@@ -5,7 +5,7 @@ import {
   Play, Pause, Sun, PlayCircle, Monitor, MessageSquare, 
   Settings, Volume2, RotateCcw, RotateCw, Camera, Headphones, 
   Sliders, PictureInPicture, VolumeX, SkipBack, SkipForward, 
-  Repeat, Check, X, ChevronRight, Minimize2, MoreHorizontal,
+  Repeat, Check, X, ChevronRight, Minimize2, MoreHorizontal, MoreVertical,
   Layout, RefreshCcw, ZoomIn, Type, Palette, Shield, Zap,
   Keyboard, FileText, Download, List, Settings2
 } from 'lucide-react';
