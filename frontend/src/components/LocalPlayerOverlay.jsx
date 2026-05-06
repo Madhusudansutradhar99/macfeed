@@ -138,6 +138,8 @@ export default function LocalPlayerOverlay() {
 
         const setupPlayer = async () => {
             const video = videoRef.current;
+            if (!video) return;
+            setIsLoading(true);
             video.preload = preloadMode.toLowerCase();
             
             try {
@@ -247,6 +249,7 @@ export default function LocalPlayerOverlay() {
         if (durationRef.current) durationRef.current.innerText = formatTime(dur);
     };
 
+    let rafId;
     if ('requestVideoFrameCallback' in video) {
         const callback = () => {
             updateUI();
@@ -427,7 +430,15 @@ export default function LocalPlayerOverlay() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClick={() => { if(!isLocked) setShowControls(!showControls); }}
+        onClick={() => { 
+          if(!isLocked) {
+            if (showExtraPanel) {
+              setShowExtraPanel(false);
+            } else {
+              setShowControls(!showControls);
+            }
+          }
+        }}
       >
         <div className="fixed inset-0 pointer-events-none z-[5]" style={{ backgroundColor: 'black', opacity: 1 - (brightness / 100) }} />
 
@@ -441,6 +452,7 @@ export default function LocalPlayerOverlay() {
             imageRendering: 'optimizeSpeed'
           }}
           onLoadedMetadata={handleVideoMetadata}
+          onCanPlay={() => setIsLoading(false)}
           onWaiting={() => setIsLoading(true)}
           onPlaying={() => { setIsLoading(false); setPlaying(true); }}
           onPlay={() => setIsLoading(false)}
@@ -450,20 +462,33 @@ export default function LocalPlayerOverlay() {
           decoding="async"
         />
 
-        {/* Premium Transparent Cinematic Loader */}
+        {/* Premium Transparent Cinematic Loader with Safety Exit */}
         {isLoading && (
-            <div className="absolute inset-0 z-[500] flex flex-col items-center justify-center bg-black/60 backdrop-blur-xl">
-                <div className="relative w-32 h-32">
-                    <motion.div animate={{ scale: [1, 2], opacity: [0.3, 0] }} transition={{ repeat: Infinity, duration: 2 }} className="absolute inset-0 border-4 border-blue-500/20 rounded-full" />
-                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }} className="absolute inset-4 border-t-4 border-blue-500 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+            <div className="absolute inset-0 z-[500] flex flex-col items-center justify-center pointer-events-none">
+                <div className="relative w-32 h-32 flex items-center justify-center">
+                    <motion.div 
+                        animate={{ scale: [1, 1.5, 1], rotate: 360 }} 
+                        transition={{ repeat: Infinity, duration: 3 }} 
+                        className="absolute inset-0 border-2 border-dashed border-blue-500/30 rounded-full" 
+                    />
+                    <motion.div 
+                        animate={{ rotate: -360 }} 
+                        transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }} 
+                        className="absolute inset-2 border-t-2 border-blue-400 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.3)]" 
+                    />
+                    <div className="w-12 h-12 bg-blue-500/10 backdrop-blur-sm border border-blue-500/20 rounded-2xl flex items-center justify-center">
+                        <motion.div 
+                           animate={{ scale: [0.8, 1.1, 0.8] }}
+                           transition={{ repeat: Infinity, duration: 1 }}
+                        >
+                           <Zap size={20} className="text-blue-400 fill-blue-400" />
+                        </motion.div>
+                    </div>
                 </div>
-                <p className="mt-8 text-blue-400 text-[10px] font-black uppercase tracking-[0.5em] animate-pulse">MacFeed 16K Engine</p>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setIsLoading(false); }}
-                  className="mt-12 px-6 py-2 bg-white/5 border border-white/10 rounded-full text-white/40 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
-                >
-                  Skip Loading
-                </button>
+                <div className="mt-6 flex flex-col items-center gap-1">
+                   <p className="text-blue-400 text-[9px] font-black uppercase tracking-[0.6em] animate-pulse">16K ENGINE</p>
+                   <p className="text-white/20 text-[8px] font-black uppercase tracking-widest">Optimizing Playback...</p>
+                </div>
             </div>
         )}
 
@@ -477,28 +502,7 @@ export default function LocalPlayerOverlay() {
             )}
         </AnimatePresence>
 
-        {/* Right Action Sidebar - Ultra Fast Clicks */}
-        <div className={`absolute right-0 top-1/2 -translate-y-1/2 flex flex-col gap-5 pr-4 z-[60] transition-all duration-300 ${!showControls ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'}`}>
-          {[
-            { icon: <MoreVertical size={20} />, id: 'settings' },
-            { icon: <Type size={20} />, id: 'subs' },
-            { icon: <AudioLines size={20} />, id: 'audio' },
-            { icon: <Zap size={20} className={hardwareBoost ? "text-yellow-400" : ""} />, id: 'hw' },
-            { icon: <Repeat size={20} />, id: 'loop' },
-          ].map((btn) => (
-            <button
-              key={btn.id}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                if (btn.id === 'hw') setHardwareBoost(!hardwareBoost);
-                if (btn.id === 'settings') setShowSettings(true);
-              }}
-              className="w-12 h-12 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 active:scale-90 active:bg-blue-500/40 transition-all touch-none"
-            >
-              {btn.icon}
-            </button>
-          ))}
-        </div>
+
 
         {/* TOP BAR */}
         <AnimatePresence>
@@ -597,6 +601,10 @@ export default function LocalPlayerOverlay() {
                             const idx = ASPECT_RATIOS.indexOf(aspectRatio);
                             setAspectRatio(ASPECT_RATIOS[(idx + 1) % ASPECT_RATIOS.length]);
                         }} />
+                        
+                        <ExtraAction icon={<Settings size={22} />} label="SET" color="#94A3B8" onClick={() => setShowSettings(true)} />
+                        <ExtraAction icon={<MessageSquare size={22} />} label="SUBS" color="#6366F1" onClick={() => { setSettingsTab('SUBTITLES'); setShowSettings(true); }} />
+                        <ExtraAction icon={<Zap size={22} className={hwAccel ? "fill-yellow-400 text-yellow-400" : ""} />} label="HW" color="#FACC15" onClick={() => setHwAccel(!hwAccel)} />
                         
                         <ExtraAction icon={<PictureInPicture size={22} />} label="PIP" color="#86EFAC" onClick={() => videoRef.current?.requestPictureInPicture()} />
                         <ExtraAction icon={isMuted ? <VolumeX size={22} /> : <Volume2 size={22} />} label="MUTE" color="#FCD34D" onClick={() => setIsMuted(!isMuted)} />

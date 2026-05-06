@@ -2,9 +2,19 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Play, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useMusicPlayer } from '../context/MusicContext';
 
 export default function PosterCard({ video, index }) {
   const navigate = useNavigate();
+  const { playSong } = useMusicPlayer();
+
+  const handleClick = () => {
+    if (video.isLocal) {
+        playSong(video);
+    } else {
+        navigate(`/watch/${video.id}`);
+    }
+  };
 
   return (
     <motion.div
@@ -13,7 +23,7 @@ export default function PosterCard({ video, index }) {
         show: { opacity: 1, y: 0 }
       }}
       whileHover={{ y: -10 }}
-      onClick={() => navigate(`/watch/${video.id}`)}
+      onClick={handleClick}
       className="relative flex flex-col group cursor-pointer"
     >
       {/* Poster Image Container */}
