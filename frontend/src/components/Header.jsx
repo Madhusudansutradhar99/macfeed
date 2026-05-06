@@ -1,0 +1,303 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Search, Play, X, Mic, Music, Layout, Database, TrendingUp, History, Globe, AlertCircle, ChevronRight, Zap, User, LogIn } from 'lucide-react';
+import { supabase } from '../supabaseClient';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
+import ThemeToggle from './ThemeToggle';
+
+const YT_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
+
+// CORS Bypassing & Multi-Engine Config
+const PROXIES = [
+  "https://api.allorigins.win/get?url=",
+  "https://corsproxy.io/?",
+  ""
+];
+
+const PIPED_INSTANCES = [
+  "https://pipedapi.kavin.rocks",
+  "https://pipedapi.tokhmi.xyz",
+  "https://pipedapi.moomoo.me",
+  "https://api.piped.victr.me"
+];
+
+const YoutubeIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" /><path d="m10 15 5-3-5-3z" />
+  </svg>
+);
+
+export default function Header() {
+  const location = useLocation();
+  if (location.pathname === '/music') return null;
+
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [isFocused, setIsFocused] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [quotaHit, setQuotaHit] = useState(false);
+  const [isFreeMode, setIsFreeMode] = useState(false);
+  const { user, setAuthModalOpen } = useAuth();
+  const navigate = useNavigate();
+  const dropdownRef = useRef();
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [isVisible, setIsVisible] = useState(true);
+
+  // Smart Header Logic: Permanent on Home and Search, Hover-to-reveal on others
+  useEffect(() => {
+    if (location.pathname === '/' || location.pathname === '/search') {
+      setIsVisible(true);
+      return;
+    }
+
+    const handleMouseMove = (e) => {
+      // Show header if mouse is at the top (top 80px)
+      if (e.clientY < 80) {
+        setIsVisible(true);
+      }
+      // Hide header if mouse leaves top area (below 120px) AND not focused
+      else if (e.clientY > 120 && !isFocused) {
+        setIsVisible(false);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [isFocused, location.pathname]);
+
+  const scrapeGlobal = async (q) => {
+    // 1. Try Official first
+    if (YT_API_KEY) {
+      try {
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&maxResults=8&key=${YT_API_KEY}`);
+        const data = await res.json();
+        if (data.items && !data.error) {
+          return data.items.map(i => ({
+            id: `yt-${i.id.videoId}`,
+            ytId: i.id.videoId,
+            title: i.snippet.title,
+            thumbnail_url: i.snippet.thumbnails.medium?.url,
+            video_url: `https://www.youtube.com/embed/${i.id.videoId}`,
+            source: 'youtube',
+            type: 'global'
+          }));
+        }
+        if (data.error?.errors?.[0]?.reason === 'quotaExceeded') setQuotaHit(true);
+      } catch (e) { }
+    }
+
+    // 2. Multi-Layered Piped Search (Bypass Quota) with Concurrent Execution for Instant Results
+    setIsFreeMode(true);
+
+    const fetchPromises = [];
+
+    for (const instance of PIPED_INSTANCES) {
+      for (const proxy of PROXIES) {
+        const promise = (async () => {
+          const target = `${instance}/search?q=${encodeURIComponent(q)}&filter=videos`;
+          const fetchUrl = proxy ? `${proxy}${encodeURIComponent(target)}` : target;
+
+          const res = await fetch(fetchUrl, { signal: AbortSignal.timeout(4000) });
+          if (!res.ok) throw new Error('Proxy failed');
+
+          let data;
+          if (proxy.includes('allorigins')) {
+            const pData = await res.json();
+            data = JSON.parse(pData.contents);
+          } else {
+            data = await res.json();
+          }
+
+          if (data && (data.items || data.length > 0)) {
+            const items = data.items || data;
+            const mapped = items.slice(0, 10).map(v => {
+              const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
+              if (!vidId) return null;
+              return {
+                id: `yt-${vidId}`,
+                ytId: vidId,
+                title: v.title,
+                thumbnail_url: v.thumbnail || v.thumbnails?.[0]?.url || `https://i.ytimg.com/vi/${vidId}/mqdefault.jpg`,
+                video_url: `https://www.youtube.com/embed/${vidId}`,
+                source: 'youtube',
+                type: 'global',
+                duration: v.duration ? (typeof v.duration === 'number' ? `${Math.floor(v.duration / 60)}:${v.duration % 60}` : v.duration) : '--:--'
+              };
+            }).filter(Boolean);
+            if (mapped.length > 0) return mapped;
+          }
+          throw new Error('No results from this proxy');
+        })();
+
+        fetchPromises.push(promise);
+      }
+    }
+
+    try {
+      const fastestResults = await Promise.any(fetchPromises);
+      return fastestResults;
+    } catch (e) {
+      console.warn('All multi-layered search instances failed.');
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (query.trim().length < 2) { setResults([]); return; }
+      setLoading(true); setQuotaHit(false); setIsFreeMode(false);
+
+      try {
+        // 1. Fetch Local Results FAST
+        const { data: dbData } = await supabase.from('videos').select('*').or(`title.ilike.%${query}%`).limit(4);
+        const localResults = (dbData || []).map(v => ({ ...v, type: 'local' }));
+
+        // Show local results immediately
+        setResults(localResults);
+
+        // 2. Fetch Global Results in background
+        const globalResults = await scrapeGlobal(query);
+
+        // Update results with both
+        setResults(prev => {
+          // Keep local results at top, add global
+          const locals = prev.filter(r => r.type === 'local');
+          return [...locals, ...globalResults];
+        });
+      } catch (e) {
+        console.error("Search Error:", e);
+      } finally {
+        setLoading(false);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const handleResultClick = async (v) => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      if (v.type === 'local') navigate(`/watch/${v.id}`);
+      else {
+        const { data: existing } = await supabase.from('videos').select('id').or(`youtube_id.eq.${v.ytId},video_url.ilike.%${v.ytId}%`).limit(1);
+        if (existing?.length) navigate(`/watch/${existing[0].id}`);
+        else {
+          const { data: inserted } = await supabase.from('videos').insert([{ title: v.title, video_url: v.video_url, youtube_id: v.ytId, thumbnail_url: v.thumbnail_url, source: 'youtube', category: 'YouTube', duration: v.duration || '--:--', views: 0 }]).select('id').single();
+          if (inserted?.id) navigate(`/watch/${inserted.id}`);
+          else navigate(`/watch/${v.id}`);
+        }
+      }
+      setQuery(''); setResults([]); setIsFocused(false);
+    } catch (e) { navigate(`/watch/${v.id}`); }
+    finally { setIsSaving(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => { if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setIsFocused(false); };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const [isHeaderHovered, setIsHeaderHovered] = useState(false);
+  const isSearchPage = location.pathname === '/search';
+
+  return (
+    <motion.header
+      initial={{ y: 0 }}
+      animate={{ y: isVisible || isFocused ? 0 : -80 }}
+      onMouseEnter={() => setIsHeaderHovered(true)}
+      onMouseLeave={() => setIsHeaderHovered(false)}
+      transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+      className={`fixed top-0 left-0 right-0 h-[75px] bg-transparent z-[5000] flex items-center px-4 transition-colors duration-500 ${isSearchPage ? 'justify-center' : 'md:px-10'}`}
+      style={isSearchPage ? { backgroundColor: 'transparent', backdropFilter: 'none', WebkitBackdropFilter: 'none', borderBottom: 'none' } : {}}
+    >
+      {!isSearchPage && (
+        <div className="flex items-center gap-6 shrink-0 mr-10">
+          <button onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))} className="p-3 bg-secondary rounded-2xl hover:bg-primary/10 border border-primary transition-all text-primary">
+            <Layout className="w-5 h-5" />
+          </button>
+          <Link to="/" className="hidden md:flex items-center gap-2">
+            <img src="/macfeed-logo.png" className="h-10 w-10" />
+            <span className="text-primary text-2xl font-black uppercase italic tracking-tighter leading-none">
+              Mac<span className="text-accent" style={{ color: 'var(--accent-color)' }}>Feed</span>
+            </span>
+          </Link>
+        </div>
+      )}
+
+      <div ref={dropdownRef} className="flex-1 max-w-4xl mx-auto relative z-[6000]">
+        <div
+          className={`flex items-center transition-all duration-500 px-4 py-1.5 rounded-full border-2 ${isFocused ? 'bg-secondary/95 border-accent ring-4 ring-accent/20 w-full shadow-2xl' : 'bg-secondary/40 border-primary w-full hover:bg-secondary/60 hover:border-accent/40'}`}
+          style={isFocused ? { borderColor: 'var(--accent-color)', boxShadow: '0 0 20px var(--accent-color)44' } : {}}
+        >
+          <div className={`flex items-center justify-center p-2 rounded-full transition-all ${isFocused || isHeaderHovered ? 'text-accent' : 'text-secondary'}`} style={isFocused || isHeaderHovered ? { color: 'var(--accent-color)' } : {}}>
+            <Search className="w-5 h-5" />
+          </div>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onKeyDown={(e) => e.key === 'Enter' && (navigate(`/search?q=${encodeURIComponent(query)}`), setIsFocused(false))}
+            placeholder="Search Global YouTube..."
+            className="bg-transparent outline-none text-primary text-lg font-black italic uppercase tracking-tight transition-all duration-500 w-full px-4 placeholder:text-secondary"
+          />
+          {loading && isFocused && <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin ml-3" style={{ borderColor: 'var(--accent-color)', borderTopColor: 'transparent' }} />}
+        </div>
+        <AnimatePresence>
+          {isFocused && !isSearchPage && (
+            <motion.div 
+                initial={{ opacity: 0, y: 15 }} 
+                animate={{ opacity: 1, y: 10 }} 
+                exit={{ opacity: 0, y: 15 }} 
+                className="fixed md:absolute top-[80px] md:top-full left-4 right-4 md:left-0 md:right-0 mx-auto w-auto md:w-full max-w-4xl bg-secondary/95 backdrop-blur-3xl border border-primary rounded-[2rem] shadow-2xl overflow-hidden"
+            >
+              <div className="max-h-[70vh] overflow-y-auto pb-6">
+                {quotaHit && <div className="mx-8 mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex flex-col gap-1"><div className="flex items-center gap-2 text-red-500 text-[10px] font-black uppercase tracking-widest"><AlertCircle className="w-4 h-4" /> Official YouTube Limit Hit</div><p className="text-[8px] text-primary/30 font-medium leading-relaxed italic">Switching to Direct Raw Scraper...</p></div>}
+                {isFreeMode && <div className="mx-8 mt-4 p-3 bg-accent/10 border border-accent/20 rounded-2xl flex items-center gap-2 shadow-lg" style={{ backgroundColor: 'var(--accent-color)22', borderColor: 'var(--accent-color)44' }}><Zap className="w-4 h-4 text-accent animate-pulse" style={{ color: 'var(--accent-color)' }} /><span className="text-[10px] font-black text-accent uppercase tracking-widest italic" style={{ color: 'var(--accent-color)' }}>Global Free Engine Active</span></div>}
+                <div className="px-10 py-5 text-[10px] font-black text-secondary uppercase tracking-[0.4em] border-b border-primary">Results for "{query}"</div>
+                {results.length > 0 ? results.map((r, idx) => (
+                  <div key={r.id + idx} onClick={() => handleResultClick(r)} className="flex items-center gap-6 px-10 py-5 hover:bg-accent/10 cursor-pointer border-b border-primary last:border-0 group transition-all">
+                    <div className="relative w-36 h-20 rounded-xl overflow-hidden bg-black shrink-0 shadow-lg border border-primary"><img src={r.thumbnail_url} decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500" />{r.duration && <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/10">{r.duration}</span>}</div>
+                    <div className="flex-1 min-w-0"><p className="text-primary text-lg font-black truncate group-hover:text-accent transition-colors uppercase italic tracking-tighter leading-none" style={{ '--accent': 'var(--accent-color)' }}>{r.title}</p><div className="flex items-center gap-3 mt-2">{r.type === 'local' ? <span className="text-[9px] text-accent font-black uppercase flex items-center gap-1 bg-accent/10 px-2 py-1 rounded-lg" style={{ color: 'var(--accent-color)', backgroundColor: 'var(--accent-color)22' }}>MacFeed</span> : <span className="text-[9px] text-red-500 font-black uppercase flex items-center gap-2 bg-red-500/10 px-2 py-1 rounded-lg"><YoutubeIcon /> YouTube Global</span>}</div></div>
+                  </div>
+                )) : !loading && <div className="p-20 text-center text-secondary font-black uppercase italic tracking-[0.5em]">Searching...</div>}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {!isSearchPage && (
+        <div className="shrink-0 ml-6 md:ml-10 flex items-center gap-4">
+          <ThemeToggle />
+          
+          {user ? (
+            <button 
+              onClick={() => navigate('/settings')}
+              className="w-11 h-11 rounded-full bg-gradient-to-br from-accent via-purple-500 to-accent p-[2px] shadow-xl transition-transform active:scale-90"
+              style={{ backgroundImage: 'linear-gradient(to bottom right, var(--accent-color), #a855f7, var(--accent-color))' }}
+            >
+              <div className="w-full h-full rounded-full bg-secondary flex items-center justify-center font-black text-xs text-primary uppercase">
+                {user.email?.[0] || <User className="w-4 h-4" />}
+              </div>
+            </button>
+          ) : (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setAuthModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-2.5 bg-accent text-white rounded-full font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-accent/30 hover:brightness-110 transition-all border border-white/20"
+              style={{ backgroundColor: 'var(--accent-color)' }}
+            >
+              <LogIn className="w-4 h-4" />
+              <span className="hidden sm:inline">Sign In</span>
+            </motion.button>
+          )}
+        </div>
+      )}
+      <AnimatePresence>{isFocused && !isSearchPage && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-primary/80 backdrop-blur-sm z-[4500] pointer-events-none" />}</AnimatePresence>
+    </motion.header>
+  );
+}

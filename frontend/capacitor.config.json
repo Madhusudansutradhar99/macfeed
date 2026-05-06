@@ -1,0 +1,10 @@
+{
+  "appId": "com.macfeed.macfeed",
+  "appName": "macfeed",
+  "webDir": "dist",
+  "plugins": {
+    "CapacitorUpdater": {
+      "autoUpdate": true
+    }
+  }
+}

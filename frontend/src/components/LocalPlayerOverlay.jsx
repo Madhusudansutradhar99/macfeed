@@ -1,0 +1,944 @@
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  ArrowLeft, Lock, Unlock, Maximize, ChevronsLeft, ChevronsRight, 
+  Play, Pause, Sun, PlayCircle, Monitor, MessageSquare, 
+  Settings, Volume2, RotateCcw, RotateCw, Camera, Headphones, 
+  Sliders, PictureInPicture, VolumeX, SkipBack, SkipForward, 
+  Repeat, Check, X, ChevronRight, Minimize2, MoreHorizontal,
+  Layout, RefreshCcw, ZoomIn, Type, Palette, Shield, Zap,
+  Keyboard, FileText, Download, List, Settings2
+} from 'lucide-react';
+import { useMusicPlayer } from '../context/MusicContext';
+import { Filesystem } from '@capacitor/filesystem';
+import { ScreenOrientation } from '@capacitor/screen-orientation';
+
+const formatTime = (s) => {
+  if (!s || isNaN(s)) return '00:00:00';
+  const hrs = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = Math.floor(s % 60);
+  if (hrs > 0) return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+const SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+const ASPECT_RATIOS = ['Fit', 'Fill', 'Stretch', '4:3', '16:9'];
+const DECODERS = ['Auto', 'Software', 'Hardware'];
+const BUFFER_SIZES = ['Small', 'Medium', 'Large'];
+const PRELOADS = ['None', 'Metadata', 'Auto'];
+const FONT_SIZES = ['Small', 'Medium', 'Large'];
+const COLORS = ['White', 'Yellow', 'Green'];
+const BG_MODES = ['None', 'Dark', 'Black'];
+const SCREENSHOT_QUALITIES = ['Low', 'Medium', 'High'];
+const SCREENSHOT_FORMATS = ['PNG', 'JPG'];
+
+export default function LocalPlayerOverlay() {
+  const { 
+    isLocalPlayerOpen, setIsLocalPlayerOpen, activeLocalSong: currentSong, 
+    playingLocal: playing, setPlayingLocal: setPlaying,
+    volumeLocal: volume, setVolumeLocal: setVolume,
+    mutedLocal: isMuted, setMutedLocal: setIsMuted,
+    next, prev
+  } = useMusicPlayer();
+
+  const videoRef = useRef(null);
+  const containerRef = useRef(null);
+  const controlsTimeout = useRef(null);
+  const touchStart = useRef({ x: 0, y: 0, time: 0 });
+  const lastTap = useRef(0);
+  const swipeUpStart = useRef(0);
+
+  // Core UI States
+  const [showControls, setShowControls] = useState(true);
+  const [isLocked, setIsLocked] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [bufferProgress, setBufferProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [brightness, setBrightness] = useState(100);
+
+  // Direct DOM Refs for high-performance updates
+  const currentTimeRef = useRef(null);
+  const durationRef = useRef(null);
+  const progressBarRef = useRef(null);
+  const bufferBarRef = useRef(null);
+  const thumbRef = useRef(null);
+  const [showExtraPanel, setShowExtraPanel] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [settingsTab, setSettingsTab] = useState('PLAYBACK');
+
+  // Settings States
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [autoPlayNext, setAutoPlayNext] = useState(true);
+  const [resumePos, setResumePos] = useState(true);
+  const [loopVideo, setLoopVideo] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState('Fit');
+  const [hwAccel, setHwAccel] = useState(true);
+  const [decoder, setDecoder] = useState('Auto');
+  const [bufferSize, setBufferSize] = useState('Medium');
+  const [preloadMode, setPreloadMode] = useState('Auto');
+  const [volumeBoost, setVolumeBoost] = useState(100);
+  const [eqPreset, setEqPreset] = useState('Normal');
+  const [fontSize, setFontSize] = useState('Medium');
+  const [subtitleColor, setSubtitleColor] = useState('White');
+  const [subtitleBg, setSubtitleBg] = useState('None');
+  const [ssQuality, setSsQuality] = useState('High');
+  const [ssFormat, setSsFormat] = useState('PNG');
+  
+  // Gesture & Feedback States
+  const [activeGesture, setActiveGesture] = useState(null); 
+  const [gestureValue, setGestureValue] = useState(0);
+  const [showSkipAnim, setShowSkipAnim] = useState(null); 
+  const [toast, setToast] = useState(null);
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
+  const [savedTime, setSavedTime] = useState(0);
+  const [orientation, setOrientation] = useState('portrait');
+
+  const showMXToast = useCallback((msg, icon, color = '#FFFFFF') => {
+    setToast({ msg, icon, color });
+    setTimeout(() => setToast(null), 2000);
+  }, []);
+
+  const resetControlsTimeout = useCallback(() => {
+    if (isLocked) {
+        setShowControls(true);
+        return;
+    }
+    setShowControls(true);
+    if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
+    controlsTimeout.current = setTimeout(() => {
+        if (playing && !showSettings && !showExtraPanel) setShowControls(false);
+    }, 3000);
+  }, [playing, isLocked, showSettings, showExtraPanel]);
+
+  useEffect(() => {
+    resetControlsTimeout();
+    return () => { if (controlsTimeout.current) clearTimeout(controlsTimeout.current); };
+  }, [playing, isLocked, resetControlsTimeout]);
+
+  useEffect(() => {
+    if (isLocalPlayerOpen && currentSong && videoRef.current) {
+        try {
+            const history = JSON.parse(localStorage.getItem('macfeed_local_history') || '[]');
+            const entry = {
+                id: currentSong.id,
+                title: currentSong.title || currentSong.name,
+                path: currentSong.path,
+                thumbnail_url: currentSong.thumbnail_url,
+                lastPlayed: Date.now(),
+                source: 'local'
+            };
+            const filtered = history.filter(h => (h.path && h.path === entry.path) || h.title !== entry.title);
+            filtered.unshift(entry);
+            localStorage.setItem('macfeed_local_history', JSON.stringify(filtered.slice(0, 50)));
+        } catch(e) {}
+
+        const setupPlayer = async () => {
+            const video = videoRef.current;
+            video.preload = preloadMode.toLowerCase();
+            
+            try {
+                if (currentSong.path) {
+                    const fileUri = await Filesystem.getUri({ path: currentSong.path });
+                    video.src = fileUri.uri;
+                } else if (currentSong.file) {
+                    const objectURL = URL.createObjectURL(currentSong.file);
+                    video.src = objectURL;
+                } else {
+                    video.src = currentSong.video_url;
+                }
+
+                video.load();
+                if ('decoding' in video) video.decoding = 'async';
+                
+                video.style.transform = 'none';
+                video.style.contain = 'strict';
+                video.style.backfaceVisibility = 'hidden';
+                video.style.webkitPerspective = '0';
+                
+                video.play().catch(() => setPlaying(false));
+                
+                const width = video.videoWidth || 0;
+                if (width > 4000) {
+                    showMXToast(`Ultra High Res Detected: ${width}p`, <Zap size={14}/>, "#FCD34D");
+                }
+            } catch (err) {
+                console.error("Player setup error:", err);
+            }
+        };
+        setupPlayer();
+    }
+  }, [isLocalPlayerOpen, currentSong]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const handleOrientation = async () => {
+        if (!isLocalPlayerOpen || !isMounted) return;
+        try {
+            if (orientation === 'landscape') {
+                if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+                    await document.documentElement.requestFullscreen().catch(() => {});
+                }
+                await ScreenOrientation.lock({ orientation: 'landscape' }).catch(() => {});
+            } else {
+                await ScreenOrientation.lock({ orientation: 'portrait' }).catch(() => {});
+                if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
+            }
+        } catch (e) { 
+            console.warn("Orientation logic failed:", e);
+        }
+    };
+    handleOrientation();
+    return () => { 
+        isMounted = false;
+        try { 
+            ScreenOrientation.unlock();
+            window.screen?.orientation?.unlock(); 
+        } catch(e) {} 
+    };
+  }, [isLocalPlayerOpen, orientation]);
+
+  const handleVideoMetadata = () => {
+    if (!videoRef.current) return;
+    const v = videoRef.current;
+    setDuration(v.duration);
+    setIsLoading(false);
+    
+    const detectedOrient = v.videoWidth > v.videoHeight ? 'landscape' : 'portrait';
+    if (orientation !== detectedOrient) {
+        setOrientation(detectedOrient);
+    }
+
+    if (resumePos) {
+        const key = `mx_resume_${currentSong.name || currentSong.title}`;
+        const saved = localStorage.getItem(key);
+        if (saved && parseFloat(saved) > 5) {
+            setSavedTime(parseFloat(saved));
+            setShowResumeDialog(true);
+        }
+    }
+  };
+
+  const handleResume = (confirm) => {
+    if (confirm && videoRef.current) videoRef.current.currentTime = savedTime;
+    setShowResumeDialog(false);
+    setPlaying(true);
+  };
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !isLocalPlayerOpen) return;
+
+    const updateUI = () => {
+        if (!video || !isLocalPlayerOpen || isLocked) return;
+        const cur = video.currentTime;
+        const dur = video.duration || 1;
+        const prog = (cur / dur) * 100;
+        if (progressBarRef.current) progressBarRef.current.style.width = `${prog}%`;
+        if (thumbRef.current) thumbRef.current.style.left = `calc(${prog}% - 10px)`;
+        if (video.buffered.length > 0) {
+            const bEnd = video.buffered.end(video.buffered.length - 1);
+            if (bufferBarRef.current) bufferBarRef.current.style.width = `${(bEnd / dur) * 100}%`;
+        }
+        if (currentTimeRef.current) currentTimeRef.current.innerText = formatTime(cur);
+        if (durationRef.current) durationRef.current.innerText = formatTime(dur);
+    };
+
+    if ('requestVideoFrameCallback' in video) {
+        const callback = () => {
+            updateUI();
+            video.requestVideoFrameCallback(callback);
+        };
+        video.requestVideoFrameCallback(callback);
+    } else {
+        const loop = () => {
+            updateUI();
+            rafId = requestAnimationFrame(loop);
+        };
+        rafId = requestAnimationFrame(loop);
+        return () => cancelAnimationFrame(rafId);
+    }
+  }, [isLocalPlayerOpen, currentSong, isLocked]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+        videoRef.current.volume = (volume * (volumeBoost / 100));
+        videoRef.current.muted = isMuted;
+        videoRef.current.playbackRate = playbackRate;
+        videoRef.current.loop = loopVideo;
+    }
+  }, [volume, isMuted, playbackRate, volumeBoost, loopVideo]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+        if (playing) {
+            videoRef.current.play().catch(e => {
+                console.warn("Play failed:", e);
+                setPlaying(false);
+            });
+        } else {
+            videoRef.current.pause();
+        }
+    }
+  }, [playing]);
+
+  const toggleLock = (e) => {
+    e?.stopPropagation();
+    const newLock = !isLocked;
+    setIsLocked(newLock);
+    setShowControls(true);
+    showMXToast(newLock ? 'Controls Locked' : 'Controls Unlocked', newLock ? <Lock size={16}/> : <Unlock size={16}/>, '#FCD34D');
+  };
+
+  const skip = (amount) => {
+    if (videoRef.current) {
+        videoRef.current.currentTime += amount;
+        setShowSkipAnim(amount > 0 ? 'right' : 'left');
+        setTimeout(() => setShowSkipAnim(null), 800);
+    }
+  };
+
+  const handleCapture = (e) => {
+    e?.stopPropagation();
+    if (!videoRef.current) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(videoRef.current, 0, 0);
+    const link = document.createElement('a');
+    link.download = `MX_Capture_${Date.now()}.${ssFormat.toLowerCase()}`;
+    link.href = canvas.toDataURL(`image/${ssFormat === 'PNG' ? 'png' : 'jpeg'}`, ssQuality === 'High' ? 1.0 : ssQuality === 'Medium' ? 0.7 : 0.4);
+    link.click();
+    showMXToast('Screenshot Saved', <Camera size={16}/>, '#38BDF8');
+  };
+
+  const toggleROT = async (e) => {
+    e?.stopPropagation();
+    const newOrient = orientation === 'portrait' ? 'landscape' : 'portrait';
+    try {
+        if (newOrient === 'landscape') {
+            if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+            await ScreenOrientation.lock({ orientation: 'landscape' });
+            showMXToast('LANDSCAPE', <RefreshCcw size={16}/>, '#34D399');
+        } else {
+            await ScreenOrientation.lock({ orientation: 'portrait' });
+            if (document.fullscreenElement) await document.exitFullscreen();
+            showMXToast('PORTRAIT', <RefreshCcw size={16}/>, '#34D399');
+        }
+    } catch(err) {
+        showMXToast(newOrient.toUpperCase(), <RefreshCcw size={16}/>, '#34D399');
+    }
+    setOrientation(newOrient);
+  };
+
+  const handleTouchStart = (e) => {
+    const touch = e.touches[0];
+    touchStart.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+    swipeUpStart.current = touch.clientY;
+    setActiveGesture(null);
+  };
+
+  const handleTouchMove = (e) => {
+    if (isLocked) return;
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStart.current.x;
+    const deltaY = touch.clientY - touchStart.current.y;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    if (!activeGesture) {
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30) setActiveGesture('seek');
+        else if (Math.abs(deltaY) > 30) {
+            if (touchStart.current.x < width * 0.3) setActiveGesture('brightness');
+            else if (touchStart.current.x > width * 0.7) setActiveGesture('volume');
+        }
+    }
+
+    if (activeGesture === 'brightness') setBrightness(prev => Math.max(0, Math.min(100, prev - (deltaY / height) * 100)));
+    else if (activeGesture === 'volume') setVolume(prev => Math.max(0, Math.min(1, prev - (deltaY / height))));
+    else if (activeGesture === 'seek') setGestureValue((deltaX / width) * 30);
+  };
+
+  const handleTouchEnd = (e) => {
+    const touchY = e.changedTouches[0].clientY;
+    const deltaY = swipeUpStart.current - touchY;
+
+    if (deltaY > 100 && !showExtraPanel && !isLocked) {
+        setShowExtraPanel(true);
+        return;
+    }
+    if (deltaY < -100 && showExtraPanel) {
+        setShowExtraPanel(false);
+        return;
+    }
+
+    if (activeGesture === 'seek' && videoRef.current) videoRef.current.currentTime += gestureValue;
+    
+    window._lastGestureTime = Date.now();
+    setTimeout(() => {
+        if (Date.now() - window._lastGestureTime >= 800) setActiveGesture(null);
+    }, 800);
+
+    const now = Date.now();
+    if (now - lastTap.current < 300) {
+        const touchX = e.changedTouches[0].clientX;
+        if (touchX < window.innerWidth / 2) skip(-10);
+        else skip(10);
+    }
+    lastTap.current = now;
+  };
+
+  useEffect(() => {
+    const handleKey = (e) => {
+        if (!isLocalPlayerOpen) return;
+        switch(e.code) {
+            case 'Space': e.preventDefault(); setPlaying(!playing); break;
+            case 'ArrowLeft': e.preventDefault(); skip(-10); break;
+            case 'ArrowRight': e.preventDefault(); skip(10); break;
+            case 'ArrowUp': e.preventDefault(); setVolume(v => Math.min(1, v + 0.1)); break;
+            case 'ArrowDown': e.preventDefault(); setVolume(v => Math.max(0, v - 0.1)); break;
+            case 'KeyF': e.preventDefault(); containerRef.current?.requestFullscreen(); break;
+            case 'KeyL': e.preventDefault(); toggleLock(); break;
+            case 'KeyM': e.preventDefault(); setIsMuted(!isMuted); break;
+            case 'KeyS': e.preventDefault(); handleCapture(); break;
+            case 'KeyR': e.preventDefault(); toggleROT(); break;
+            case 'KeyQ': e.preventDefault(); setSettingsTab('QUALITY'); setShowSettings(true); break;
+            case 'KeyA': e.preventDefault(); setSettingsTab('AUDIO'); setShowSettings(true); break;
+        }
+        resetControlsTimeout();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [playing, isLocalPlayerOpen, isMuted, volume, isLocked, orientation, playbackRate]);
+
+  if (!isLocalPlayerOpen || !currentSong) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        ref={containerRef}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[9999] bg-[#000] flex flex-col items-center justify-center overflow-hidden font-sans select-none"
+        onMouseMove={resetControlsTimeout}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={() => { if(!isLocked) setShowControls(!showControls); }}
+      >
+        <div className="fixed inset-0 pointer-events-none z-[5]" style={{ backgroundColor: 'black', opacity: 1 - (brightness / 100) }} />
+
+        <video
+          ref={videoRef}
+          className="w-full h-full relative z-[10]"
+          style={{ 
+            objectFit: aspectRatio === 'Fit' ? 'contain' : aspectRatio === 'Fill' ? 'cover' : aspectRatio === 'Stretch' ? 'fill' : 'contain', 
+            aspectRatio: (aspectRatio === '16:9' || aspectRatio === '4:3') ? aspectRatio.replace(':', '/') : 'auto',
+            contain: 'strict',
+            imageRendering: 'optimizeSpeed'
+          }}
+          onLoadedMetadata={handleVideoMetadata}
+          onWaiting={() => setIsLoading(true)}
+          onPlaying={() => { setIsLoading(false); setPlaying(true); }}
+          onPlay={() => setIsLoading(false)}
+          onPause={() => setPlaying(false)}
+          onEnded={() => setPlaying(false)}
+          playsInline
+          decoding="async"
+        />
+
+        {/* Premium Transparent Cinematic Loader */}
+        {isLoading && (
+            <div className="absolute inset-0 z-[500] flex flex-col items-center justify-center bg-black/60 backdrop-blur-xl">
+                <div className="relative w-32 h-32">
+                    <motion.div animate={{ scale: [1, 2], opacity: [0.3, 0] }} transition={{ repeat: Infinity, duration: 2 }} className="absolute inset-0 border-4 border-blue-500/20 rounded-full" />
+                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }} className="absolute inset-4 border-t-4 border-blue-500 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+                </div>
+                <p className="mt-8 text-blue-400 text-[10px] font-black uppercase tracking-[0.5em] animate-pulse">MacFeed 16K Engine</p>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setIsLoading(false); }}
+                  className="mt-12 px-6 py-2 bg-white/5 border border-white/10 rounded-full text-white/40 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
+                >
+                  Skip Loading
+                </button>
+            </div>
+        )}
+
+        {/* Toast Notification */}
+        <AnimatePresence>
+            {toast && (
+                <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 60, opacity: 1 }} exit={{ opacity: 0 }} className="absolute top-0 left-1/2 -translate-x-1/2 z-[1000] bg-black/80 px-4 py-2 rounded-full flex items-center gap-2 border border-white/10 shadow-2xl backdrop-blur-md">
+                    <span style={{ color: toast.color }}>{toast.icon}</span>
+                    <span className="text-white text-[10px] font-black uppercase tracking-widest">{toast.msg}</span>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* Right Action Sidebar - Ultra Fast Clicks */}
+        <div className={`absolute right-0 top-1/2 -translate-y-1/2 flex flex-col gap-5 pr-4 z-[60] transition-all duration-300 ${!showControls ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'}`}>
+          {[
+            { icon: <MoreVertical size={20} />, id: 'settings' },
+            { icon: <Type size={20} />, id: 'subs' },
+            { icon: <AudioLines size={20} />, id: 'audio' },
+            { icon: <Zap size={20} className={hardwareBoost ? "text-yellow-400" : ""} />, id: 'hw' },
+            { icon: <Repeat size={20} />, id: 'loop' },
+          ].map((btn) => (
+            <button
+              key={btn.id}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                if (btn.id === 'hw') setHardwareBoost(!hardwareBoost);
+                if (btn.id === 'settings') setShowSettings(true);
+              }}
+              className="w-12 h-12 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 active:scale-90 active:bg-blue-500/40 transition-all touch-none"
+            >
+              {btn.icon}
+            </button>
+          ))}
+        </div>
+
+        {/* TOP BAR */}
+        <AnimatePresence>
+            {showControls && !isLocked && (
+                <motion.div 
+                    initial={{ y: -100 }} animate={{ y: 0 }} exit={{ y: -100 }}
+                    className="absolute top-0 left-0 right-0 z-50 p-6 flex items-center justify-between bg-gradient-to-b from-black to-transparent"
+                    onClick={e => e.stopPropagation()}
+                >
+                    <div className="flex items-center gap-6">
+                        <button onClick={() => { window.screen?.orientation?.unlock(); setIsLocalPlayerOpen(false); }} className="text-white">
+                            <ArrowLeft size={24} />
+                        </button>
+                        <h2 className="text-white text-sm font-bold truncate max-w-[200px]">{currentSong.name || currentSong.title}</h2>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* CENTER CONTROLS */}
+        <AnimatePresence>
+            {showControls && !isLocked && (
+                <motion.div 
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="absolute inset-0 flex items-center justify-center gap-16 z-40 pointer-events-none"
+                >
+                    <button onClick={e => { e.stopPropagation(); if (videoRef.current) videoRef.current.currentTime -= 10; }} className="pointer-events-auto text-white p-4">
+                        <ChevronsLeft size={32} />
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); setPlaying(!playing); }} className="pointer-events-auto text-white p-4">
+                        {playing ? <Pause size={48} fill="white" /> : <Play size={48} fill="white" />}
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); if (videoRef.current) videoRef.current.currentTime += 10; }} className="pointer-events-auto text-white p-4">
+                        <ChevronsRight size={32} />
+                    </button>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* BOTTOM SECTION */}
+        <AnimatePresence>
+            {showControls && !isLocked && (
+                <motion.div 
+                    initial={{ y: 150 }} animate={{ y: 0 }} exit={{ y: 150 }}
+                    className="absolute bottom-0 left-0 right-0 z-50 p-6 flex flex-col gap-6 bg-gradient-to-t from-black to-transparent"
+                    onClick={e => e.stopPropagation()}
+                >
+                    <div className="w-full flex items-center gap-4">
+                        <span ref={currentTimeRef} className="text-white text-xs font-bold min-w-[50px]">00:00</span>
+                        <div className="flex-1 h-1.5 bg-white/20 rounded-full relative overflow-hidden">
+                            <div ref={bufferBarRef} className="absolute top-0 left-0 h-full bg-white/10" style={{ width: '0%' }} />
+                            <div ref={progressBarRef} className="absolute top-0 left-0 h-full bg-blue-500" style={{ width: '0%' }} />
+                        </div>
+                        <span ref={durationRef} className="text-white text-xs font-bold min-w-[50px]">00:00</span>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* GESTURE VISUALS */}
+        <AnimatePresence>
+            {activeGesture === 'brightness' && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute left-10 top-1/2 -translate-y-1/2 z-[200] flex flex-col items-center gap-4 bg-black/40 p-4 rounded-full backdrop-blur-md border border-white/10">
+                    <Sun className="w-5 h-5 text-white" />
+                    <div className="h-40 w-1 bg-white/20 rounded-full relative overflow-hidden">
+                        <div className="absolute bottom-0 left-0 right-0 bg-white" style={{ height: `${brightness}%` }} />
+                    </div>
+                </motion.div>
+            )}
+            {activeGesture === 'volume' && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute right-20 top-1/2 -translate-y-1/2 z-[200] flex flex-col items-center gap-4 bg-black/40 p-4 rounded-full backdrop-blur-md border border-white/10">
+                    <Volume2 className="w-5 h-5 text-white" />
+                    <div className="h-40 w-1 bg-white/20 rounded-full relative overflow-hidden">
+                        <div className="absolute bottom-0 left-0 right-0 bg-white" style={{ height: `${volume * 100}%` }} />
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* EXTRA MX PLAYER BUTTONS PANEL (SWIPE UP) */}
+        <AnimatePresence>
+            {showExtraPanel && (
+                <motion.div 
+                    initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                    className="absolute bottom-0 left-0 right-0 z-[150] bg-black/95 backdrop-blur-xl border-t border-white/10 p-8 rounded-t-[2.5rem] shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
+                    onClick={e => e.stopPropagation()}
+                >
+                    <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
+                    
+                    <div className="grid grid-cols-5 gap-y-10">
+                        <ExtraAction icon={<RefreshCcw size={22} />} label="ROT" color="#34D399" onClick={toggleROT} />
+                        <ExtraAction icon={<Camera size={22} />} label="CAP" color="#38BDF8" onClick={handleCapture} />
+                        <ExtraAction icon={<Headphones size={22} />} label="TRACK" color="#C084FC" onClick={() => { setSettingsTab('AUDIO'); setShowSettings(true); }} />
+                        <ExtraAction icon={<Sliders size={22} />} label="EQ" color="#F472B6" onClick={() => { setSettingsTab('AUDIO'); setShowSettings(true); }} />
+                        <ExtraAction icon={<ZoomIn size={22} />} label="ZOOM" color="#FB923C" onClick={() => {
+                            const idx = ASPECT_RATIOS.indexOf(aspectRatio);
+                            setAspectRatio(ASPECT_RATIOS[(idx + 1) % ASPECT_RATIOS.length]);
+                        }} />
+                        
+                        <ExtraAction icon={<PictureInPicture size={22} />} label="PIP" color="#86EFAC" onClick={() => videoRef.current?.requestPictureInPicture()} />
+                        <ExtraAction icon={isMuted ? <VolumeX size={22} /> : <Volume2 size={22} />} label="MUTE" color="#FCD34D" onClick={() => setIsMuted(!isMuted)} />
+                        <ExtraAction icon={<SkipForward size={22} />} label="NEXT" color="#A78BFA" onClick={() => { next(); showMXToast('Next Video', <SkipForward size={16}/>); }} />
+                        <ExtraAction icon={<SkipBack size={22} />} label="PREV" color="#A78BFA" onClick={() => { prev(); showMXToast('Prev Video', <SkipBack size={16}/>); }} />
+                        <ExtraAction icon={<Repeat size={22} />} label="LOOP" color="#67E8F9" onClick={() => setLoopVideo(!loopVideo)} />
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* SETTINGS MODAL */}
+        <AnimatePresence>
+            {showSettings && (
+                <motion.div 
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-[1000] bg-[#000]/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-10"
+                    onClick={() => setShowSettings(false)}
+                >
+                    <motion.div 
+                        initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                        className="bg-[#111] w-full max-w-4xl h-[80vh] rounded-[2rem] border border-white/5 overflow-hidden flex flex-col sm:flex-row shadow-2xl"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Sidebar Tabs */}
+                        <div className="w-full sm:w-64 bg-white/[0.02] border-r border-white/5 p-6 flex flex-row sm:flex-col gap-2 overflow-x-auto no-scrollbar">
+                            <SettingsTab id="PLAYBACK" label="Playback" icon={<PlayCircle size={18}/>} active={settingsTab} set={setSettingsTab} />
+                            <SettingsTab id="QUALITY" label="Video Quality" icon={<Monitor size={18}/>} active={settingsTab} set={setSettingsTab} />
+                            <SettingsTab id="PERFORMANCE" label="Performance" icon={<Zap size={18}/>} active={settingsTab} set={setSettingsTab} />
+                            <SettingsTab id="AUDIO" label="Audio" icon={<Volume2 size={18}/>} active={settingsTab} set={setSettingsTab} />
+                            <SettingsTab id="SUBTITLES" label="Subtitles" icon={<MessageSquare size={18}/>} active={settingsTab} set={setSettingsTab} />
+                            <SettingsTab id="ADVANCED" label="Advanced" icon={<Settings2 size={18}/>} active={settingsTab} set={setSettingsTab} />
+                        </div>
+
+                        {/* Content Area */}
+                        <div className="flex-1 p-8 overflow-y-auto custom-scrollbar space-y-8">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-white text-xl font-bold tracking-tight">{settingsTab}</h3>
+                                <button onClick={() => setShowSettings(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-white/50 hover:text-white">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            {settingsTab === 'PLAYBACK' && (
+                                <>
+                                    <SettingRow label="Playback Speed">
+                                        <div className="flex flex-wrap gap-2">
+                                            {SPEEDS.map(s => (
+                                                <button key={s} onClick={() => setPlaybackRate(s)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${playbackRate === s ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{s}x</button>
+                                            ))}
+                                        </div>
+                                    </SettingRow>
+                                    <SettingToggle label="Auto play next" active={autoPlayNext} onToggle={() => setAutoPlayNext(!autoPlayNext)} />
+                                    <SettingToggle label="Resume from last position" active={resumePos} onToggle={() => setResumePos(!resumePos)} />
+                                    <SettingToggle label="Loop video" active={loopVideo} onToggle={() => setLoopVideo(!loopVideo)} />
+                                </>
+                            )}
+
+                            {settingsTab === 'QUALITY' && (
+                                <>
+                                    <SettingRow label="Resolution">
+                                        <div className="flex flex-wrap gap-2">
+                                            {['Auto', '144p', '240p', '360p', '480p', '720p', '1080p'].map(q => (
+                                                <button 
+                                                    key={q} 
+                                                    onClick={() => showMXToast(`Quality set to ${q}`, <Zap size={14}/>, "#4ADE80")}
+                                                    className="px-4 py-2 rounded-xl bg-white/5 text-white/40 text-xs font-bold hover:bg-white/10 transition-colors"
+                                                >
+                                                    {q}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </SettingRow>
+                                    <SettingRow label="Aspect Ratio">
+                                        <div className="flex flex-wrap gap-2">
+                                            {ASPECT_RATIOS.map(r => (
+                                                <button key={r} onClick={() => setAspectRatio(r)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${aspectRatio === r ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{r}</button>
+                                            ))}
+                                        </div>
+                                    </SettingRow>
+                                </>
+                            )}
+
+                            {settingsTab === 'PERFORMANCE' && (
+                                <>
+                                    <SettingToggle label="Hardware acceleration" active={hwAccel} onToggle={() => setHwAccel(!hwAccel)} />
+                                    <SettingRow label="Decoder">
+                                        <div className="flex gap-2">
+                                            {DECODERS.map(d => (
+                                                <button key={d} onClick={() => setDecoder(d)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${decoder === d ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{d}</button>
+                                            ))}
+                                        </div>
+                                    </SettingRow>
+                                    <SettingRow label="Buffer size">
+                                        <div className="flex gap-2">
+                                            {BUFFER_SIZES.map(b => (
+                                                <button key={b} onClick={() => setBufferSize(b)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${bufferSize === b ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{b}</button>
+                                            ))}
+                                        </div>
+                                    </SettingRow>
+                                    <SettingRow label="Preload mode">
+                                        <div className="flex gap-2">
+                                            {PRELOADS.map(p => (
+                                                <button key={p} onClick={() => setPreloadMode(p)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${preloadMode === p ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{p}</button>
+                                            ))}
+                                        </div>
+                                    </SettingRow>
+                                </>
+                            )}
+
+                            {settingsTab === 'AUDIO' && (
+                                <>
+                                    <SettingRow label="Audio Track">
+                                        <button className="flex items-center gap-2 px-4 py-3 bg-white/5 rounded-xl text-white/60 text-xs font-bold hover:bg-white/10 transition-colors">
+                                            <Headphones size={14} /> Default Track (English)
+                                        </button>
+                                    </SettingRow>
+                                    <SettingRow label="Volume Boost">
+                                        <div className="flex gap-2">
+                                            {[100, 125, 150, 200].map(v => (
+                                                <button key={v} onClick={() => setVolumeBoost(v)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${volumeBoost === v ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{v}%</button>
+                                            ))}
+                                        </div>
+                                    </SettingRow>
+                                    <SettingRow label="Equalizer Preset">
+                                        <div className="flex flex-wrap gap-2">
+                                            {['Normal', 'Bass Boost', 'Voice', 'Movie'].map(e => (
+                                                <button key={e} onClick={() => setEqPreset(e)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${eqPreset === e ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{e}</button>
+                                            ))}
+                                        </div>
+                                    </SettingRow>
+                                </>
+                            )}
+
+                            {settingsTab === 'SUBTITLES' && (
+                                <>
+                                    <button className="w-full flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors border border-white/5">
+                                        <div className="flex items-center gap-3">
+                                            <FileText size={18} className="text-white/60" />
+                                            <span className="text-white text-sm font-bold">Load subtitle file</span>
+                                        </div>
+                                        <span className="text-white/30 text-[10px] uppercase font-black">.srt / .vtt</span>
+                                    </button>
+                                    <SettingRow label="Font Size">
+                                        <div className="flex gap-2">
+                                            {FONT_SIZES.map(f => (
+                                                <button key={f} onClick={() => setFontSize(f)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${fontSize === f ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{f}</button>
+                                            ))}
+                                        </div>
+                                    </SettingRow>
+                                    <SettingRow label="Color">
+                                        <div className="flex gap-2">
+                                            {COLORS.map(c => (
+                                                <button key={c} onClick={() => setSubtitleColor(c)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${subtitleColor === c ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{c}</button>
+                                            ))}
+                                        </div>
+                                    </SettingRow>
+                                    <SettingRow label="Background">
+                                        <div className="flex gap-2">
+                                            {BG_MODES.map(b => (
+                                                <button key={b} onClick={() => setSubtitleBg(b)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${subtitleBg === b ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{b}</button>
+                                            ))}
+                                        </div>
+                                    </SettingRow>
+                                </>
+                            )}
+
+                            {settingsTab === 'ADVANCED' && (
+                                <>
+                                    <SettingRow label="Screenshot Quality">
+                                        <div className="flex gap-2">
+                                            {SCREENSHOT_QUALITIES.map(q => (
+                                                <button key={q} onClick={() => setSsQuality(q)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${ssQuality === q ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{q}</button>
+                                            ))}
+                                        </div>
+                                    </SettingRow>
+                                    <SettingRow label="Screenshot Format">
+                                        <div className="flex gap-2">
+                                            {SCREENSHOT_FORMATS.map(f => (
+                                                <button key={f} onClick={() => setSsFormat(f)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${ssFormat === f ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{f}</button>
+                                            ))}
+                                        </div>
+                                    </SettingRow>
+                                    <div className="p-6 bg-white/[0.03] rounded-3xl border border-white/5">
+                                        <h4 className="text-white/60 text-[10px] font-black uppercase tracking-widest mb-4">Desktop Shortcuts</h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <Shortcut key="Space" label="Play / Pause" />
+                                            <Shortcut key="← →" label="Seek ±10s" />
+                                            <Shortcut key="↑ ↓" label="Volume" />
+                                            <Shortcut key="F" label="Fullscreen" />
+                                            <Shortcut key="L" label="Lock" />
+                                            <Shortcut key="S" label="Screenshot" />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* RESUME DIALOG */}
+        <AnimatePresence>
+            {showResumeDialog && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[2000] flex items-center justify-center bg-black/60 backdrop-blur-md">
+                    <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-[#111] p-8 rounded-[2.5rem] border border-white/10 shadow-2xl max-w-xs w-full text-center space-y-6">
+                        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto">
+                            <RefreshCcw className="text-white/50 w-8 h-8" />
+                        </div>
+                        <div className="space-y-1">
+                            <h3 className="text-white font-bold text-lg">Resume Playback?</h3>
+                            <p className="text-white/40 text-xs">Start from {formatTime(savedTime)}</p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button onClick={() => handleResume(true)} className="flex-1 py-4 bg-white text-black rounded-2xl font-bold text-sm hover:opacity-90 transition-opacity">Resume</button>
+                            <button onClick={() => handleResume(false)} className="flex-1 py-4 bg-white/5 text-white/40 rounded-2xl font-bold text-sm hover:bg-white/10 transition-colors">Restart</button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* QUALITY BOTTOM SHEET */}
+        <AnimatePresence>
+            {showQualityMenu && (
+                <motion.div 
+                    initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                    className="absolute bottom-0 left-0 right-0 z-[1100] bg-black/95 backdrop-blur-xl border-t border-white/10 p-8 rounded-t-[2.5rem] shadow-2xl"
+                    onClick={e => e.stopPropagation()}
+                >
+                    <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-white text-lg font-bold">Video Quality</h3>
+                        <button onClick={() => setShowQualityMenu(false)} className="p-2 text-white/40 hover:text-white"><X size={20}/></button>
+                    </div>
+                    <div className="grid grid-cols-4 gap-4">
+                        {['Auto', '144p', '240p', '360p', '480p', '720p', '1080p'].map(q => (
+                            <button 
+                                key={q} 
+                                onClick={() => {
+                                    showMXToast(`Quality: ${q}`, <Zap size={14}/>, "#4ADE80");
+                                    setShowQualityMenu(false);
+                                }}
+                                className="px-4 py-3 rounded-2xl bg-white/5 text-white/60 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
+                            >
+                                {q}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="mt-10 pt-6 border-t border-white/5 flex items-center justify-between">
+                        <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Hardware Acceleration</span>
+                        <SettingToggle active={hwAccel} onToggle={() => setHwAccel(!hwAccel)} />
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        <style>{`
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+            .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+            .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+            .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        `}</style>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+function BottomAction({ icon, label, subLabel, onClick }) {
+    return (
+        <button onClick={onClick} className="flex flex-col items-center gap-1 group">
+            <div className="text-white/90 group-hover:text-white transition-colors">{icon}</div>
+            <div className="flex items-center gap-1.5">
+                <span className="text-white text-[11px] font-medium opacity-90">{label}</span>
+                {subLabel && <span className="text-white/40 text-[10px] font-bold">{subLabel}</span>}
+            </div>
+        </button>
+    );
+}
+
+function ExtraAction({ icon, color, label, onClick }) {
+    return (
+        <button 
+            onClick={onClick}
+            className="flex flex-col items-center gap-2 group transition-all"
+        >
+            <div 
+                className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110"
+                style={{ color: color }}
+            >
+                {icon}
+            </div>
+            <span className="text-white/50 text-[10px] font-black uppercase tracking-widest group-hover:text-white transition-colors">{label}</span>
+        </button>
+    );
+}
+
+function SettingsTab({ id, label, icon, active, set }) {
+    const isActive = active === id;
+    return (
+        <button 
+            onClick={() => set(id)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all whitespace-nowrap ${isActive ? 'bg-white text-black' : 'text-white/40 hover:bg-white/5'}`}
+        >
+            {icon}
+            <span className="text-xs font-bold">{label}</span>
+        </button>
+    );
+}
+
+function SettingRow({ label, children }) {
+    return (
+        <div className="space-y-4">
+            <h4 className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">{label}</h4>
+            {children}
+        </div>
+    );
+}
+
+function SettingToggle({ label, active, onToggle }) {
+    return (
+        <div className="flex items-center justify-between py-2">
+            <span className="text-white/80 text-sm font-medium">{label}</span>
+            <button 
+                onClick={onToggle}
+                className={`w-12 h-6 rounded-full relative transition-colors ${active ? 'bg-white' : 'bg-white/10'}`}
+            >
+                <motion.div 
+                    animate={{ x: active ? 26 : 2 }}
+                    className={`absolute top-1 w-4 h-4 rounded-full ${active ? 'bg-black' : 'bg-white/40'}`}
+                />
+            </button>
+        </div>
+    );
+}
+
+function Shortcut({ key, label }) {
+    return (
+        <div className="flex items-center justify-between">
+            <span className="text-white/40 text-[11px] font-medium">{label}</span>
+            <kbd className="px-2 py-1 bg-white/5 rounded-lg text-white/60 text-[10px] font-bold border border-white/5 min-w-[30px] text-center">{key}</kbd>
+        </div>
+    );
+}

@@ -1,0 +1,197 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0A0A0F;
+  --bg-secondary: #12121A;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.5);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --accent-color: #9333ea;
+  --accent-hover: #a855f7;
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --sidebar-bg: #0A0A0F;
+  --header-bg: rgba(10, 10, 15, 0.8);
+}
+
+.light {
+  --bg-primary: #eff6ff;
+  --bg-secondary: #f8fafc;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --accent-color: #3b82f6;
+  --accent-hover: #2563eb;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --card-bg: #f8fafc;
+  --sidebar-bg: #f8fafc;
+  --header-bg: rgba(248, 250, 252, 0.8);
+}
+
+.blue {
+  --bg-primary: #E0F2FE;
+  --bg-secondary: #F0F9FF;
+  --text-primary: #0369A1;
+  --text-secondary: #075985;
+  --border-color: #facc15;
+  --accent-color: #0284C7;
+  --accent-hover: #0369A1;
+  --glass-bg: rgba(224, 242, 254, 0.7);
+  --card-bg: #F0F9FF;
+  --sidebar-bg: #F0F9FF;
+  --header-bg: rgba(224, 242, 254, 0.8);
+}
+
+/* ── BASE DESKTOP STYLES ── */
+html,
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  outline: none !important;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  scroll-behavior: smooth;
+  font-size: 13px;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  /* Safe Area Support */
+  padding-top: env(safe-area-inset-top) !important;
+  padding-bottom: env(safe-area-inset-bottom) !important;
+  padding-left: env(safe-area-inset-left) !important;
+  padding-right: env(safe-area-inset-right) !important;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
+  caret-color: transparent !important;
+  outline: none !important;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  border: none; /* Remove all default borders */
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  #root {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  body {
+    width: 100% !important;
+    height: auto !important;
+    overflow-x: hidden !important;
+    font-size: 16px;
+  }
+}
+
+/* Global Grid Stability - Remove side gaps on mobile */
+.container,
+.max-w-7xl {
+  width: 100% !important;
+  max-width: 1400px !important;
+  margin: 0 auto !important;
+  padding-left: 15px !important;
+  padding-right: 15px !important;
+}
+
+@media (max-width: 640px) {
+  .container,
+  .max-w-7xl {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}
+
+header {
+  width: 100%;
+  background-color: var(--header-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: none !important;
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+}
+
+/* Custom Scrollbar for Sidebar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(147, 51, 234, 0.3);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(147, 51, 234, 0.6);
+}
+
+/* Helper classes for themes */
+.bg-primary {
+  background-color: var(--bg-primary);
+}
+
+.bg-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.border-primary {
+  border-color: var(--border-color);
+}
+
+.yt-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9999 !important;
+  background: #000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}

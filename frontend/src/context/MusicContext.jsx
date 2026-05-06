@@ -1,0 +1,298 @@
+import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
+
+const MusicContext = createContext(null);
+
+export function useMusicPlayer() {
+  return useContext(MusicContext);
+}
+
+const deduplicate = (arr) => {
+  if (!arr) return [];
+  const seen = new Set();
+  return arr.filter(item => {
+    const cleanUrl = item.video_url?.split('?')[0];
+    const key = item.youtube_id || cleanUrl || item.id;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const parseDuration = (duration) => {
+  if (!duration) return 300; 
+  if (typeof duration === 'number') return duration;
+  if (typeof duration !== 'string') return 300;
+  
+  const parts = duration.split(':').map(p => parseInt(p, 10));
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return parseInt(duration, 10) || 300;
+};
+
+export function MusicProvider({ children }) {
+  const [playlist, setPlaylist] = useState([]);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [playing, setPlaying] = useState(false); 
+  const [volume, setVolume] = useState(0.8);
+  const [muted, setMuted] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(300);
+  
+  const [activeLocalSong, setActiveLocalSong] = useState(null);
+  const [isLocalPlayerOpen, setIsLocalPlayerOpen] = useState(false);
+  const [playingLocal, setPlayingLocal] = useState(false);
+  const [volumeLocal, setVolumeLocal] = useState(1);
+  const [mutedLocal, setMutedLocal] = useState(false);
+  
+  const audioRef = useRef();
+  const currentSong = (playlist && playlist[currentIdx]) || null;
+
+  useEffect(() => {
+    const saved = localStorage.getItem('macfeed_music_state');
+    if (saved) {
+      try {
+        const { idx, list, song } = JSON.parse(saved);
+        if (list?.length) setPlaylist(list);
+        if (idx !== undefined) setCurrentIdx(idx);
+        if (song) setActiveLocalSong(song.source === 'local' ? song : null);
+      } catch (e) {}
+    }
+
+    supabase.from('videos').select('*').eq('category', 'Music').order('created_at', { ascending: false }).then(({ data }) => {
+      if (data?.length) setPlaylist(prev => deduplicate([...prev, ...data]));
+    });
+  }, []);
+
+  useEffect(() => {
+    if (playlist.length > 0) {
+      localStorage.setItem('macfeed_music_state', JSON.stringify({
+        idx: currentIdx,
+        list: playlist.slice(0, 50),
+        song: activeLocalSong
+      }));
+    }
+  }, [currentIdx, playlist, activeLocalSong]);
+
+  useEffect(() => {
+    // Reset progress display when song changes, but don't reset actual iframe
+    setProgress(0);
+    if (currentSong) {
+      setDuration(parseDuration(currentSong.duration));
+    }
+    window._lastMusicTime = Date.now();
+  }, [currentSong?.id]);
+
+  const playVideo = (video) => {
+    if (!video) return;
+    const idx = playlist.findIndex((v) => v.id === video.id);
+    if (idx >= 0) setCurrentIdx(idx);
+    else {
+      setPlaylist((prev) => deduplicate([video, ...prev]));
+      setCurrentIdx(0);
+    }
+    setIsOpen(true);
+    setPlaying(true);
+    setPlayingLocal(false);
+    window._lastMusicTime = Date.now();
+  };
+
+  // ── YouTube time sync ────────────────────────────────────────────────────
+  // Send 'listening' to the iframe so YouTube pushes infoDelivery events.
+  // YouTube automatically sends currentTime + duration in these events.
+  useEffect(() => {
+    if (currentSong?.source !== 'youtube') return;
+    // Poll every 800ms — YouTube replies with infoDelivery containing real currentTime
+    const interval = setInterval(() => {
+      const iframe = document.querySelector('iframe[src*="youtube.com/embed"]');
+      iframe?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 1 }), '*');
+    }, 800);
+    return () => clearInterval(interval);
+  }, [currentSong?.id]);
+
+  // Receive YouTube's infoDelivery events with real currentTime
+  useEffect(() => {
+    const onMsg = (e) => {
+      if (!e.data) return;
+      try {
+        const d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+        if (d.event === 'infoDelivery' && d.info) {
+          if (typeof d.info.currentTime === 'number' && d.info.currentTime >= 0)
+            setCurrentTime(d.info.currentTime);
+          if (typeof d.info.duration === 'number' && d.info.duration > 0)
+            setDuration(d.info.duration);
+        }
+        if (d.event === 'onStateChange') {
+          if (d.info === 1) setPlaying(true);
+          if (d.info === 2) setPlaying(false);
+          if (d.info === 0) next();
+        }
+      } catch (_) {}
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  // ── MEDIA SESSION API (Background Notification Controls) ──────────────────
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !currentSong) return;
+
+    const updateMetadata = () => {
+      navigator.mediaSession.metadata = new window.MediaMetadata({
+        title: currentSong.title,
+        artist: currentSong.category || 'MacFeed',
+        album: 'MacFeed Music',
+        artwork: [
+          { src: currentSong.thumbnail_url, sizes: '96x96', type: 'image/jpeg' },
+          { src: currentSong.thumbnail_url, sizes: '128x128', type: 'image/jpeg' },
+          { src: currentSong.thumbnail_url, sizes: '192x192', type: 'image/jpeg' },
+          { src: currentSong.thumbnail_url, sizes: '256x256', type: 'image/jpeg' },
+          { src: currentSong.thumbnail_url, sizes: '384x384', type: 'image/jpeg' },
+          { src: currentSong.thumbnail_url, sizes: '512x512', type: 'image/jpeg' },
+        ]
+      });
+    };
+
+    updateMetadata();
+
+    const actionHandlers = [
+      ['play', () => { setPlaying(true); }],
+      ['pause', () => { setPlaying(false); }],
+      ['previoustrack', () => prev()],
+      ['nexttrack', () => next()],
+      ['seekto', (details) => {
+        if (details.seekTime !== undefined) {
+           const targetTime = details.seekTime;
+           if (currentSong?.source === 'youtube') {
+             document.querySelectorAll('iframe').forEach(f => {
+               f.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [targetTime, true] }), '*');
+             });
+             setCurrentTime(targetTime);
+           } else if (audioRef.current) {
+             audioRef.current.currentTime = targetTime;
+             setCurrentTime(targetTime);
+           }
+        }
+      }]
+    ];
+
+    for (const [action, handler] of actionHandlers) {
+      try {
+        navigator.mediaSession.setActionHandler(action, handler);
+      } catch (error) {
+        // Fallback for older browsers
+      }
+    }
+
+    // Force playback state sync
+    navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+
+    return () => {
+      ['play', 'pause', 'previoustrack', 'nexttrack', 'seekto'].forEach(action => {
+        try { navigator.mediaSession.setActionHandler(action, null); } catch(e) {}
+      });
+    };
+  }, [currentSong?.id, currentSong?.title, currentSong?.thumbnail_url, playing]);
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !duration) return;
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: Math.max(1, duration),
+        playbackRate: 1,
+        position: Math.min(duration, currentTime)
+      });
+    } catch (e) {}
+  }, [currentTime, duration]);
+
+  // Fallback for local (non-YouTube) audio
+  const handleTimeUpdate = () => {
+    if (currentSong?.source === 'youtube') return;
+    const audio = audioRef.current;
+    if (audio?.duration) {
+      setCurrentTime(audio.currentTime);
+      setDuration(audio.duration);
+      if (audio.ended) next();
+    }
+  };
+
+  useEffect(() => {
+    if (duration > 0) {
+      const p = (currentTime / duration) * 100;
+      setProgress(Math.min(100, Math.max(0, p)));
+    }
+  }, [currentTime, duration]);
+
+  const seek = (e) => {
+    if (!e) return;
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    if (!clientX) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pos = (clientX - rect.left) / rect.width;
+    const targetTime = Math.max(0, Math.min(duration, pos * duration));
+
+    if (currentSong?.source === 'youtube') {
+      const iframes = document.querySelectorAll('iframe');
+      iframes.forEach(f => {
+        f.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [targetTime, true] }), '*');
+      });
+      window._lastMusicTime = Date.now();
+      setCurrentTime(targetTime);
+    } else if (audioRef.current) {
+      audioRef.current.currentTime = targetTime;
+      setCurrentTime(targetTime);
+    }
+  };
+
+  const next = () => {
+    if (playlist?.length) {
+      setCurrentIdx((prevIdx) => (prevIdx + 1) % playlist.length);
+    }
+  };
+
+  const prev = () => {
+    if (playlist?.length) {
+      setCurrentIdx((prevIdx) => (prevIdx - 1 + playlist.length) % playlist.length);
+    }
+  };
+
+  const close = () => {
+    setIsOpen(false);
+    setIsExpanded(false);
+    setPlaying(false);
+  };
+
+  const value = {
+    playlist, currentSong, currentIdx, isOpen, setIsOpen, isExpanded, setIsExpanded,
+    playing, setPlaying, volume, setVolume, muted, setMuted, progress, currentTime,
+    duration, audioRef, handleTimeUpdate, seek, next, prev, close, playVideo,
+    isLocalPlayerOpen, setIsLocalPlayerOpen, activeLocalSong, setActiveLocalSong,
+    playingLocal, setPlayingLocal, volumeLocal, setVolumeLocal, mutedLocal, setMutedLocal,
+    setCurrentTime, setDuration,
+    playLocalFile: (file) => {
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      const localVideo = {
+        id: `local-${Date.now()}`, title: file.name, video_url: url,
+        thumbnail_url: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800',
+        source: 'local', category: 'Local', path: file.path || null
+      };
+      setActiveLocalSong(localVideo);
+      setIsLocalPlayerOpen(true);
+      setPlayingLocal(true);
+      setPlaying(false);
+    },
+    playLocalSong: (song) => {
+      if (!song) return;
+      setActiveLocalSong(song);
+      setIsLocalPlayerOpen(true);
+      setPlayingLocal(true);
+      setPlaying(false);
+    }
+  };
+
+  return <MusicContext.Provider value={value}>{children}</MusicContext.Provider>;
+}
