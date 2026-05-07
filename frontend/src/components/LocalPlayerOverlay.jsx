@@ -664,13 +664,13 @@ export default function LocalPlayerOverlay() {
                         className="relative h-full w-[300px] flex items-center justify-start pointer-events-auto"
                         onClick={e => e.stopPropagation()}
                     >
-                        {/* THE WHEEL CASING (HIGH-VISIBILITY PHYSICAL RING) */}
+                        {/* THE WHEEL CASING (SYNCED ROTATION) */}
                         <div 
                             className="absolute left-[-480px] w-[600px] h-[600px] rounded-full border-2 border-white/10 bg-gradient-to-r from-white/[0.05] to-transparent pointer-events-none shadow-[0_0_40px_rgba(255,255,255,0.03)]"
                             style={{ 
                                 boxShadow: 'inset -30px 0 60px rgba(255,255,255,0.03)',
-                                transform: `rotate(${wheelRotation}deg)`,
-                                transition: 'transform 0.1s linear'
+                                transform: `rotate(${-wheelRotation}deg)`, // Synced with icon movement
+                                transition: 'transform 0.1s ease-out'
                             }}
                         >
                             {/* Brighter Tick Marks on the Wheel */}
@@ -687,18 +687,22 @@ export default function LocalPlayerOverlay() {
                             ))}
                         </div>
 
-                        {/* Invisible Drag Area */}
+                        {/* Invisible Drag Area with Clamped Logic */}
                         <motion.div 
                             drag="y"
-                            dragConstraints={{ top: -1000, bottom: 1000 }}
+                            dragConstraints={{ top: -2000, bottom: 2000 }}
                             onDrag={(e, info) => {
-                                const sensitivity = 0.3;
-                                setWheelRotation(prev => prev + (info.delta.y * sensitivity));
+                                const sensitivity = 0.4;
+                                const maxRot = (14 - 1) * 18; // 14 icons * 18deg spacing
+                                setWheelRotation(prev => {
+                                    const newVal = prev - (info.delta.y * sensitivity); // Inverted for natural feel
+                                    return Math.max(0, Math.min(newVal, maxRot));
+                                });
                             }}
                             className="absolute left-[-200px] w-[350px] h-full z-10 cursor-grab active:cursor-grabbing"
                         />
 
-                        {/* Icons along the Far-Left Arc (Tighter Spacing) */}
+                        {/* Icons along the Far-Left Arc (Clamped Range) */}
                         <div className="absolute left-[-440px] h-full w-[600px] flex items-center justify-center pointer-events-none">
                             {[
                                 { icon: <RefreshCcw size={18} />, label: "Rotation", color: "#34D399", onClick: toggleROT },
@@ -719,11 +723,11 @@ export default function LocalPlayerOverlay() {
                                 { icon: <SkipBack size={18} />, label: "Prev", color: "#A78BFA", onClick: () => { prev(); showMXToast('Prev Video', <SkipBack size={16}/>); } },
                                 { icon: <Repeat size={18} />, label: "Loop", color: "#67E8F9", onClick: () => setLoopVideo(!loopVideo) }
                             ].map((action, i) => {
-                                const angleStep = 18; // Tighter Spacing
-                                const totalRotation = wheelRotation + (i * angleStep) - 90;
+                                const angleStep = 18; 
+                                const totalRotation = (i * angleStep) - wheelRotation; // Icon i is centered when wheelRotation = i * 18
                                 const rad = (totalRotation * Math.PI) / 180;
                                 
-                                // Calculate position (EVEN FURTHER LEFT)
+                                // Calculate position
                                 const radius = 420; 
                                 const xPos = Math.cos(rad) * radius + 60; 
                                 const yPos = Math.sin(rad) * radius;
@@ -731,7 +735,7 @@ export default function LocalPlayerOverlay() {
                                 const normalizedDist = Math.abs(yPos) / (radius * 1.2);
                                 const scale = Math.max(0.6, 1.2 - normalizedDist); 
                                 const opacity = Math.max(0.1, 1 - normalizedDist);
-                                const isFocused = scale > 1.05;
+                                const isFocused = scale > 1.1;
 
                                 return (
                                     <motion.div
