@@ -715,8 +715,8 @@ export default function LocalPlayerOverlay() {
                             className="absolute left-[-100px] w-[350px] h-full z-10 cursor-grab active:cursor-grabbing"
                         />
 
-                        {/* Panels with ZERO-GAP Connections (Stuck to Ring) */}
-                        <div className="absolute left-[-260px] h-full w-[600px] flex items-center justify-center pointer-events-none">
+                        {/* Panels with ZERO-GAP Connections (Aligned to Ring Center) */}
+                        <div className="absolute left-[-280px] w-[400px] h-full flex items-center justify-center pointer-events-none">
                             {[
                                 { icon: <RefreshCcw size={14} />, label: "Rotation", color: "#fbbf24", onClick: toggleROT },
                                 { icon: <Camera size={14} />, label: "Capture", color: "#fbbf24", onClick: handleCapture },
@@ -740,9 +740,10 @@ export default function LocalPlayerOverlay() {
                                 const totalRotation = (i * angleStep) - wheelRotation;
                                 const rad = (totalRotation * Math.PI) / 180;
                                 
-                                const panelRadius = 200; // TIGHTLY STUCK TO RING
+                                // Cyan ring is at 170. Panel is at 350. Wire is 180px long.
+                                const panelRadius = 350; 
                                 
-                                const xPos = Math.cos(rad) * panelRadius + 230; 
+                                const xPos = Math.cos(rad) * panelRadius + 200; // Center offset
                                 const yPos = Math.sin(rad) * panelRadius;
                                 
                                 const normalizedDist = Math.abs(yPos) / (panelRadius * 1.5);
@@ -763,26 +764,26 @@ export default function LocalPlayerOverlay() {
                                         }}
                                         onClick={(e) => { e.stopPropagation(); action.onClick(); }}
                                     >
-                                        {/* ZERO-GAP CONNECTION (THICKER CIRCUIT) */}
-                                        <div className={`absolute left-[-110px] w-[120px] h-10 pointer-events-none transition-opacity duration-300 ${isFocused ? 'opacity-100' : 'opacity-20'}`}>
-                                            <svg width="120" height="40" viewBox="0 0 120 40" fill="none">
-                                                {/* Start exactly at Cyan Ring Edge (calculated X) */}
-                                                <path d="M0 20 H60 L80 5 H120" stroke={action.color} strokeWidth="1.5" strokeOpacity="0.7" />
-                                                <path d="M0 20 H60 L80 35 H120" stroke={action.color} strokeWidth="1.5" strokeOpacity="0.7" />
-                                                <circle cx="0" cy="20" r="3" fill={action.color} />
+                                        {/* LONG ZERO-GAP CONNECTION */}
+                                        <div className={`absolute left-[-190px] w-[200px] h-10 pointer-events-none transition-opacity duration-300 ${isFocused ? 'opacity-100' : 'opacity-20'}`}>
+                                            <svg width="200" height="40" viewBox="0 0 200 40" fill="none">
+                                                {/* Start exactly at Cyan Ring edge (x=0) and reach panel (x=200) */}
+                                                <path d="M10 20 H120 L150 5 H200" stroke={action.color} strokeWidth="1.5" strokeOpacity="0.7" />
+                                                <path d="M10 20 H120 L150 35 H200" stroke={action.color} strokeWidth="1.5" strokeOpacity="0.7" />
+                                                <circle cx="10" cy="20" r="3.5" fill={action.color} />
                                                 {isFocused && (
                                                     <motion.circle 
-                                                        animate={{ cx: [0, 120] }}
+                                                        animate={{ cx: [10, 200] }}
                                                         transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                                                        r="2" fill="white" 
+                                                        r="2.5" fill="white" 
                                                     />
                                                 )}
                                             </svg>
                                         </div>
 
-                                        {/* Endfield Style Panel (Bold Border) */}
+                                        {/* Endfield Style Panel */}
                                         <div 
-                                            className={`relative w-32 h-12 bg-black/98 backdrop-blur-3xl border-l-[6px] border-r-[1.5px] border-y-[1.5px] transition-all duration-300 flex items-center justify-between px-3 ${isFocused ? `border-l-[${action.color}] border-white/40 shadow-[0_0_25px_${action.color}33] scale-105` : 'border-white/10 opacity-60'}`}
+                                            className={`relative w-32 h-12 bg-black/98 backdrop-blur-3xl border-l-[6px] border-r-[2px] border-y-[2px] transition-all duration-300 flex items-center justify-between px-3 ${isFocused ? `border-l-[${action.color}] border-white/40 shadow-[0_0_25px_${action.color}33] scale-105` : 'border-white/10 opacity-60'}`}
                                             style={{ 
                                                 clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)',
                                                 borderLeftColor: isFocused ? action.color : 'rgba(255,255,255,0.1)'
