@@ -856,11 +856,11 @@ export default function LocalPlayerOverlay() {
                         <button onClick={() => setShowQualityMenu(false)} className="p-2 text-white/40 hover:text-white"><X size={20}/></button>
                     </div>
                     <div className="grid grid-cols-4 gap-4">
-                        {['Auto', '144p', '240p', '360p', '480p', '720p', '1080p'].map(q => (
+                        {['Auto', '1080p', '2K', '4K', '8K', '16K'].map(q => (
                             <button 
                                 key={q} 
                                 onClick={() => {
-                                    showMXToast(`Quality: ${q}`, <Zap size={14}/>, "#4ADE80");
+                                    showMXToast(`${q} Hyper Engine Activated`, <Zap size={14}/>, "#FCD34D");
                                     setShowQualityMenu(false);
                                 }}
                                 className="px-4 py-3 rounded-2xl bg-white/5 text-white/60 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
