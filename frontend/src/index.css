@@ -71,16 +71,14 @@ body {
   padding: 0;
   box-sizing: border-box;
   user-select: none !important;
-  -webkit-user-select: none !important;
   -webkit-tap-highlight-color: transparent !important;
-  -webkit-touch-callout: none !important;
-  caret-color: transparent !important;
-  outline: none !important;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  border: none;
-  touch-action: manipulation; /* Eliminate mobile tap delay */
-  transform: translateZ(0); /* Global GPU acceleration */
+  touch-action: manipulation;
+}
+
+/* Ensure no purple/accent colors leak in fullscreen */
+:root {
+  --accent-color: #ffffff; /* Neutralize purple accent */
+  --accent-hover: #ffffff;
 }
 
 #root {
