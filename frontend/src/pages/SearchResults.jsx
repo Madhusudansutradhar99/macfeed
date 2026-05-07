@@ -151,12 +151,16 @@ export default function SearchResults() {
           }
         }
 
-        // LAYER 3: Client-Side Multi-Piped (Emergency Backup)
+        // LAYER 3: Client-Side Multi-Piped with CORS Proxy (Emergency Backup)
         if (globalResults.length === 0) {
+           const CORS_PROXY = "https://api.allorigins.win/get?url=";
            for (const instance of PIPED_INSTANCES) {
              try {
-               const res = await fetch(`${instance}/search?q=${encodeURIComponent(query)}&filter=videos`, { signal: AbortSignal.timeout(3000) });
-               const data = await res.json();
+               const targetUrl = `${instance}/search?q=${encodeURIComponent(query)}&filter=videos`;
+               const res = await fetch(`${CORS_PROXY}${encodeURIComponent(targetUrl)}`, { signal: AbortSignal.timeout(5000) });
+               const pData = await res.json();
+               const data = JSON.parse(pData.contents);
+               
                const items = data.items || data;
                if (items?.length > 0) {
                  globalResults = items.slice(0, 20).map(v => {
