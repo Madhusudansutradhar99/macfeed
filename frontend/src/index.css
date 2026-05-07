@@ -12,10 +12,8 @@
   --border-color: rgba(255, 255, 255, 0.08);
   --accent-color: #ffffff;
   --accent-hover: #ffffff;
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --card-bg: rgba(255, 255, 255, 0.05);
-  --sidebar-bg: #0A0A0F;
-  --header-bg: rgba(10, 10, 15, 0.8);
+  --sidebar-bg: #000000;
+  --header-bg: rgba(0, 0, 0, 0.8);
 }
 
 .light {
@@ -28,11 +26,11 @@
   --accent-hover: #cc0000;
 }
 
-.light .video-card, 
-.light .poster-card,
-.light .hero-card,
+.light .video-card > div:first-child, 
+.light .poster-card > div:first-child,
+.light .hero-card > div:first-child,
 .light .search-container {
-  border: 1px solid rgba(255, 0, 0, 0.3) !important;
+  border: 1px solid #ff0000 !important;
   box-shadow: none !important;
 }
 
