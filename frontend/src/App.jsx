@@ -15,6 +15,7 @@ import Loader from './components/Loader';
 import LocalPlayerOverlay from './components/LocalPlayerOverlay';
 import InstallPWA from './components/InstallPWA';
 import OfflineStatus from './components/OfflineStatus';
+import StartupAnimation from './components/StartupAnimation';
 
 // Lazy load pages for performance optimization
 const Home = lazy(() => import('./pages/Home'));
@@ -65,6 +66,7 @@ export default function App() {
 }
 
 function AppContent() {
+  const [showSplash, setShowSplash] = useState(true);
   const shouldRedirectToIntro = React.useMemo(() => {
     const visited = localStorage.getItem('macfeed_visited');
     if (!visited && !window.location.hash.includes('/intro')) {
@@ -88,6 +90,7 @@ function AppContent() {
 
   return (
     <AuthProvider>
+      {showSplash && <StartupAnimation onComplete={() => setShowSplash(false)} />}
       <MusicProvider>
         <VideoPlayerProvider>
           <Suspense fallback={null}>

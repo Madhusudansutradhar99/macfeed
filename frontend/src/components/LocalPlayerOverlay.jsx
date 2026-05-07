@@ -156,10 +156,12 @@ export default function LocalPlayerOverlay() {
                 video.load();
                 if ('decoding' in video) video.decoding = 'async';
                 
-                video.style.transform = 'none';
+                video.style.transform = 'translate3d(0,0,0)';
+                video.style.willChange = 'transform, contents';
                 video.style.contain = 'strict';
                 video.style.backfaceVisibility = 'hidden';
-                video.style.webkitPerspective = '0';
+                video.style.webkitPerspective = '1000';
+                video.style.imageRendering = 'optimizeSpeed';
                 
                 video.play().catch(() => setPlaying(false));
                 
@@ -449,7 +451,10 @@ export default function LocalPlayerOverlay() {
             objectFit: aspectRatio === 'Fit' ? 'contain' : aspectRatio === 'Fill' ? 'cover' : aspectRatio === 'Stretch' ? 'fill' : 'contain', 
             aspectRatio: (aspectRatio === '16:9' || aspectRatio === '4:3') ? aspectRatio.replace(':', '/') : 'auto',
             contain: 'strict',
-            imageRendering: 'optimizeSpeed'
+            imageRendering: 'crisp-edges',
+            willChange: 'transform',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden'
           }}
           onLoadedMetadata={handleVideoMetadata}
           onCanPlay={() => setIsLoading(false)}
@@ -486,8 +491,9 @@ export default function LocalPlayerOverlay() {
                     </div>
                 </div>
                 <div className="mt-6 flex flex-col items-center gap-1">
-                   <p className="text-blue-400 text-[9px] font-black uppercase tracking-[0.6em] animate-pulse">16K ENGINE</p>
-                   <p className="text-white/20 text-[8px] font-black uppercase tracking-widest">Optimizing Playback...</p>
+                   <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.6em] animate-pulse">16K HYPER ENGINE</p>
+                   <p className="text-white/20 text-[8px] font-black uppercase tracking-widest">Optimizing Hardware Decoders...</p>
+                   <p className="text-white/10 text-[7px] font-bold uppercase tracking-widest mt-2">Buffer: {bufferSize} | Decoder: {decoder}</p>
                 </div>
             </div>
         )}

@@ -12,12 +12,13 @@ import {
   deletePlaylist,
   removeVideoFromPlaylist,
 } from '../utils/playlistStore';
+import { Filesystem } from '@capacitor/filesystem';
 import { motion, AnimatePresence } from 'framer-motion';
 import SmartYoutubeSearch from '../components/SmartYoutubeSearch';
 
 export default function Playlists() {
   const { user, setAuthModalOpen } = useAuth();
-  const { playLocalFile } = useMusicPlayer();
+  const { playLocalFile, playLocalSong } = useMusicPlayer();
   const navigate = useNavigate();
   
   const [activeView, setActiveView] = useState('Local');
@@ -58,16 +59,36 @@ export default function Playlists() {
       const updated = [newMeta, ...recentLocal.filter(f => f.name !== file.name)].slice(0, 8);
       localStorage.setItem('macfeed_recent_local', JSON.stringify(updated));
       setRecentLocal(updated);
+      
+      // Also add to permanent history for Downloads page
+      const history = JSON.parse(localStorage.getItem('macfeed_local_history') || '[]');
+      const entry = {
+        id: newMeta.id,
+        title: file.name,
+        name: file.name,
+        lastPlayed: Date.now(),
+        source: 'local',
+        path: file.path || null
+      };
+      const filtered = history.filter(h => h.name !== entry.name);
+      filtered.unshift(entry);
+      localStorage.setItem('macfeed_local_history', JSON.stringify(filtered.slice(0, 50)));
+
       playLocalFile(file);
     }
   };
 
   const handleRecentPlay = (fileMeta) => {
+    // If it has a path (Capacitor), use that
+    if (fileMeta.path) {
+        playLocalSong(fileMeta);
+        return;
+    }
     const actualFile = fileRegistry.current.get(fileMeta.name);
     if (actualFile) {
       playLocalFile(actualFile);
     } else {
-      alert(`Security: Please re-select "${fileMeta.name}" to play it again.`);
+      alert(`Accessing Archive: Please re-select "${fileMeta.name}" to restore file handle.`);
       fileInputRef.current.click();
     }
   };
