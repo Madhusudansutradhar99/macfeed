@@ -612,6 +612,7 @@ export default function LocalPlayerOverlay() {
                         }} />
                         
                         <ExtraAction icon={<Settings size={22} />} label="SET" color="#94A3B8" onClick={() => setShowSettings(true)} />
+                        <ExtraAction icon={<Monitor size={22} />} label="QUALITY" color="#4ADE80" onClick={() => setShowQualityMenu(true)} />
                         <ExtraAction icon={<MessageSquare size={22} />} label="SUBS" color="#6366F1" onClick={() => { setSettingsTab('SUBTITLES'); setShowSettings(true); }} />
                         <ExtraAction icon={<Zap size={22} className={hwAccel ? "fill-yellow-400 text-yellow-400" : ""} />} label="HW" color="#FACC15" onClick={() => setHwAccel(!hwAccel)} />
                         
