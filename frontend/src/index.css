@@ -32,26 +32,21 @@ input, textarea, [contenteditable="true"] {
 }
 
 .light {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f0f0f0;
-  --text-primary: #000000;
-  --text-secondary: #444444;
-  --border-color: #ff0000;
-  --accent-color: #ff0000;
-  --accent-hover: #cc0000;
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --accent-color: #7c3aed;
+  --accent-hover: #6d28d9;
 }
 
 .light .video-card > div:first-child, 
 .light .poster-card > div:first-child,
 .light .hero-card > div:first-child,
 .light .search-container {
-  border: 1px solid #ff0000 !important;
-  box-shadow: none !important;
-}
-
-.light .search-container:focus-within {
-  border-color: #ff0000 !important;
-  box-shadow: 0 0 10px rgba(255, 0, 0, 0.1) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05) !important;
 }
 
 .blue {
@@ -73,7 +68,7 @@ html,
 body {
   margin: 0 !important;
   padding: 0 !important;
-  background-color: #000 !important;
+  background-color: var(--bg-primary) !important;
   color: var(--text-primary);
   scroll-behavior: smooth;
   font-size: 13px;
