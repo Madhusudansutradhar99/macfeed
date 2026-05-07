@@ -124,21 +124,45 @@ export default function SearchResults() {
       }
 
       try {
-      // Use more reliable public search proxies
-      globalResults = await Promise.any(fetchPromises);
-      setIsFreeMode(true);
-    } catch (e) {
-      // Fallback: If all fail, try a direct fetch from a stable instance
-      try {
-        const res = await fetch(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=videos`);
-        const data = await res.json();
-        globalResults = data.map(v => ({
-           id: `yt-${v.videoId}`, ytId: v.videoId, title: v.title,
-           thumbnail_url: v.thumbnail, video_url: `https://www.youtube.com/embed/${v.videoId}`,
-           source: 'youtube', type: 'global'
-        }));
-      } catch(err) { globalResults = []; }
-    }
+        // LAYER 1: Official API (Priority)
+        if (YT_API_KEY) {
+          const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=25&order=viewCount&key=${YT_API_KEY}`);
+          const data = await res.json();
+          if (data.items?.length > 0) {
+            globalResults = data.items.map(i => ({
+              id: `yt-${i.id.videoId}`, ytId: i.id.videoId, title: i.snippet.title,
+              thumbnail_url: i.snippet.thumbnails.high?.url, video_url: `https://www.youtube.com/embed/${i.id.videoId}`,
+              source: 'youtube', type: 'global'
+            }));
+          }
+        }
+
+        // LAYER 2: Multi-Piped (If official failed or empty)
+        if (globalResults.length === 0) {
+           for (const instance of PIPED_INSTANCES) {
+             try {
+               const res = await fetch(`${instance}/search?q=${encodeURIComponent(query)}&filter=videos`, { signal: AbortSignal.timeout(3000) });
+               const data = await res.json();
+               const items = data.items || data;
+               if (items?.length > 0) {
+                 globalResults = items.slice(0, 20).map(v => {
+                   const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
+                   return {
+                     id: `yt-${vidId}`, ytId: vidId, title: v.title,
+                     thumbnail_url: v.thumbnail || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`,
+                     video_url: `https://www.youtube.com/embed/${vidId}`, source: 'youtube', type: 'global'
+                   };
+                 });
+                 if (globalResults.length > 0) break;
+               }
+             } catch(e) {}
+           }
+        }
+        
+        setIsFreeMode(true);
+      } catch (err) {
+        console.warn("Hard fallback required.");
+      }
 
       if (globalResults.length > 0) {
         setResults(prev => {
