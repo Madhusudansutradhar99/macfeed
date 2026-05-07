@@ -645,7 +645,7 @@ export default function LocalPlayerOverlay() {
             )}
         </AnimatePresence>
 
-        {/* ADVANCED ROTATABLE INTERACTIVE JOG WHEEL (SWIPE TO SPIN) */}
+        {/* ADVANCED ROTATABLE INTERACTIVE JOG WHEEL (INWARD CURVE) */}
         <AnimatePresence>
             {showExtraPanel && (
                 <motion.div 
@@ -653,7 +653,7 @@ export default function LocalPlayerOverlay() {
                     animate={{ x: 0, opacity: 1 }} 
                     exit={{ x: '-100%', opacity: 0 }}
                     transition={{ type: 'spring', damping: 25, stiffness: 120 }}
-                    className="absolute inset-y-0 left-0 w-full sm:w-[500px] z-[150] pointer-events-none"
+                    className="absolute inset-y-0 left-0 w-full z-[150] pointer-events-none"
                     onClick={e => e.stopPropagation()}
                 >
                     {/* The Interactive Wheel Area */}
@@ -668,54 +668,53 @@ export default function LocalPlayerOverlay() {
                         {/* Invisible Drag Area */}
                         <motion.div 
                             drag="y"
-                            dragConstraints={{ top: -800, bottom: 800 }}
+                            dragConstraints={{ top: -1000, bottom: 1000 }}
                             onDrag={(e, info) => {
                                 const sensitivity = 0.5;
                                 setWheelRotation(prev => prev + (info.delta.y * sensitivity));
                             }}
-                            className="absolute left-[-200px] w-[600px] h-full z-10 cursor-grab active:cursor-grabbing"
+                            className="absolute left-0 w-[400px] h-full z-10 cursor-grab active:cursor-grabbing"
                         />
 
-                        {/* Icons along the Arc */}
-                        <div className="absolute left-[-250px] h-full w-[600px] flex items-center justify-center pointer-events-none">
+                        {/* Icons along the Inward Arc */}
+                        <div className="absolute left-[-450px] h-full w-[800px] flex items-center justify-center pointer-events-none">
                             {[
-                                { icon: <RefreshCcw size={22} />, label: "Rotation", color: "#34D399", onClick: toggleROT },
-                                { icon: <Camera size={22} />, label: "Capture", color: "#38BDF8", onClick: handleCapture },
-                                { icon: <Headphones size={22} />, label: "Audio", color: "#C084FC", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
-                                { icon: <Sliders size={22} />, label: "Equalizer", color: "#F472B6", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
-                                { icon: <ZoomIn size={22} />, label: "Zoom/Fit", color: "#FB923C", onClick: () => {
+                                { icon: <RefreshCcw size={24} />, label: "Rotation", color: "#34D399", onClick: toggleROT },
+                                { icon: <Camera size={24} />, label: "Capture", color: "#38BDF8", onClick: handleCapture },
+                                { icon: <Headphones size={24} />, label: "Audio", color: "#C084FC", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
+                                { icon: <Sliders size={24} />, label: "Equalizer", color: "#F472B6", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
+                                { icon: <ZoomIn size={24} />, label: "Zoom/Fit", color: "#FB923C", onClick: () => {
                                     const idx = ASPECT_RATIOS.indexOf(aspectRatio);
                                     setAspectRatio(ASPECT_RATIOS[(idx + 1) % ASPECT_RATIOS.length]);
                                 } },
-                                { icon: <Settings size={22} />, label: "Settings", color: "#94A3B8", onClick: () => setShowSettings(true) },
-                                { icon: <Monitor size={22} />, label: "Quality", color: "#4ADE80", onClick: () => setShowQualityMenu(true) },
-                                { icon: <MessageSquare size={22} />, label: "Subtitles", color: "#6366F1", onClick: () => { setSettingsTab('SUBTITLES'); setShowSettings(true); } },
-                                { icon: <Zap size={22} />, label: "Hardware", color: "#FACC15", onClick: () => setHwAccel(!hwAccel) },
-                                { icon: <PictureInPicture size={22} />, label: "PIP", color: "#86EFAC", onClick: () => videoRef.current?.requestPictureInPicture() },
-                                { icon: isMuted ? <VolumeX size={22} /> : <Volume2 size={22} />, label: "Mute", color: "#FCD34D", onClick: () => setIsMuted(!isMuted) },
-                                { icon: <SkipForward size={22} />, label: "Next", color: "#A78BFA", onClick: () => { next(); showMXToast('Next Video', <SkipForward size={16}/>); } },
-                                { icon: <SkipBack size={22} />, label: "Prev", color: "#A78BFA", onClick: () => { prev(); showMXToast('Prev Video', <SkipBack size={16}/>); } },
-                                { icon: <Repeat size={22} />, label: "Loop", color: "#67E8F9", onClick: () => setLoopVideo(!loopVideo) }
+                                { icon: <Settings size={24} />, label: "Settings", color: "#94A3B8", onClick: () => setShowSettings(true) },
+                                { icon: <Monitor size={24} />, label: "Quality", color: "#4ADE80", onClick: () => setShowQualityMenu(true) },
+                                { icon: <MessageSquare size={24} />, label: "Subtitles", color: "#6366F1", onClick: () => { setSettingsTab('SUBTITLES'); setShowSettings(true); } },
+                                { icon: <Zap size={24} />, label: "Hardware", color: "#FACC15", onClick: () => setHwAccel(!hwAccel) },
+                                { icon: <PictureInPicture size={24} />, label: "PIP", color: "#86EFAC", onClick: () => videoRef.current?.requestPictureInPicture() },
+                                { icon: isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />, label: "Mute", color: "#FCD34D", onClick: () => setIsMuted(!isMuted) },
+                                { icon: <SkipForward size={24} />, label: "Next", color: "#A78BFA", onClick: () => { next(); showMXToast('Next Video', <SkipForward size={16}/>); } },
+                                { icon: <SkipBack size={24} />, label: "Prev", color: "#A78BFA", onClick: () => { prev(); showMXToast('Prev Video', <SkipBack size={16}/>); } },
+                                { icon: <Repeat size={24} />, label: "Loop", color: "#67E8F9", onClick: () => setLoopVideo(!loopVideo) }
                             ].map((action, i) => {
-                                const angleStep = 25; // Degrees between icons
+                                const angleStep = 22; // Degrees between icons
                                 const totalRotation = wheelRotation + (i * angleStep) - 90;
                                 const rad = (totalRotation * Math.PI) / 180;
                                 
-                                // Calculate position on the circle
-                                const radius = 350;
-                                const xPos = Math.cos(rad) * radius + 300;
+                                // Calculate position on the circle (INWARD CURVE)
+                                const radius = 550;
+                                const xPos = Math.cos(rad) * radius + 400; // Peak of the arc shifted right
                                 const yPos = Math.sin(rad) * radius;
                                 
                                 // Scale and opacity based on proximity to the center (y=0)
-                                const distanceFromCenter = Math.abs(totalRotation % 360);
-                                const normalizedDist = Math.abs(yPos) / (radius * 1.2);
-                                const scale = Math.max(0.6, 1.3 - normalizedDist); // Slightly bigger scale
-                                const opacity = Math.max(0.2, 1 - normalizedDist);
+                                const normalizedDist = Math.abs(yPos) / (radius * 1.5);
+                                const scale = Math.max(0.7, 1.4 - normalizedDist); 
+                                const opacity = Math.max(0.1, 1 - normalizedDist);
 
                                 return (
                                     <motion.div
                                         key={i}
-                                        className="absolute pointer-events-auto flex items-center gap-6 group cursor-pointer"
+                                        className="absolute pointer-events-auto flex items-center gap-8 group cursor-pointer"
                                         style={{ 
                                             x: xPos,
                                             y: yPos,
@@ -726,18 +725,19 @@ export default function LocalPlayerOverlay() {
                                         onClick={(e) => { e.stopPropagation(); action.onClick(); }}
                                     >
                                         <div 
-                                            className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-xl border-2 border-white/20 flex items-center justify-center transition-all duration-300 group-hover:bg-white/30 shadow-[0_0_20px_rgba(255,255,255,0.1)] group-hover:shadow-[0_0_40px_rgba(255,255,255,0.2)]"
-                                            style={{ color: action.color, boxShadow: `0 0 40px ${action.color}33` }}
+                                            className="w-18 h-18 rounded-full bg-black/80 backdrop-blur-2xl border-4 border-white/30 flex items-center justify-center transition-all duration-300 group-hover:bg-white/40 shadow-[0_0_30px_rgba(0,0,0,0.8)] group-hover:shadow-[0_0_50px_rgba(255,255,255,0.3)] group-hover:border-white/60"
+                                            style={{ color: action.color, boxShadow: `0 0 50px ${action.color}44` }}
                                         >
-                                            <div className="filter drop-shadow-[0_0_8px_currentColor]">
+                                            <div className="filter drop-shadow-[0_0_12px_currentColor]">
                                                 {action.icon}
                                             </div>
                                         </div>
-                                        <div className="flex flex-col min-w-[150px]">
-                                            <span className="text-white font-black text-xs uppercase tracking-[0.4em] italic drop-shadow-[0_2px_10px_rgba(0,0,0,1)]" style={{ opacity: scale > 1.1 ? 1 : 0.4 }}>
+                                        <div className="flex flex-col min-w-[200px]">
+                                            <span className="text-white font-black text-sm uppercase tracking-[0.5em] italic drop-shadow-[0_4px_12px_rgba(0,0,0,1)] bg-black/20 px-4 py-1 rounded-lg backdrop-blur-md" 
+                                                  style={{ opacity: scale > 1.15 ? 1 : 0.4 }}>
                                                 {action.label}
                                             </span>
-                                            {scale > 1.1 && <motion.div layoutId="active-underline" className="h-0.5 w-12 bg-white mt-1 rounded-full shadow-lg" />}
+                                            {scale > 1.15 && <motion.div layoutId="active-underline" className="h-1 w-20 bg-white mt-2 rounded-full shadow-2xl" />}
                                         </div>
                                     </motion.div>
                                 );
