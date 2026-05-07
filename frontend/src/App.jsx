@@ -1,6 +1,6 @@
 import React, { useState, Suspense, lazy, useEffect } from 'react';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 
 import { MusicProvider } from './context/MusicContext';
 import { VideoPlayerProvider } from './context/VideoPlayerContext';
@@ -57,9 +57,9 @@ const preloadComponents = () => {
 export default function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
+      <HashRouter>
         <AppContent />
-      </BrowserRouter>
+      </HashRouter>
     </ThemeProvider>
   );
 }
@@ -67,7 +67,7 @@ export default function App() {
 function AppContent() {
   const shouldRedirectToIntro = React.useMemo(() => {
     const visited = localStorage.getItem('macfeed_visited');
-    if (!visited && window.location.pathname !== '/intro') {
+    if (!visited && !window.location.hash.includes('/intro')) {
       return true;
     }
     return false;
@@ -75,7 +75,7 @@ function AppContent() {
 
   React.useEffect(() => {
     if (shouldRedirectToIntro) {
-      window.location.href = '/intro';
+      window.location.hash = '#/intro';
     }
   }, [shouldRedirectToIntro]);
 
