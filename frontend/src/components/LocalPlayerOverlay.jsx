@@ -635,36 +635,68 @@ export default function LocalPlayerOverlay() {
             )}
         </AnimatePresence>
 
-        {/* EXTRA MX PLAYER BUTTONS PANEL (SWIPE UP) */}
+        {/* PREMIUM CIRCULAR ARC MENU (SWIPE UP / SIDE TRIGGER) */}
         <AnimatePresence>
             {showExtraPanel && (
                 <motion.div 
-                    initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                    className="absolute bottom-0 left-0 right-0 z-[150] bg-black/95 backdrop-blur-xl border-t border-white/10 p-8 rounded-t-[2.5rem] shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
+                    initial={{ x: '-100%', opacity: 0 }} 
+                    animate={{ x: 0, opacity: 1 }} 
+                    exit={{ x: '-100%', opacity: 0 }}
+                    transition={{ type: 'spring', damping: 20, stiffness: 100 }}
+                    className="absolute inset-y-0 left-0 w-full sm:w-[450px] z-[150] pointer-events-none"
                     onClick={e => e.stopPropagation()}
                 >
-                    <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
-                    
-                    <div className="grid grid-cols-5 gap-y-10">
-                        <ExtraAction icon={<RefreshCcw size={22} />} label="ROT" color="#34D399" onClick={toggleROT} />
-                        <ExtraAction icon={<Camera size={22} />} label="CAP" color="#38BDF8" onClick={handleCapture} />
-                        <ExtraAction icon={<Headphones size={22} />} label="TRACK" color="#C084FC" onClick={() => { setSettingsTab('AUDIO'); setShowSettings(true); }} />
-                        <ExtraAction icon={<Sliders size={22} />} label="EQ" color="#F472B6" onClick={() => { setSettingsTab('AUDIO'); setShowSettings(true); }} />
-                        <ExtraAction icon={<ZoomIn size={22} />} label="ZOOM" color="#FB923C" onClick={() => {
-                            const idx = ASPECT_RATIOS.indexOf(aspectRatio);
-                            setAspectRatio(ASPECT_RATIOS[(idx + 1) % ASPECT_RATIOS.length]);
-                        }} />
+                    {/* The Arc Background Layer */}
+                    <div className="absolute inset-y-0 left-0 w-[120%] h-full bg-gradient-to-r from-black/80 via-black/40 to-transparent backdrop-blur-sm pointer-events-none" 
+                         style={{ clipPath: 'circle(100% at -50% 50%)' }} />
+
+                    {/* Circular Controls Container */}
+                    <div className="relative h-full w-full flex items-center justify-start pointer-events-auto">
+                        <div className="absolute left-[-100px] h-[80%] w-[400px] flex flex-col justify-center gap-4">
+                            {[
+                                { icon: <RefreshCcw size={22} />, label: "Rotation", color: "#34D399", onClick: toggleROT, angle: -50 },
+                                { icon: <Camera size={22} />, label: "Capture", color: "#38BDF8", onClick: handleCapture, angle: -35 },
+                                { icon: <Headphones size={22} />, label: "Audio", color: "#C084FC", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); }, angle: -20 },
+                                { icon: <Sliders size={22} />, label: "Equalizer", color: "#F472B6", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); }, angle: -5 },
+                                { icon: <ZoomIn size={22} />, label: "Zoom/Fit", color: "#FB923C", onClick: () => {
+                                    const idx = ASPECT_RATIOS.indexOf(aspectRatio);
+                                    setAspectRatio(ASPECT_RATIOS[(idx + 1) % ASPECT_RATIOS.length]);
+                                }, angle: 10 },
+                                { icon: <Settings size={22} />, label: "Settings", color: "#94A3B8", onClick: () => setShowSettings(true), angle: 25 },
+                                { icon: <MessageSquare size={22} />, label: "Subtitles", color: "#6366F1", onClick: () => { setSettingsTab('SUBTITLES'); setShowSettings(true); }, angle: 40 },
+                                { icon: <Zap size={22} />, label: "Hardware", color: "#FACC15", onClick: () => setHwAccel(!hwAccel), angle: 55 }
+                            ].map((action, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ x: -100, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    transition={{ delay: i * 0.05 }}
+                                    className="relative flex items-center gap-6 group cursor-pointer"
+                                    style={{ 
+                                        marginLeft: `${Math.cos((action.angle * Math.PI) / 180) * 180 + 80}px`,
+                                        transform: `translateY(${Math.sin((action.angle * Math.PI) / 180) * 50}px)`
+                                    }}
+                                    onClick={(e) => { e.stopPropagation(); action.onClick(); }}
+                                >
+                                    <div 
+                                        className="w-14 h-14 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 flex items-center justify-center transition-all duration-300 group-hover:scale-125 group-hover:bg-white/20 shadow-2xl"
+                                        style={{ color: action.color, boxShadow: `0 0 20px ${action.color}33` }}
+                                    >
+                                        {action.icon}
+                                    </div>
+                                    <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0">
+                                        <span className="text-white font-black text-[10px] uppercase tracking-[0.3em] italic">{action.label}</span>
+                                        <div className="h-0.5 w-8 bg-current mt-1 rounded-full" style={{ color: action.color }} />
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
                         
-                        <ExtraAction icon={<Settings size={22} />} label="SET" color="#94A3B8" onClick={() => setShowSettings(true)} />
-                        <ExtraAction icon={<Monitor size={22} />} label="QUALITY" color="#4ADE80" onClick={() => setShowQualityMenu(true)} />
-                        <ExtraAction icon={<MessageSquare size={22} />} label="SUBS" color="#6366F1" onClick={() => { setSettingsTab('SUBTITLES'); setShowSettings(true); }} />
-                        <ExtraAction icon={<Zap size={22} className={hwAccel ? "fill-yellow-400 text-yellow-400" : ""} />} label="HW" color="#FACC15" onClick={() => setHwAccel(!hwAccel)} />
-                        
-                        <ExtraAction icon={<PictureInPicture size={22} />} label="PIP" color="#86EFAC" onClick={() => videoRef.current?.requestPictureInPicture()} />
-                        <ExtraAction icon={isMuted ? <VolumeX size={22} /> : <Volume2 size={22} />} label="MUTE" color="#FCD34D" onClick={() => setIsMuted(!isMuted)} />
-                        <ExtraAction icon={<SkipForward size={22} />} label="NEXT" color="#A78BFA" onClick={() => { next(); showMXToast('Next Video', <SkipForward size={16}/>); }} />
-                        <ExtraAction icon={<SkipBack size={22} />} label="PREV" color="#A78BFA" onClick={() => { prev(); showMXToast('Prev Video', <SkipBack size={16}/>); }} />
-                        <ExtraAction icon={<Repeat size={22} />} label="LOOP" color="#67E8F9" onClick={() => setLoopVideo(!loopVideo)} />
+                        {/* Swipe Hint to close */}
+                        <div className="absolute bottom-10 left-10 flex flex-col items-center gap-2 opacity-30">
+                            <ArrowLeft size={16} className="text-white animate-bounce" />
+                            <span className="text-white text-[8px] font-black uppercase tracking-widest">Swipe Left to Hide</span>
+                        </div>
                     </div>
                 </motion.div>
             )}
