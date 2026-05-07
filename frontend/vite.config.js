@@ -61,7 +61,7 @@ export default defineConfig({
     strictPort: true
   },
   build: {
-    chunkSizeWarningLimit: 2000,
+    chunkSizeWarningLimit: 5000,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -82,4 +82,5 @@ export default defineConfig({
     }
   }
 })
+
 
