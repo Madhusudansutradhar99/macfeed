@@ -70,7 +70,7 @@ export default function Header() {
   const scrapeGlobal = async (q) => {
     if (!q) return [];
     
-    // LAYER 1: Backend Search (Master Engine - Bypass CORS)
+    // LAYER 1: Backend Search (Bypass CORS)
     try {
       const backRes = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: AbortSignal.timeout(4000) });
       if (backRes.ok) {
@@ -84,10 +84,10 @@ export default function Header() {
       }
     } catch(e) {}
 
-    // LAYER 2: Client-Side Fallbacks (Official API)
+    // LAYER 2: Client-Side Official API
     if (YT_API_KEY && !quotaHit) {
       try {
-        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&maxResults=20&order=viewCount&key=${YT_API_KEY}`);
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&maxResults=8&order=viewCount&key=${YT_API_KEY}`);
         const data = await res.json();
         if (data.items && !data.error) {
           return data.items.map(i => ({
@@ -98,6 +98,26 @@ export default function Header() {
         if (data.error?.errors?.[0]?.reason === 'quotaExceeded') setQuotaHit(true);
       } catch (err) {}
     }
+
+    // LAYER 3: CORS Proxy + Piped (Emergency Backup)
+    try {
+      const CORS_PROXY = "https://api.allorigins.win/get?url=";
+      const target = `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(q)}&filter=videos`;
+      const res = await fetch(`${CORS_PROXY}${encodeURIComponent(target)}`, { signal: AbortSignal.timeout(5000) });
+      const pData = await res.json();
+      const data = JSON.parse(pData.contents);
+      const items = data.items || data;
+      if (items?.length > 0) {
+        return items.slice(0, 10).map(v => {
+          const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
+          return {
+            id: `yt-${vidId}`, ytId: vidId, title: v.title,
+            thumbnail_url: v.thumbnail || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`,
+            video_url: `https://www.youtube.com/embed/${vidId}`, source: 'youtube', type: 'global'
+          };
+        });
+      }
+    } catch(e) {}
 
     return [];
   };
