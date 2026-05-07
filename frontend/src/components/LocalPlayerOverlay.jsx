@@ -584,32 +584,42 @@ export default function LocalPlayerOverlay() {
                     className="absolute bottom-0 left-0 right-0 z-50 p-6 flex flex-col gap-6 bg-gradient-to-t from-black to-transparent"
                     onClick={e => e.stopPropagation()}
                 >
-                    <div 
-                        className="w-full flex items-center gap-4 py-4 cursor-pointer"
-                        onTouchStart={(e) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const pos = (e.touches[0].clientX - rect.left) / rect.width;
-                            if (videoRef.current) videoRef.current.currentTime = pos * videoRef.current.duration;
-                        }}
-                        onTouchMove={(e) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const pos = Math.max(0, Math.min(1, (e.touches[0].clientX - rect.left) / rect.width));
-                            if (videoRef.current) videoRef.current.currentTime = pos * videoRef.current.duration;
-                        }}
-                        onClick={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          const pos = (e.clientX - rect.left) / rect.width;
-                          if (videoRef.current) videoRef.current.currentTime = pos * videoRef.current.duration;
-                        }}
-                    >
-                        <span ref={currentTimeRef} className="text-white text-[10px] font-black min-w-[45px]">00:00</span>
-                        <div className="flex-1 h-1.5 bg-white/10 rounded-full relative">
-                            <div ref={bufferBarRef} className="absolute top-0 left-0 h-full bg-white/5 rounded-full" style={{ width: '0%' }} />
-                            <div ref={progressBarRef} className="absolute top-0 left-0 h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: '0%' }}>
-                                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-xl scale-110" />
+                    <div className="flex items-center justify-between gap-6">
+                        <div 
+                            className="flex-1 flex items-center gap-4 py-4 cursor-pointer"
+                            onTouchStart={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const pos = (e.touches[0].clientX - rect.left) / rect.width;
+                                if (videoRef.current) videoRef.current.currentTime = pos * videoRef.current.duration;
+                            }}
+                            onTouchMove={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const pos = Math.max(0, Math.min(1, (e.touches[0].clientX - rect.left) / rect.width));
+                                if (videoRef.current) videoRef.current.currentTime = pos * videoRef.current.duration;
+                            }}
+                            onClick={(e) => {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              const pos = (e.clientX - rect.left) / rect.width;
+                              if (videoRef.current) videoRef.current.currentTime = pos * videoRef.current.duration;
+                            }}
+                        >
+                            <span ref={currentTimeRef} className="text-white text-[10px] font-black min-w-[45px]">00:00</span>
+                            <div className="flex-1 h-1.5 bg-white/10 rounded-full relative">
+                                <div ref={bufferBarRef} className="absolute top-0 left-0 h-full bg-white/5 rounded-full" style={{ width: '0%' }} />
+                                <div ref={progressBarRef} className="absolute top-0 left-0 h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: '0%' }}>
+                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-xl scale-110" />
+                                </div>
                             </div>
+                            <span ref={durationRef} className="text-white text-[10px] font-black min-w-[45px]">00:00</span>
                         </div>
-                        <span ref={durationRef} className="text-white text-[10px] font-black min-w-[45px]">00:00</span>
+
+                        {/* Desktop Site Mode: More Button to open Wheel */}
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setShowExtraPanel(!showExtraPanel); }}
+                            className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-90 border border-white/5"
+                        >
+                            <Settings2 size={24} className={showExtraPanel ? "text-accent animate-spin-slow" : ""} />
+                        </button>
                     </div>
                 </motion.div>
             )}
@@ -647,7 +657,13 @@ export default function LocalPlayerOverlay() {
                     onClick={e => e.stopPropagation()}
                 >
                     {/* The Interactive Wheel Area */}
-                    <div className="relative h-full w-full flex items-center justify-start pointer-events-auto overflow-hidden">
+                    <div 
+                        onWheel={(e) => {
+                            const sensitivity = 0.5;
+                            setWheelRotation(prev => prev - (e.deltaY * sensitivity));
+                        }}
+                        className="relative h-full w-full flex items-center justify-start pointer-events-auto overflow-hidden"
+                    >
                         
                         {/* Invisible Drag Area */}
                         <motion.div 
