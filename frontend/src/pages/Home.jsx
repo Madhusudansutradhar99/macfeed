@@ -166,28 +166,28 @@ function Movies3DSection({ title, videos }) {
         </h2>
       </div>
 
-      <div className="absolute top-4 sm:top-8 md:top-12 left-4 sm:left-6 md:left-12 right-4 sm:right-6 md:right-12 z-50 flex justify-between items-center flex-col sm:flex-row gap-3 sm:gap-0">
+      <div className="absolute top-4 sm:top-8 md:top-12 left-4 sm:left-6 md:left-12 right-4 sm:right-6 md:right-12 z-50 flex justify-between items-center flex-col sm:flex-row gap-2 sm:gap-0">
         <div className="flex items-center gap-2 sm:gap-4">
-          <div className="w-1 sm:w-1.5 h-8 sm:h-10 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+          <div className="w-1 sm:w-1.5 h-6 sm:h-10 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
           <div>
-            <h2 className="text-primary text-2xl sm:text-3xl md:text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-none text-center sm:text-left">
+            <h2 className="text-primary text-xl sm:text-3xl md:text-5xl font-black italic tracking-tighter uppercase leading-none text-center sm:text-left">
               {title}
             </h2>
-            <p className="text-blue-400 font-bold tracking-[0.2em] sm:tracking-[0.3em] text-[8px] sm:text-[10px] mt-1 sm:mt-2 uppercase">
+            <p className="text-blue-400 font-bold tracking-[0.2em] sm:tracking-[0.3em] text-[7px] sm:text-[10px] mt-0.5 sm:mt-2 uppercase text-center sm:text-left">
               The MacFeed Experience
             </p>
           </div>
         </div>
         <button
           onClick={() => navigate('/movies')}
-          className="bg-blue-600/10 hover:bg-blue-600 border border-blue-500/30 text-white px-4 sm:px-6 md:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl md:rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all active:scale-95 whitespace-nowrap"
+          className="bg-blue-600/10 hover:bg-blue-600 border border-blue-500/30 text-white px-3 sm:px-8 py-1.5 sm:py-3 rounded-lg sm:rounded-2xl font-black text-[8px] sm:text-xs uppercase tracking-widest transition-all active:scale-95 whitespace-nowrap"
         >
           Explore All
         </button>
       </div>
 
       {/* SCATTERED GRID */}
-      <div className="relative z-10 flex flex-wrap justify-center items-center gap-x-3 sm:gap-x-6 md:gap-x-12 gap-y-6 sm:gap-y-12 md:gap-y-24 mt-16 sm:mt-20 perspective-[1000px]">
+      <div className="relative z-10 flex flex-wrap justify-center items-center gap-x-3 sm:gap-x-6 md:gap-x-12 gap-y-6 sm:gap-y-12 md:gap-y-24 mt-28 sm:mt-20 perspective-[1000px]">
         {displayVideos.map((video, idx) => {
           const style = cardStyles[idx % cardStyles.length];
           const isHovered = hoveredIdx === idx;
