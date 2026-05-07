@@ -703,7 +703,7 @@ export default function LocalPlayerOverlay() {
                             </div>
                         </div>
 
-                        {/* Drag Area */}
+                        {/* Drag Area (Safe-Zone for Mobile) */}
                         <motion.div 
                             drag="y"
                             dragConstraints={{ top: -2000, bottom: 2000 }}
@@ -712,7 +712,7 @@ export default function LocalPlayerOverlay() {
                                 const maxRot = (14 - 1) * 18;
                                 setWheelRotation(prev => Math.max(0, Math.min(prev - (info.delta.y * sensitivity), maxRot)));
                             }}
-                            className="absolute left-[-100px] w-[350px] h-full z-10 cursor-grab active:cursor-grabbing"
+                            className="absolute left-[-280px] w-[250px] h-full z-10 cursor-grab active:cursor-grabbing"
                         />
 
                         {/* Panels with ZERO-GAP Connections (Aligned to Ring Center) */}

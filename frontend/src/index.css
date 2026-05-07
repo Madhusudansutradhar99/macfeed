@@ -36,9 +36,9 @@ input, textarea, [contenteditable="true"] {
   --bg-secondary: #ffffff;
   --text-primary: #0f172a;
   --text-secondary: #64748b;
-  --border-color: #e2e8f0;
-  --accent-color: #7c3aed;
-  --accent-hover: #6d28d9;
+  --border-color: #ef4444; /* Restored Red Border */
+  --accent-color: #ef4444; /* Restored Red Accent */
+  --accent-hover: #dc2626;
 }
 
 .light .video-card > div:first-child, 
