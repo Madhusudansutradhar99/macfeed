@@ -34,8 +34,14 @@
 .light [role="button"],
 .light .video-card, 
 .light .poster-card,
-.light .hero-card {
-  border: 2px solid red !important;
+.light .hero-card,
+.light .category-pill,
+.light .bg-secondary,
+.light header,
+.light aside {
+  border: 2px solid #ff0000 !important;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.2) !important;
+  transition: all 0.3s ease;
 }
 
 .blue {
