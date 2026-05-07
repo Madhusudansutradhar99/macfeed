@@ -10,8 +10,8 @@
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.5);
   --border-color: rgba(255, 255, 255, 0.08);
-  --accent-color: #7c3aed;
-  --accent-hover: #8b5cf6;
+  --accent-color: #ffffff;
+  --accent-hover: #ffffff;
   --glass-bg: rgba(255, 255, 255, 0.03);
   --card-bg: rgba(255, 255, 255, 0.05);
   --sidebar-bg: #0A0A0F;
@@ -70,15 +70,8 @@ body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  user-select: none !important;
   -webkit-tap-highlight-color: transparent !important;
   touch-action: manipulation;
-}
-
-/* Ensure no purple/accent colors leak in fullscreen */
-:root {
-  --accent-color: #ffffff; /* Neutralize purple accent */
-  --accent-hover: #ffffff;
 }
 
 #root {
