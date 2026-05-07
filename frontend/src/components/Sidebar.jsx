@@ -108,8 +108,14 @@ export default function Sidebar() {
         )}
       </AnimatePresence>
 
-      <aside 
-        className={`fixed top-20 left-4 h-[calc(100vh-100px)] w-[260px] z-[1100] flex flex-col transition-transform duration-500 pointer-events-none ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[calc(100%+40px)]'}`}
+      <motion.aside 
+        initial={false}
+        animate={{ 
+          x: isSidebarOpen ? 0 : '-calc(100% + 40px)',
+          opacity: isSidebarOpen ? 1 : 0
+        }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className="fixed top-20 left-4 h-[calc(100vh-100px)] w-[260px] z-[1100] flex flex-col pointer-events-none will-change-transform"
       >
         <div className="w-full h-full py-6 flex flex-col flex-1 pointer-events-auto relative overflow-y-auto no-scrollbar overflow-x-visible">
           <nav className="flex-1 flex flex-col gap-3 px-1">
@@ -145,7 +151,7 @@ export default function Sidebar() {
             </div>
           </div>
         </div>
-      </aside>
+      </motion.aside>
 
       {/* Floating Top Animation */}
       <AnimatePresence>

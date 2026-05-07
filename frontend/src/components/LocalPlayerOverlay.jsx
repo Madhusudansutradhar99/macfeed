@@ -750,10 +750,19 @@ export default function LocalPlayerOverlay() {
                                         }}
                                         onClick={(e) => { e.stopPropagation(); action.onClick(); }}
                                     >
-                                        {/* Energy Wire Connection */}
-                                        <div 
-                                            className={`absolute left-[-60px] w-20 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent transition-opacity duration-300 ${isFocused ? 'opacity-100' : 'opacity-20'}`} 
-                                        />
+                                        {/* Energy Wire Connection with Pulse */}
+                                        <div className="absolute left-[-60px] w-20 h-[1px] flex items-center overflow-hidden">
+                                            <div 
+                                                className={`w-20 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent transition-opacity duration-300 ${isFocused ? 'opacity-100' : 'opacity-20'}`} 
+                                            />
+                                            {isFocused && (
+                                                <motion.div 
+                                                    animate={{ x: [0, 80] }}
+                                                    transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+                                                    className="absolute w-10 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent blur-[1px]"
+                                                />
+                                            )}
+                                        </div>
 
                                         {/* Endfield Style Panel */}
                                         <div 
