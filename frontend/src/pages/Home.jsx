@@ -331,7 +331,6 @@ export default function Home() {
       setLoading(true);
       const start = Date.now();
       try {
-        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&maxResults=8&order=viewCount&key=${YT_API_KEY}`);
         const fetchPromise = fetchVideos(0, true);
         const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Fetch timeout')), 10000));
         await Promise.race([fetchPromise, timeoutPromise]);
