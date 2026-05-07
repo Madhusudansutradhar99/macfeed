@@ -56,7 +56,7 @@ function HeroBanner({ videos }) {
         >
           {videos.map((video) => (
             <SwiperSlide key={video.id}>
-              <div className="relative w-full h-[160px] md:h-[280px] flex flex-col justify-end overflow-hidden cursor-pointer group rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl border border-primary" onClick={() => navigate('/watch/' + video.id)}>
+              <div className="hero-card relative w-full h-[160px] md:h-[280px] flex flex-col justify-end overflow-hidden cursor-pointer group rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl border border-primary" onClick={() => navigate('/watch/' + video.id)}>
                 
                 {/* Full Fit Pro Thumbnail */}
                 <div className="absolute inset-0 z-0 overflow-hidden bg-black">

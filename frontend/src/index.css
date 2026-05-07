@@ -28,8 +28,14 @@
   --accent-hover: #cc0000;
 }
 
-.light * {
-  border: 1px solid red !important;
+.light button, 
+.light input, 
+.light select,
+.light [role="button"],
+.light .video-card, 
+.light .poster-card,
+.light .hero-card {
+  border: 2px solid red !important;
 }
 
 .blue {
