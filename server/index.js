@@ -161,22 +161,69 @@ app.get('/api/search', async (req, res) => {
   const { q } = req.query;
   if (!q) return res.status(400).json({ error: 'Query is required' });
   const cachedData = apiCache.get(q);
-  if (cachedData) return res.json(cachedData);
+  if (cachedData) return res.json({ results: cachedData, source: 'cache' });
 
-  try {
-    const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
-      params: { part: 'snippet', q: q, type: 'video', maxResults: 15, key: YT_API_KEY }
-    });
-    const results = response.data.items.map(item => ({
-      id: item.id.videoId,
-      youtubeId: item.id.videoId,
-      title: item.snippet.title,
-      thumbnail: item.snippet.thumbnails.high.url
-    }));
+  let results = [];
+  
+  // 1. Try Official YouTube API via Backend
+  if (YT_API_KEY) {
+    try {
+      const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+        params: { 
+          part: 'snippet', 
+          q: q, 
+          type: 'video', 
+          maxResults: 20, 
+          order: 'viewCount',
+          key: YT_API_KEY 
+        },
+        timeout: 5000
+      });
+      results = response.data.items.map(item => ({
+        id: item.id.videoId,
+        ytId: item.id.videoId,
+        title: item.snippet.title,
+        thumbnail: item.snippet.thumbnails.high.url,
+        source: 'youtube'
+      }));
+    } catch (error) {
+      console.warn('Backend YT API failed, trying fallback...');
+    }
+  }
+
+  // 2. Fallback to Piped Instances (Server-to-Server)
+  if (results.length === 0) {
+    const instances = [
+      "https://pipedapi.kavin.rocks",
+      "https://pipedapi.tokhmi.xyz",
+      "https://pipedapi.moomoo.me"
+    ];
+    for (const instance of instances) {
+      try {
+        const pRes = await axios.get(`${instance}/search?q=${encodeURIComponent(q)}&filter=videos`, { timeout: 4000 });
+        const items = pRes.data.items || pRes.data;
+        if (items?.length > 0) {
+          results = items.slice(0, 20).map(v => {
+            const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
+            return {
+              id: vidId,
+              ytId: vidId,
+              title: v.title,
+              thumbnail: v.thumbnail || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`,
+              source: 'youtube'
+            };
+          });
+          if (results.length > 0) break;
+        }
+      } catch (e) {}
+    }
+  }
+
+  if (results.length > 0) {
     apiCache.set(q, results);
-    res.json(results);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch' });
+    res.json({ results, source: 'global' });
+  } else {
+    res.status(404).json({ error: 'No results found' });
   }
 });
 

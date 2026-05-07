@@ -68,81 +68,40 @@ export default function Header() {
   }, [isFocused, location.pathname]);
 
   const scrapeGlobal = async (q) => {
-    // 1. Try Official first
-    if (YT_API_KEY) {
+    if (!q) return [];
+    
+    // LAYER 1: Backend Search (Master Engine - Bypass CORS)
+    try {
+      const backRes = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: AbortSignal.timeout(4000) });
+      if (backRes.ok) {
+        const backData = await backRes.json();
+        if (backData.results?.length > 0) {
+          return backData.results.slice(0, 10).map(v => ({
+            id: `yt-${v.ytId}`, ytId: v.ytId, title: v.title, thumbnail_url: v.thumbnail || v.thumbnail_url,
+            video_url: `https://www.youtube.com/embed/${v.ytId}`, source: 'youtube', type: 'global'
+          }));
+        }
+      }
+    } catch(e) {}
+
+    // LAYER 2: Client-Side Fallbacks (Official API)
+    if (YT_API_KEY && !quotaHit) {
       try {
         const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&maxResults=20&order=viewCount&key=${YT_API_KEY}`);
         const data = await res.json();
         if (data.items && !data.error) {
           return data.items.map(i => ({
-            id: `yt-${i.id.videoId}`,
-            ytId: i.id.videoId,
-            title: i.snippet.title,
-            thumbnail_url: i.snippet.thumbnails.medium?.url,
-            video_url: `https://www.youtube.com/embed/${i.id.videoId}`,
-            source: 'youtube',
-            type: 'global'
+            id: `yt-${i.id.videoId}`, ytId: i.id.videoId, title: i.snippet.title, thumbnail_url: i.snippet.thumbnails.medium?.url,
+            video_url: `https://www.youtube.com/embed/${i.id.videoId}`, source: 'youtube', type: 'global'
           }));
         }
         if (data.error?.errors?.[0]?.reason === 'quotaExceeded') setQuotaHit(true);
-      } catch (e) { }
+      } catch (err) {}
     }
 
-    // 2. Multi-Layered Piped Search (Bypass Quota) with Concurrent Execution for Instant Results
-    setIsFreeMode(true);
-
-    const fetchPromises = [];
-
-    for (const instance of PIPED_INSTANCES) {
-      for (const proxy of PROXIES) {
-        const promise = (async () => {
-          const target = `${instance}/search?q=${encodeURIComponent(q)}&filter=videos`;
-          const fetchUrl = proxy ? `${proxy}${encodeURIComponent(target)}` : target;
-
-          const res = await fetch(fetchUrl, { signal: AbortSignal.timeout(4000) });
-          if (!res.ok) throw new Error('Proxy failed');
-
-          let data;
-          if (proxy.includes('allorigins')) {
-            const pData = await res.json();
-            data = JSON.parse(pData.contents);
-          } else {
-            data = await res.json();
-          }
-
-          if (data && (data.items || data.length > 0)) {
-            const items = data.items || data;
-            const mapped = items.slice(0, 10).map(v => {
-              const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
-              if (!vidId) return null;
-              return {
-                id: `yt-${vidId}`,
-                ytId: vidId,
-                title: v.title,
-                thumbnail_url: v.thumbnail || v.thumbnails?.[0]?.url || `https://i.ytimg.com/vi/${vidId}/mqdefault.jpg`,
-                video_url: `https://www.youtube.com/embed/${vidId}`,
-                source: 'youtube',
-                type: 'global',
-                duration: v.duration ? (typeof v.duration === 'number' ? `${Math.floor(v.duration / 60)}:${v.duration % 60}` : v.duration) : '--:--'
-              };
-            }).filter(Boolean);
-            if (mapped.length > 0) return mapped;
-          }
-          throw new Error('No results from this proxy');
-        })();
-
-        fetchPromises.push(promise);
-      }
-    }
-
-    try {
-      const fastestResults = await Promise.any(fetchPromises);
-      return fastestResults;
-    } catch (e) {
-      console.warn('All multi-layered search instances failed.');
-      return [];
-    }
+    return [];
   };
+
 
   useEffect(() => {
     const timer = setTimeout(async () => {

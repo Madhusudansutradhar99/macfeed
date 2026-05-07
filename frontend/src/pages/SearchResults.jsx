@@ -124,9 +124,23 @@ export default function SearchResults() {
       }
 
       try {
-        // LAYER 1: Official API (Priority)
-        if (YT_API_KEY) {
-          const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=25&order=viewCount&key=${YT_API_KEY}`);
+        // LAYER 1: Backend Search (Master Engine - Bypass CORS)
+        const backRes = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(6000) });
+        if (backRes.ok) {
+          const backData = await backRes.json();
+          if (backData.results?.length > 0) {
+            globalResults = backData.results.map(v => ({
+              id: `yt-${v.ytId}`, ytId: v.ytId, title: v.title, 
+              thumbnail_url: v.thumbnail || v.thumbnail_url,
+              video_url: `https://www.youtube.com/embed/${v.ytId}`, 
+              source: 'youtube', type: 'global'
+            }));
+          }
+        }
+
+        // LAYER 2: Official API Client-Side (Fallback)
+        if (globalResults.length === 0 && YT_API_KEY) {
+          const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&order=viewCount&key=${YT_API_KEY}`);
           const data = await res.json();
           if (data.items?.length > 0) {
             globalResults = data.items.map(i => ({
@@ -137,7 +151,7 @@ export default function SearchResults() {
           }
         }
 
-        // LAYER 2: Multi-Piped (If official failed or empty)
+        // LAYER 3: Client-Side Multi-Piped (Emergency Backup)
         if (globalResults.length === 0) {
            for (const instance of PIPED_INSTANCES) {
              try {
@@ -161,7 +175,7 @@ export default function SearchResults() {
         
         setIsFreeMode(true);
       } catch (err) {
-        console.warn("Hard fallback required.");
+        console.warn("Global search engine sequence completed.");
       }
 
       if (globalResults.length > 0) {
