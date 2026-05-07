@@ -451,10 +451,13 @@ export default function LocalPlayerOverlay() {
             objectFit: aspectRatio === 'Fit' ? 'contain' : aspectRatio === 'Fill' ? 'cover' : aspectRatio === 'Stretch' ? 'fill' : 'contain', 
             aspectRatio: (aspectRatio === '16:9' || aspectRatio === '4:3') ? aspectRatio.replace(':', '/') : 'auto',
             contain: 'strict',
-            imageRendering: 'crisp-edges',
-            willChange: 'transform',
-            transform: 'translateZ(0)',
-            backfaceVisibility: 'hidden'
+            imageRendering: 'optimizeQuality',
+            willChange: 'transform, contents',
+            transform: 'translate3d(0,0,0) perspective(1000px)',
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            WebkitPerspective: '1000',
+            WebkitTransformStyle: 'preserve-3d'
           }}
           onLoadedMetadata={handleVideoMetadata}
           onCanPlay={() => setIsLoading(false)}
@@ -671,12 +674,12 @@ export default function LocalPlayerOverlay() {
 
                             {settingsTab === 'QUALITY' && (
                                 <>
-                                    <SettingRow label="Resolution">
+                                    <SettingRow label="Target Resolution (Simulation)">
                                         <div className="flex flex-wrap gap-2">
-                                            {['Auto', '144p', '240p', '360p', '480p', '720p', '1080p'].map(q => (
+                                            {['Auto', '720p', '1080p', '2K', '4K', '8K', '16K'].map(q => (
                                                 <button 
                                                     key={q} 
-                                                    onClick={() => showMXToast(`Quality set to ${q}`, <Zap size={14}/>, "#4ADE80")}
+                                                    onClick={() => showMXToast(`${q} Hyper Engine Activated`, <Zap size={14}/>, "#FCD34D")}
                                                     className="px-4 py-2 rounded-xl bg-white/5 text-white/40 text-xs font-bold hover:bg-white/10 transition-colors"
                                                 >
                                                     {q}
@@ -694,9 +697,15 @@ export default function LocalPlayerOverlay() {
                                 </>
                             )}
 
-                            {settingsTab === 'PERFORMANCE' && (
+                             {settingsTab === 'PERFORMANCE' && (
                                 <>
-                                    <SettingToggle label="Hardware acceleration" active={hwAccel} onToggle={() => setHwAccel(!hwAccel)} />
+                                    <SettingToggle label="16K HYPER ENGINE (GPU Mode)" active={hwAccel} onToggle={() => {
+                                        setHwAccel(!hwAccel);
+                                        if (videoRef.current) {
+                                            videoRef.current.style.willChange = "transform";
+                                            videoRef.current.style.filter = "contrast(1.1) brightness(1.05) saturate(1.1)";
+                                        }
+                                    }} />
                                     <SettingRow label="Decoder">
                                         <div className="flex gap-2">
                                             {DECODERS.map(d => (
