@@ -88,6 +88,9 @@ export default function LocalPlayerOverlay() {
   const [subtitleBg, setSubtitleBg] = useState('None');
   const [ssQuality, setSsQuality] = useState('High');
   const [ssFormat, setSsFormat] = useState('PNG');
+  const [subtitles, setSubtitles] = useState([]);
+  const [activeSubtitle, setActiveSubtitle] = useState(null);
+  const [audioTracks, setAudioTracks] = useState([]);
   
   // Gesture & Feedback States
   const [activeGesture, setActiveGesture] = useState(null); 
@@ -457,8 +460,9 @@ export default function LocalPlayerOverlay() {
             transform: 'translate3d(0,0,0) perspective(1000px)',
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
-            WebkitPerspective: '1000',
-            WebkitTransformStyle: 'preserve-3d'
+            border: 'none !important',
+            outline: 'none !important',
+            boxShadow: 'none !important'
           }}
           onLoadedMetadata={handleVideoMetadata}
           onCanPlay={() => setIsLoading(false)}
@@ -469,7 +473,9 @@ export default function LocalPlayerOverlay() {
           onEnded={() => setPlaying(false)}
           playsInline
           decoding="async"
-        />
+        >
+          {activeSubtitle && <track src={activeSubtitle} kind="subtitles" srcLang="en" label="English" default />}
+        </video>
 
         {/* Premium Transparent Cinematic Loader with Safety Exit */}
         {isLoading && (
@@ -481,7 +487,7 @@ export default function LocalPlayerOverlay() {
                         className="absolute inset-0 border-2 border-dashed border-blue-500/30 rounded-full" 
                     />
                     <motion.div 
-                        animate={{ rotate: -360 }} 
+                        animate={{ rotate: 360 }} 
                         transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }} 
                         className="absolute inset-2 border-t-2 border-blue-400 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.3)]" 
                     />
@@ -523,10 +529,28 @@ export default function LocalPlayerOverlay() {
                     onClick={e => e.stopPropagation()}
                 >
                     <div className="flex items-center gap-6">
-                        <button onClick={() => { window.screen?.orientation?.unlock(); setIsLocalPlayerOpen(false); }} className="text-white">
+                        <button onClick={() => { window.screen?.orientation?.unlock(); setIsLocalPlayerOpen(false); }} className="text-white p-2">
                             <ArrowLeft size={24} />
                         </button>
-                        <h2 className="text-white text-sm font-bold truncate max-w-[200px]">{currentSong.name || currentSong.title}</h2>
+                        <h2 className="text-white text-sm font-bold truncate max-w-[150px] sm:max-w-[300px]">{currentSong.name || currentSong.title}</h2>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const idx = ASPECT_RATIOS.indexOf(aspectRatio);
+                                const nextRatio = ASPECT_RATIOS[(idx + 1) % ASPECT_RATIOS.length];
+                                setAspectRatio(nextRatio);
+                                showMXToast(`Ratio: ${nextRatio}`, <Maximize size={16}/>, "#38BDF8");
+                            }}
+                            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white"
+                        >
+                            <Monitor size={18} />
+                        </button>
+                        <button onClick={handleCapture} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white">
+                            <Camera size={18} />
+                        </button>
                     </div>
                 </motion.div>
             )}
@@ -560,13 +584,32 @@ export default function LocalPlayerOverlay() {
                     className="absolute bottom-0 left-0 right-0 z-50 p-6 flex flex-col gap-6 bg-gradient-to-t from-black to-transparent"
                     onClick={e => e.stopPropagation()}
                 >
-                    <div className="w-full flex items-center gap-4">
-                        <span ref={currentTimeRef} className="text-white text-xs font-bold min-w-[50px]">00:00</span>
-                        <div className="flex-1 h-1.5 bg-white/20 rounded-full relative overflow-hidden">
-                            <div ref={bufferBarRef} className="absolute top-0 left-0 h-full bg-white/10" style={{ width: '0%' }} />
-                            <div ref={progressBarRef} className="absolute top-0 left-0 h-full bg-blue-500" style={{ width: '0%' }} />
+                    <div 
+                        className="w-full flex items-center gap-4 py-4 cursor-pointer"
+                        onTouchStart={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const pos = (e.touches[0].clientX - rect.left) / rect.width;
+                            if (videoRef.current) videoRef.current.currentTime = pos * videoRef.current.duration;
+                        }}
+                        onTouchMove={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const pos = Math.max(0, Math.min(1, (e.touches[0].clientX - rect.left) / rect.width));
+                            if (videoRef.current) videoRef.current.currentTime = pos * videoRef.current.duration;
+                        }}
+                        onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const pos = (e.clientX - rect.left) / rect.width;
+                          if (videoRef.current) videoRef.current.currentTime = pos * videoRef.current.duration;
+                        }}
+                    >
+                        <span ref={currentTimeRef} className="text-white text-[10px] font-black min-w-[45px]">00:00</span>
+                        <div className="flex-1 h-1.5 bg-white/10 rounded-full relative">
+                            <div ref={bufferBarRef} className="absolute top-0 left-0 h-full bg-white/5 rounded-full" style={{ width: '0%' }} />
+                            <div ref={progressBarRef} className="absolute top-0 left-0 h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: '0%' }}>
+                                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-xl scale-110" />
+                            </div>
                         </div>
-                        <span ref={durationRef} className="text-white text-xs font-bold min-w-[50px]">00:00</span>
+                        <span ref={durationRef} className="text-white text-[10px] font-black min-w-[45px]">00:00</span>
                     </div>
                 </motion.div>
             )}
@@ -765,7 +808,23 @@ export default function LocalPlayerOverlay() {
 
                             {settingsTab === 'SUBTITLES' && (
                                 <>
-                                    <button className="w-full flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors border border-white/5">
+                                    <button 
+                                        onClick={() => {
+                                            const input = document.createElement('input');
+                                            input.type = 'file';
+                                            input.accept = '.srt,.vtt';
+                                            input.onchange = (e) => {
+                                                const file = e.target.files[0];
+                                                if (file) {
+                                                    const url = URL.createObjectURL(file);
+                                                    setActiveSubtitle(url);
+                                                    showMXToast('Subtitles Loaded', <FileText size={16}/>, "#4ADE80");
+                                                }
+                                            };
+                                            input.click();
+                                        }}
+                                        className="w-full flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors border border-white/5"
+                                    >
                                         <div className="flex items-center gap-3">
                                             <FileText size={18} className="text-white/60" />
                                             <span className="text-white text-sm font-bold">Load subtitle file</span>
