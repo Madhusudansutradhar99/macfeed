@@ -132,122 +132,63 @@ function HeroBanner({ videos }) {
 // ── 3D Movies Section (Premium Scattered Grid) ──
 function Movies3DSection({ title, videos }) {
   const navigate = useNavigate();
-  const [hoveredIdx, setHoveredIdx] = useState(null);
-
   if (!videos || !videos.length) return null;
 
-  // Filter and sort videos
-  const displayVideos = [...videos]
-    .sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
-    .slice(0, 12);
-
-  // Artistic offsets and tilts to mimic the 'scattered' look safely
-  const cardStyles = [
-    { rotate: '6deg', y: -20, scale: 0.95 },
-    { rotate: '-8deg', y: 30, scale: 1.05 },
-    { rotate: '4deg', y: -40, scale: 1.1 },
-    { rotate: '-5deg', y: 10, scale: 0.9 },
-    { rotate: '10deg', y: 40, scale: 1.0 },
-    { rotate: '-12deg', y: -10, scale: 1.15 },
-    { rotate: '7deg', y: 25, scale: 0.95 },
-    { rotate: '-6deg', y: -30, scale: 1.05 },
-    { rotate: '9deg', y: 15, scale: 0.85 },
-    { rotate: '-4deg', y: 50, scale: 1.1 },
-    { rotate: '11deg', y: -25, scale: 0.9 },
-    { rotate: '-9deg', y: 10, scale: 1.05 },
-  ];
-
   return (
-    <div className="relative w-full min-h-[300px] sm:min-h-[450px] md:min-h-[550px] bg-[#001b2e] light:bg-blue-100/50 rounded-2xl sm:rounded-3xl md:rounded-[40px] py-8 sm:py-12 md:py-16 px-4 sm:px-6 md:px-10 mt-4 md:mt-6 border border-blue-500/10 shadow-[0_0_100px_rgba(0,0,0,0.6)] overflow-hidden">
-      {/* Background Labels */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
-        <h2 className="text-[10vw] sm:text-[12vw] md:text-[15vw] font-black italic text-blue-500 uppercase tracking-tighter">
-          CINEMA
-        </h2>
+    <div className="relative w-full bg-gradient-to-br from-[#001b2e] to-[#000d17] rounded-3xl py-6 px-4 md:px-8 mt-2 border border-blue-500/10 shadow-2xl overflow-hidden">
+      {/* Background Subtle Label */}
+      <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+        <h2 className="text-6xl font-black italic text-blue-500 uppercase">CINEMA</h2>
       </div>
 
-      <div className="absolute top-4 sm:top-8 md:top-12 left-4 sm:left-6 md:left-12 right-4 sm:right-6 md:right-12 z-50 flex justify-between items-center flex-col sm:flex-row gap-2 sm:gap-0">
-        <div className="flex items-center gap-2 sm:gap-4">
-          <div className="w-1 sm:w-1.5 h-6 sm:h-10 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+      <div className="flex items-center justify-between mb-6 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-8 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
           <div>
-            <h2 className="text-primary text-xl sm:text-3xl md:text-5xl font-black italic tracking-tighter uppercase leading-none text-center sm:text-left">
+            <h2 className="text-white text-xl sm:text-2xl font-black italic tracking-tighter uppercase leading-none">
               {title}
             </h2>
-            <p className="text-blue-400 font-bold tracking-[0.2em] sm:tracking-[0.3em] text-[7px] sm:text-[10px] mt-0.5 sm:mt-2 uppercase text-center sm:text-left">
+            <p className="text-blue-400 font-bold tracking-[0.2em] text-[8px] mt-1 uppercase">
               The MacFeed Experience
             </p>
           </div>
         </div>
         <button
           onClick={() => navigate('/movies')}
-          className="bg-blue-600/10 hover:bg-blue-600 border border-blue-500/30 text-white px-3 sm:px-8 py-1.5 sm:py-3 rounded-lg sm:rounded-2xl font-black text-[8px] sm:text-xs uppercase tracking-widest transition-all active:scale-95 whitespace-nowrap"
+          className="bg-blue-600/10 hover:bg-blue-600 border border-blue-500/20 text-white px-4 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all active:scale-95"
         >
-          Explore All
+          View All
         </button>
       </div>
 
-      {/* SCATTERED GRID */}
-      <div className="relative z-10 flex flex-wrap justify-center items-center gap-x-3 sm:gap-x-6 md:gap-x-12 gap-y-6 sm:gap-y-12 md:gap-y-24 mt-28 sm:mt-20 perspective-[1000px]">
-        {displayVideos.map((video, idx) => {
-          const style = cardStyles[idx % cardStyles.length];
-          const isHovered = hoveredIdx === idx;
-
-          return (
-            <motion.div
-              key={video.id}
-              onMouseEnter={() => setHoveredIdx(idx)}
-              onMouseLeave={() => setHoveredIdx(null)}
-              onClick={() => navigate(`/watch/${video.id}`)}
-              initial={{ opacity: 0, y: 50 }}
-              animate={{
-                opacity: 1,
-                y: style.y,
-                rotateZ: isHovered ? 0 : style.rotate,
-                scale: isHovered ? 1.2 : style.scale,
-                zIndex: isHovered ? 100 : 10,
-              }}
-              transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-              className="relative cursor-pointer group"
+      {/* SWIPER FOR ALL VIDEOS */}
+      <Swiper
+        modules={[Navigation, FreeMode]}
+        spaceBetween={15}
+        slidesPerView={2.2}
+        breakpoints={{
+          640: { slidesPerView: 3.2 },
+          768: { slidesPerView: 4.2 },
+          1024: { slidesPerView: 5.2 }
+        }}
+        freeMode={true}
+        className="w-full pb-2"
+      >
+        {videos.map((video) => (
+          <SwiperSlide key={video.id}>
+            <div 
+                onClick={() => navigate(`/watch/${video.id}`)}
+                className="relative aspect-video rounded-xl overflow-hidden border border-white/5 cursor-pointer group shadow-lg"
             >
-              {/* Card Body */}
-              <div className="relative w-[180px] sm:w-[220px] md:w-[280px] aspect-video rounded-xl sm:rounded-2xl md:rounded-[24px] overflow-hidden border-2 border-white/5 shadow-2xl transition-all duration-500 group-hover:border-blue-400 group-hover:shadow-[0_0_50px_rgba(59,130,246,0.4)] bg-black">
-                <img
-                  src={video.thumbnail_url}
-                  className="w-full h-full object-cover brightness-75 group-hover:brightness-100 transition-all duration-500"
-                  alt={video.title}
-                />
-
-                {/* Overlay with Title */}
-                <div
-                  className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
-                />
-
-                <AnimatePresence>
-                  {isHovered && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="absolute bottom-2 sm:bottom-3 md:bottom-4 left-2 sm:left-3 md:left-4 right-2 sm:right-3 md:right-4"
-                    >
-                      <p className="text-white text-[11px] font-black uppercase italic leading-tight drop-shadow-lg line-clamp-2">
-                        {video.title}
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Holographic Glow Effect behind card */}
-              {isHovered && (
-                <motion.div
-                  layoutId="glow"
-                  className="absolute inset-0 bg-blue-500/20 blur-[60px] rounded-full -z-10"
-                />
-              )}
-            </motion.div>
-          );
-        })}
-      </div>
+                <img src={video.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute bottom-1 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="text-white text-[8px] font-black uppercase italic truncate">{video.title}</p>
+                </div>
+            </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
     </div>
   );
 }
