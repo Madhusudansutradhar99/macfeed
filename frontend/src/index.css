@@ -78,7 +78,9 @@ body {
   outline: none !important;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  border: none; /* Remove all default borders */
+  border: none;
+  touch-action: manipulation; /* Eliminate mobile tap delay */
+  transform: translateZ(0); /* Global GPU acceleration */
 }
 
 #root {
