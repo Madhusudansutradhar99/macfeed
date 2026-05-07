@@ -432,7 +432,7 @@ export default function LocalPlayerOverlay() {
       <motion.div
         ref={containerRef}
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[9999] bg-[#000] flex flex-col items-center justify-center overflow-hidden font-sans select-none"
+        className="fixed inset-0 z-[9999] bg-[#000] flex flex-col items-center justify-center overflow-hidden font-sans select-none touch-none"
         onMouseMove={resetControlsTimeout}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -447,7 +447,8 @@ export default function LocalPlayerOverlay() {
           }
         }}
       >
-        <div className="fixed inset-0 pointer-events-none z-[5]" style={{ backgroundColor: 'black', opacity: 1 - (brightness / 100) }} />
+        {/* Real-time Brightness Overlay (Must be ABOVE video z-10) */}
+        <div className="fixed inset-0 pointer-events-none z-[15]" style={{ backgroundColor: 'black', opacity: Math.max(0, 1 - (brightness / 100)) }} />
 
         <video
           ref={videoRef}
@@ -455,15 +456,13 @@ export default function LocalPlayerOverlay() {
           style={{ 
             objectFit: aspectRatio === 'Fit' ? 'contain' : aspectRatio === 'Fill' ? 'cover' : aspectRatio === 'Stretch' ? 'fill' : 'contain', 
             aspectRatio: (aspectRatio === '16:9' || aspectRatio === '4:3') ? aspectRatio.replace(':', '/') : 'auto',
+            filter: `brightness(${brightness}%) contrast(105%)`, // Real-time brightness filter
             contain: 'strict',
             imageRendering: 'optimizeQuality',
             willChange: 'transform, contents',
             transform: 'translate3d(0,0,0) perspective(1000px)',
             backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            border: 'none !important',
-            outline: 'none !important',
-            boxShadow: 'none !important'
+            WebkitBackfaceVisibility: 'hidden'
           }}
           onLoadedMetadata={handleVideoMetadata}
           onCanPlay={() => setIsLoading(false)}
@@ -694,13 +693,13 @@ export default function LocalPlayerOverlay() {
                                 // Scale and opacity based on proximity to the center (y=0)
                                 const distanceFromCenter = Math.abs(totalRotation % 360);
                                 const normalizedDist = Math.abs(yPos) / (radius * 1.2);
-                                const scale = Math.max(0.6, 1.2 - normalizedDist);
-                                const opacity = Math.max(0.1, 1 - normalizedDist);
+                                const scale = Math.max(0.6, 1.3 - normalizedDist); // Slightly bigger scale
+                                const opacity = Math.max(0.2, 1 - normalizedDist);
 
                                 return (
                                     <motion.div
                                         key={i}
-                                        className="absolute pointer-events-auto flex items-center gap-4 group cursor-pointer"
+                                        className="absolute pointer-events-auto flex items-center gap-6 group cursor-pointer"
                                         style={{ 
                                             x: xPos,
                                             y: yPos,
@@ -711,15 +710,18 @@ export default function LocalPlayerOverlay() {
                                         onClick={(e) => { e.stopPropagation(); action.onClick(); }}
                                     >
                                         <div 
-                                            className="w-14 h-14 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center transition-all duration-300 group-hover:bg-white/20 shadow-2xl"
-                                            style={{ color: action.color, boxShadow: `0 0 30px ${action.color}22` }}
+                                            className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-xl border-2 border-white/20 flex items-center justify-center transition-all duration-300 group-hover:bg-white/30 shadow-[0_0_20px_rgba(255,255,255,0.1)] group-hover:shadow-[0_0_40px_rgba(255,255,255,0.2)]"
+                                            style={{ color: action.color, boxShadow: `0 0 40px ${action.color}33` }}
                                         >
-                                            {action.icon}
+                                            <div className="filter drop-shadow-[0_0_8px_currentColor]">
+                                                {action.icon}
+                                            </div>
                                         </div>
-                                        <div className="flex flex-col min-w-[120px]">
-                                            <span className="text-white font-black text-[10px] uppercase tracking-[0.3em] italic drop-shadow-lg" style={{ opacity: scale > 1 ? 1 : 0.3 }}>
+                                        <div className="flex flex-col min-w-[150px]">
+                                            <span className="text-white font-black text-xs uppercase tracking-[0.4em] italic drop-shadow-[0_2px_10px_rgba(0,0,0,1)]" style={{ opacity: scale > 1.1 ? 1 : 0.4 }}>
                                                 {action.label}
                                             </span>
+                                            {scale > 1.1 && <motion.div layoutId="active-underline" className="h-0.5 w-12 bg-white mt-1 rounded-full shadow-lg" />}
                                         </div>
                                     </motion.div>
                                 );
