@@ -71,7 +71,7 @@ export default function Header() {
     // 1. Try Official first
     if (YT_API_KEY) {
       try {
-        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&maxResults=8&order=viewCount&key=${YT_API_KEY}`);
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&maxResults=20&order=viewCount&key=${YT_API_KEY}`);
         const data = await res.json();
         if (data.items && !data.error) {
           return data.items.map(i => ({

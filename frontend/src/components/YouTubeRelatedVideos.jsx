@@ -111,7 +111,7 @@ export default function YouTubeRelatedVideos({ currentVideoUrl, currentVideoId, 
     if (YT_API_KEY) {
       fetchPromises.push((async () => {
         try {
-          const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=10&key=${YT_API_KEY}`, { signal: AbortSignal.timeout(4000) });
+          const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&order=viewCount&key=${YT_API_KEY}`, { signal: AbortSignal.timeout(4000) });
           if (!res.ok) throw new Error('Official API failed');
           const data = await res.json();
           if (data.items?.length > 0) {
