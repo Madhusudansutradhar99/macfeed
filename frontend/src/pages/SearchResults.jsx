@@ -42,157 +42,76 @@ export default function SearchResults() {
     if (!query) return;
     setLoading(true);
     setIsFreeMode(false);
-    setResults([]); // Reset previous
     
+    // 1. LOCAL SEARCH (Immediate)
     try {
-      // 1. Local Search (Supabase) - Show this immediately
       const { data: dbData } = await supabase.from('videos').select('*').or(`title.ilike.%${query}%`);
       const localResults = (dbData || []).map(v => ({ ...v, type: 'local', source: 'local' }));
       setResults(localResults);
-      // We purposefully DO NOT set loading to false here, so the loader stays if local results are empty.
+    } catch (e) { console.error("Local search failed", e); }
 
-      // 2. Try Global Search (Promise.any across Backend, Official API, and Proxies)
-      let globalResults = [];
-      const fetchPromises = [];
+    // 2. GLOBAL SEARCH (Parallel Winning Strategy)
+    const fetchPromises = [];
 
-      // A. Backend API Promise
+    // Strategy A: Backend Master Engine
+    fetchPromises.push((async () => {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(6000) });
+      if (!res.ok) throw new Error('Backend failed');
+      const data = await res.json();
+      if (!data.results?.length) throw new Error('Backend empty');
+      return data.results.map(v => ({
+        id: `yt-${v.ytId}`, ytId: v.ytId, title: v.title, thumbnail_url: v.thumbnail || v.thumbnail_url,
+        video_url: `https://www.youtube.com/embed/${v.ytId}`, source: 'youtube', type: 'global'
+      }));
+    })());
+
+    // Strategy B: Official API Client-Side
+    if (YT_API_KEY) {
       fetchPromises.push((async () => {
-        const backRes = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(4000) });
-        if (!backRes.ok) throw new Error('Backend failed');
-        const backData = await backRes.json();
-        if (backData.results?.length > 0) {
-          return backData.results.map(v => ({
-            id: `yt-${v.id}`, ytId: v.id, title: v.title, thumbnail_url: v.thumbnail,
-            video_url: `https://www.youtube.com/embed/${v.id}`, source: 'youtube', type: 'global', views: 0, created_at: 'Recent'
-          }));
-        }
-        throw new Error('Backend no results');
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&order=viewCount&key=${YT_API_KEY}`, { signal: AbortSignal.timeout(5000) });
+        const data = await res.json();
+        if (!data.items?.length) throw new Error('Official API empty');
+        return data.items.map(i => ({
+          id: `yt-${i.id.videoId}`, ytId: i.id.videoId, title: i.snippet.title, thumbnail_url: i.snippet.thumbnails.high?.url,
+          video_url: `https://www.youtube.com/embed/${i.id.videoId}`, source: 'youtube', type: 'global'
+        }));
       })());
+    }
 
-      // B. Official YouTube API Promise
-      if (YT_API_KEY) {
-        fetchPromises.push((async () => {
-          const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&order=viewCount&key=${YT_API_KEY}`, { signal: AbortSignal.timeout(4000) });
-          if (!ytRes.ok) throw new Error('Official API failed');
-          const ytData = await ytRes.json();
-          if (ytData.items && ytData.items.length > 0) {
-            return ytData.items.map(i => ({
-              id: `yt-${i.id.videoId}`, ytId: i.id.videoId, title: i.snippet.title,
-              thumbnail_url: i.snippet.thumbnails.high?.url, video_url: `https://www.youtube.com/embed/${i.id.videoId}`,
-              source: 'youtube', type: 'global', views: 0, created_at: i.snippet.publishedAt
-            }));
-          }
-          throw new Error('Official API no items');
-        })());
-      }
+    // Strategy C: Multi-Proxy Piped (The "Never Fail" Scraper)
+    const CORS_PROXY = "https://api.allorigins.win/get?url=";
+    const stableInstance = "https://pipedapi.kavin.rocks";
+    fetchPromises.push((async () => {
+      const target = `${stableInstance}/search?q=${encodeURIComponent(query)}&filter=videos`;
+      const res = await fetch(`${CORS_PROXY}${encodeURIComponent(target)}`, { signal: AbortSignal.timeout(8000) });
+      const pData = await res.json();
+      const data = JSON.parse(pData.contents);
+      const items = data.items || data;
+      if (!items?.length) throw new Error('Proxy empty');
+      return items.slice(0, 20).map(v => {
+        const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
+        return {
+          id: `yt-${vidId}`, ytId: vidId, title: v.title, thumbnail_url: v.thumbnail || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`,
+          video_url: `https://www.youtube.com/embed/${vidId}`, source: 'youtube', type: 'global'
+        };
+      });
+    })());
 
-      // C. Piped/Proxies Promises
-      for (const instance of PIPED_INSTANCES) {
-        for (const proxy of PROXIES) {
-          fetchPromises.push((async () => {
-            const targetUrl = `${instance}/search?q=${encodeURIComponent(query)}&filter=videos`;
-            const fetchUrl = proxy ? `${proxy}${encodeURIComponent(targetUrl)}` : targetUrl;
-            const res = await fetch(fetchUrl, { signal: AbortSignal.timeout(4000) });
-            if (!res.ok) throw new Error('Proxy failed');
-            
-            let data;
-            if (proxy.includes('allorigins')) {
-              const pData = await res.json();
-              data = JSON.parse(pData.contents);
-            } else {
-              data = await res.json();
-            }
-
-            if (data && (data.items || data.length > 0)) {
-               const items = data.items || data;
-               const mapped = items.slice(0, 15).map(v => {
-                  const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
-                  if (!vidId) return null;
-                  return {
-                    id: `yt-${vidId}`, ytId: vidId, title: v.title,
-                    thumbnail_url: v.thumbnail || v.thumbnails?.[0]?.url || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`, 
-                    video_url: `https://www.youtube.com/embed/${vidId}`, source: 'youtube', type: 'global', 
-                    duration: v.duration ? (typeof v.duration === 'number' ? `${Math.floor(v.duration/60)}:${v.duration%60}` : v.duration) : '--:--',
-                    views: v.views || 0, created_at: v.uploadedDate || 'Recent'
-                  };
-               }).filter(Boolean);
-               if (mapped.length > 0) return mapped;
-            }
-            throw new Error('Proxy no items');
-          })());
-        }
-      }
-
-      try {
-        // LAYER 1: Backend Search (Master Engine - Bypass CORS)
-        const backRes = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(6000) });
-        if (backRes.ok) {
-          const backData = await backRes.json();
-          if (backData.results?.length > 0) {
-            globalResults = backData.results.map(v => ({
-              id: `yt-${v.ytId}`, ytId: v.ytId, title: v.title, 
-              thumbnail_url: v.thumbnail || v.thumbnail_url,
-              video_url: `https://www.youtube.com/embed/${v.ytId}`, 
-              source: 'youtube', type: 'global'
-            }));
-          }
-        }
-
-        // LAYER 2: Official API Client-Side (Fallback)
-        if (globalResults.length === 0 && YT_API_KEY) {
-          const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&order=viewCount&key=${YT_API_KEY}`);
-          const data = await res.json();
-          if (data.items?.length > 0) {
-            globalResults = data.items.map(i => ({
-              id: `yt-${i.id.videoId}`, ytId: i.id.videoId, title: i.snippet.title,
-              thumbnail_url: i.snippet.thumbnails.high?.url, video_url: `https://www.youtube.com/embed/${i.id.videoId}`,
-              source: 'youtube', type: 'global'
-            }));
-          }
-        }
-
-        // LAYER 3: Client-Side Multi-Piped with CORS Proxy (Emergency Backup)
-        if (globalResults.length === 0) {
-           const CORS_PROXY = "https://api.allorigins.win/get?url=";
-           for (const instance of PIPED_INSTANCES) {
-             try {
-               const targetUrl = `${instance}/search?q=${encodeURIComponent(query)}&filter=videos`;
-               const res = await fetch(`${CORS_PROXY}${encodeURIComponent(targetUrl)}`, { signal: AbortSignal.timeout(5000) });
-               const pData = await res.json();
-               const data = JSON.parse(pData.contents);
-               
-               const items = data.items || data;
-               if (items?.length > 0) {
-                 globalResults = items.slice(0, 20).map(v => {
-                   const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
-                   return {
-                     id: `yt-${vidId}`, ytId: vidId, title: v.title,
-                     thumbnail_url: v.thumbnail || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`,
-                     video_url: `https://www.youtube.com/embed/${vidId}`, source: 'youtube', type: 'global'
-                   };
-                 });
-                 if (globalResults.length > 0) break;
-               }
-             } catch(e) {}
-           }
-        }
-        
+    try {
+      // Wait for the fastest successful strategy
+      const globalResults = await Promise.any(fetchPromises);
+      if (globalResults?.length > 0) {
         setIsFreeMode(true);
-      } catch (err) {
-        console.warn("Global search engine sequence completed.");
-      }
-
-      if (globalResults.length > 0) {
         setResults(prev => {
-          const existingIds = new Set(prev.map(p => p.id));
-          const newResults = globalResults.filter(g => !existingIds.has(g.id));
-          return [...prev, ...newResults];
+          const existingIds = new Set(prev.map(p => p.id || p.ytId));
+          const uniqueNew = globalResults.filter(g => !existingIds.has(g.id));
+          return [...prev, ...uniqueNew];
         });
       }
     } catch (err) {
-      console.error("Search Logic Error:", err);
-    } finally { 
-      setLoading(false); 
+      console.warn("All global search strategies failed or timed out.");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
