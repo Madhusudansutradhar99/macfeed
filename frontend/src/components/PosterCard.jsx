@@ -31,7 +31,7 @@ export default function PosterCard({ video, index }) {
         <img
           src={video.thumbnail_url}
           alt={video.title}
-          className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:blur-[2px] brightness-90 group-hover:brightness-100"
+          className="w-full h-full object-cover object-top transition-all duration-700 group-hover:scale-110 group-hover:blur-[2px] brightness-90 group-hover:brightness-100"
         />
         
         {/* Play Overlay */}

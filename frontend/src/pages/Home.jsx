@@ -249,7 +249,7 @@ function VideoRow({ title, videos, emoji }) {
           prevEl: `.${prevClass}`,
           nextEl: `.${nextClass}`,
         }}
-        className="px-2 cursor-grab active:cursor-grabbing"
+        className="px-2 !pt-10 !-mt-10 cursor-grab active:cursor-grabbing"
       >
         {videos.map((video) => (
           <SwiperSlide key={video.id}>
@@ -468,7 +468,9 @@ export default function Home() {
                 nextEl: '.more-next',
               }}
               freeMode={true}
-              className="w-full pb-10"
+              grabCursor={true}
+              touchEventsTarget="container"
+              className="w-full !pt-10 !-mt-10 pb-10"
             >
               {videos.map((video, index) => {
                 const isLast = videos.length === index + 1;
