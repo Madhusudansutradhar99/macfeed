@@ -353,7 +353,7 @@ export default function LocalPlayerOverlay() {
   };
 
   const handleTouchMove = (e) => {
-    if (isLocked) return;
+    if (isLocked || showExtraPanel) return;
     const touch = e.touches[0];
     const deltaX = touch.clientX - touchStart.current.x;
     const deltaY = touch.clientY - touchStart.current.y;
