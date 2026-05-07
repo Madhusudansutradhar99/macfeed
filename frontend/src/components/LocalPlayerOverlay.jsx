@@ -83,6 +83,7 @@ export default function LocalPlayerOverlay() {
   const [volumeBoost, setVolumeBoost] = useState(100);
   const [eqPreset, setEqPreset] = useState('Normal');
   const [fontSize, setFontSize] = useState('Medium');
+  const [targetQuality, setTargetQuality] = useState('Auto');
   const [subtitleColor, setSubtitleColor] = useState('White');
   const [subtitleBg, setSubtitleBg] = useState('None');
   const [ssQuality, setSsQuality] = useState('High');
@@ -675,13 +676,20 @@ export default function LocalPlayerOverlay() {
 
                             {settingsTab === 'QUALITY' && (
                                 <>
-                                    <SettingRow label="Target Resolution (Simulation)">
+                                    <SettingRow label="Target Resolution (GPU Precision)">
                                         <div className="flex flex-wrap gap-2">
-                                            {['Auto', '720p', '1080p', '2K', '4K', '8K', '16K'].map(q => (
+                                            {['Auto', '1080p', '2K', '4K', '8K', '16K'].map(q => (
                                                 <button 
                                                     key={q} 
-                                                    onClick={() => showMXToast(`${q} Hyper Engine Activated`, <Zap size={14}/>, "#FCD34D")}
-                                                    className="px-4 py-2 rounded-xl bg-white/5 text-white/40 text-xs font-bold hover:bg-white/10 transition-colors"
+                                                    onClick={() => {
+                                                        setTargetQuality(q);
+                                                        showMXToast(`${q} Rendering Activated`, <Monitor size={14}/>, "#FCD34D");
+                                                        if (videoRef.current) {
+                                                            videoRef.current.style.imageRendering = (q === '16K' || q === '8K') ? 'high-quality' : 'optimizeSpeed';
+                                                            videoRef.current.style.filter = (q === '16K' || q === '8K') ? 'contrast(1.05) saturate(1.05)' : 'none';
+                                                        }
+                                                    }}
+                                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${targetQuality === q ? 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
                                                 >
                                                     {q}
                                                 </button>
