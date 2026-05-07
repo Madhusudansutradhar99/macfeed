@@ -664,24 +664,24 @@ export default function LocalPlayerOverlay() {
                         className="relative h-full w-[300px] flex items-center justify-start pointer-events-auto"
                         onClick={e => e.stopPropagation()}
                     >
-                        {/* THE WHEEL CASING (SUBTLE PHYSICAL RING) */}
+                        {/* THE WHEEL CASING (HIGH-VISIBILITY PHYSICAL RING) */}
                         <div 
-                            className="absolute left-[-480px] w-[600px] h-[600px] rounded-full border border-white/[0.03] bg-gradient-to-r from-white/[0.02] to-transparent pointer-events-none"
+                            className="absolute left-[-480px] w-[600px] h-[600px] rounded-full border-2 border-white/10 bg-gradient-to-r from-white/[0.05] to-transparent pointer-events-none shadow-[0_0_40px_rgba(255,255,255,0.03)]"
                             style={{ 
-                                boxShadow: 'inset -20px 0 50px rgba(255,255,255,0.01)',
+                                boxShadow: 'inset -30px 0 60px rgba(255,255,255,0.03)',
                                 transform: `rotate(${wheelRotation}deg)`,
                                 transition: 'transform 0.1s linear'
                             }}
                         >
-                            {/* Subtle Tick Marks on the Wheel */}
-                            {[...Array(24)].map((_, i) => (
+                            {/* Brighter Tick Marks on the Wheel */}
+                            {[...Array(36)].map((_, i) => (
                                 <div 
                                     key={i} 
-                                    className="absolute w-2 h-0.5 bg-white/10" 
+                                    className="absolute w-3 h-0.5 bg-white/20" 
                                     style={{ 
                                         left: '100%', 
                                         top: '50%', 
-                                        transform: `rotate(${i * 15}deg) translateX(-20px)` 
+                                        transform: `rotate(${i * 10}deg) translateX(-20px)` 
                                     }} 
                                 />
                             ))}
