@@ -100,6 +100,7 @@ export default function LocalPlayerOverlay() {
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [savedTime, setSavedTime] = useState(0);
   const [orientation, setOrientation] = useState('portrait');
+  const [wheelRotation, setWheelRotation] = useState(0);
 
   const showMXToast = useCallback((msg, icon, color = '#FFFFFF') => {
     setToast({ msg, icon, color });
@@ -635,67 +636,102 @@ export default function LocalPlayerOverlay() {
             )}
         </AnimatePresence>
 
-        {/* PREMIUM CIRCULAR ARC MENU (SWIPE UP / SIDE TRIGGER) */}
+        {/* ADVANCED ROTATABLE INTERACTIVE JOG WHEEL (SWIPE TO SPIN) */}
         <AnimatePresence>
             {showExtraPanel && (
                 <motion.div 
                     initial={{ x: '-100%', opacity: 0 }} 
                     animate={{ x: 0, opacity: 1 }} 
                     exit={{ x: '-100%', opacity: 0 }}
-                    transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-                    className="absolute inset-y-0 left-0 w-full sm:w-[450px] z-[150] pointer-events-none"
+                    transition={{ type: 'spring', damping: 25, stiffness: 120 }}
+                    className="absolute inset-y-0 left-0 w-full sm:w-[500px] z-[150] pointer-events-none"
                     onClick={e => e.stopPropagation()}
                 >
-                    {/* The Arc Background Layer */}
-                    <div className="absolute inset-y-0 left-0 w-[120%] h-full bg-gradient-to-r from-black/80 via-black/40 to-transparent backdrop-blur-sm pointer-events-none" 
-                         style={{ clipPath: 'circle(100% at -50% 50%)' }} />
+                    {/* The Interactive Wheel Area */}
+                    <div className="relative h-full w-full flex items-center justify-start pointer-events-auto overflow-hidden">
+                        
+                        {/* Invisible Drag Area */}
+                        <motion.div 
+                            drag="y"
+                            dragConstraints={{ top: -800, bottom: 800 }}
+                            onDrag={(e, info) => {
+                                const sensitivity = 0.5;
+                                setWheelRotation(prev => prev + (info.delta.y * sensitivity));
+                            }}
+                            className="absolute left-[-200px] w-[600px] h-full z-10 cursor-grab active:cursor-grabbing"
+                        />
 
-                    {/* Circular Controls Container */}
-                    <div className="relative h-full w-full flex items-center justify-start pointer-events-auto">
-                        <div className="absolute left-[-100px] h-[80%] w-[400px] flex flex-col justify-center gap-4">
+                        {/* Icons along the Arc */}
+                        <div className="absolute left-[-250px] h-full w-[600px] flex items-center justify-center pointer-events-none">
                             {[
-                                { icon: <RefreshCcw size={22} />, label: "Rotation", color: "#34D399", onClick: toggleROT, angle: -50 },
-                                { icon: <Camera size={22} />, label: "Capture", color: "#38BDF8", onClick: handleCapture, angle: -35 },
-                                { icon: <Headphones size={22} />, label: "Audio", color: "#C084FC", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); }, angle: -20 },
-                                { icon: <Sliders size={22} />, label: "Equalizer", color: "#F472B6", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); }, angle: -5 },
+                                { icon: <RefreshCcw size={22} />, label: "Rotation", color: "#34D399", onClick: toggleROT },
+                                { icon: <Camera size={22} />, label: "Capture", color: "#38BDF8", onClick: handleCapture },
+                                { icon: <Headphones size={22} />, label: "Audio", color: "#C084FC", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
+                                { icon: <Sliders size={22} />, label: "Equalizer", color: "#F472B6", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
                                 { icon: <ZoomIn size={22} />, label: "Zoom/Fit", color: "#FB923C", onClick: () => {
                                     const idx = ASPECT_RATIOS.indexOf(aspectRatio);
                                     setAspectRatio(ASPECT_RATIOS[(idx + 1) % ASPECT_RATIOS.length]);
-                                }, angle: 10 },
-                                { icon: <Settings size={22} />, label: "Settings", color: "#94A3B8", onClick: () => setShowSettings(true), angle: 25 },
-                                { icon: <MessageSquare size={22} />, label: "Subtitles", color: "#6366F1", onClick: () => { setSettingsTab('SUBTITLES'); setShowSettings(true); }, angle: 40 },
-                                { icon: <Zap size={22} />, label: "Hardware", color: "#FACC15", onClick: () => setHwAccel(!hwAccel), angle: 55 }
-                            ].map((action, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ x: -100, opacity: 0 }}
-                                    animate={{ x: 0, opacity: 1 }}
-                                    transition={{ delay: i * 0.05 }}
-                                    className="relative flex items-center gap-6 group cursor-pointer"
-                                    style={{ 
-                                        marginLeft: `${Math.cos((action.angle * Math.PI) / 180) * 180 + 80}px`,
-                                        transform: `translateY(${Math.sin((action.angle * Math.PI) / 180) * 50}px)`
-                                    }}
-                                    onClick={(e) => { e.stopPropagation(); action.onClick(); }}
-                                >
-                                    <div 
-                                        className="w-14 h-14 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 flex items-center justify-center transition-all duration-300 group-hover:scale-125 group-hover:bg-white/20 shadow-2xl"
-                                        style={{ color: action.color, boxShadow: `0 0 20px ${action.color}33` }}
+                                } },
+                                { icon: <Settings size={22} />, label: "Settings", color: "#94A3B8", onClick: () => setShowSettings(true) },
+                                { icon: <Monitor size={22} />, label: "Quality", color: "#4ADE80", onClick: () => setShowQualityMenu(true) },
+                                { icon: <MessageSquare size={22} />, label: "Subtitles", color: "#6366F1", onClick: () => { setSettingsTab('SUBTITLES'); setShowSettings(true); } },
+                                { icon: <Zap size={22} />, label: "Hardware", color: "#FACC15", onClick: () => setHwAccel(!hwAccel) },
+                                { icon: <PictureInPicture size={22} />, label: "PIP", color: "#86EFAC", onClick: () => videoRef.current?.requestPictureInPicture() },
+                                { icon: isMuted ? <VolumeX size={22} /> : <Volume2 size={22} />, label: "Mute", color: "#FCD34D", onClick: () => setIsMuted(!isMuted) },
+                                { icon: <SkipForward size={22} />, label: "Next", color: "#A78BFA", onClick: () => { next(); showMXToast('Next Video', <SkipForward size={16}/>); } },
+                                { icon: <SkipBack size={22} />, label: "Prev", color: "#A78BFA", onClick: () => { prev(); showMXToast('Prev Video', <SkipBack size={16}/>); } },
+                                { icon: <Repeat size={22} />, label: "Loop", color: "#67E8F9", onClick: () => setLoopVideo(!loopVideo) }
+                            ].map((action, i) => {
+                                const angleStep = 25; // Degrees between icons
+                                const totalRotation = wheelRotation + (i * angleStep) - 90;
+                                const rad = (totalRotation * Math.PI) / 180;
+                                
+                                // Calculate position on the circle
+                                const radius = 350;
+                                const xPos = Math.cos(rad) * radius + 300;
+                                const yPos = Math.sin(rad) * radius;
+                                
+                                // Scale and opacity based on proximity to the center (y=0)
+                                const distanceFromCenter = Math.abs(totalRotation % 360);
+                                const normalizedDist = Math.abs(yPos) / (radius * 1.2);
+                                const scale = Math.max(0.6, 1.2 - normalizedDist);
+                                const opacity = Math.max(0.1, 1 - normalizedDist);
+
+                                return (
+                                    <motion.div
+                                        key={i}
+                                        className="absolute pointer-events-auto flex items-center gap-4 group cursor-pointer"
+                                        style={{ 
+                                            x: xPos,
+                                            y: yPos,
+                                            scale: scale,
+                                            opacity: opacity,
+                                            zIndex: Math.round(opacity * 100)
+                                        }}
+                                        onClick={(e) => { e.stopPropagation(); action.onClick(); }}
                                     >
-                                        {action.icon}
-                                    </div>
-                                    <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0">
-                                        <span className="text-white font-black text-[10px] uppercase tracking-[0.3em] italic">{action.label}</span>
-                                        <div className="h-0.5 w-8 bg-current mt-1 rounded-full" style={{ color: action.color }} />
-                                    </div>
-                                </motion.div>
-                            ))}
+                                        <div 
+                                            className="w-14 h-14 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center transition-all duration-300 group-hover:bg-white/20 shadow-2xl"
+                                            style={{ color: action.color, boxShadow: `0 0 30px ${action.color}22` }}
+                                        >
+                                            {action.icon}
+                                        </div>
+                                        <div className="flex flex-col min-w-[120px]">
+                                            <span className="text-white font-black text-[10px] uppercase tracking-[0.3em] italic drop-shadow-lg" style={{ opacity: scale > 1 ? 1 : 0.3 }}>
+                                                {action.label}
+                                            </span>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
                         </div>
                         
-                        {/* Swipe Hint to close */}
-                        <div className="absolute bottom-10 left-10 flex flex-col items-center gap-2 opacity-30">
-                            <ArrowLeft size={16} className="text-white animate-bounce" />
-                            <span className="text-white text-[8px] font-black uppercase tracking-widest">Swipe Left to Hide</span>
+                        {/* Interaction Guide */}
+                        <div className="absolute bottom-12 left-10 flex items-center gap-3 opacity-20 pointer-events-none">
+                            <div className="w-8 h-8 rounded-full border border-white flex items-center justify-center animate-spin-slow">
+                                <RefreshCcw size={12} className="text-white" />
+                            </div>
+                            <span className="text-white text-[8px] font-black uppercase tracking-widest">Spin the Wheel to Access Controls</span>
                         </div>
                     </div>
                 </motion.div>
