@@ -668,26 +668,26 @@ export default function LocalPlayerOverlay() {
                         {/* THE RINGS (BOLD & INDUSTRIAL) */}
                         <div className="absolute left-[-280px] w-[400px] h-[400px] flex items-center justify-center pointer-events-none">
                             
-                            {/* 1. OUTER GOLD RING (THICK BORDER) */}
+                            {/* 1. OUTER GOLD RING (STABLE ARROW) */}
                             <motion.div 
                                 animate={{ rotate: 360 }}
-                                transition={{ repeat: Infinity, duration: 40, ease: 'linear' }}
+                                transition={{ repeat: Infinity, duration: 60, ease: 'linear' }}
                                 className="absolute w-[420px] h-[420px] rounded-full border-[3px] border-dashed border-yellow-500/20" 
-                            >
-                                {/* SYSTEM ARROW ALIGNED TO RIGHT (PANELS) */}
-                                <div className="absolute right-[-10px] top-[50%] translate-y-[-50%] rotate-[-90deg]">
-                                    <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[12px] border-t-yellow-400 shadow-[0_0_15px_#fbbf24]" />
-                                </div>
-                            </motion.div>
+                            />
+                            
+                            {/* STABLE SYSTEM ARROW (FIXED AT RIGHT) */}
+                            <div className="absolute right-[15px] top-[50%] translate-y-[-50%] rotate-[-90deg] z-50">
+                                <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[14px] border-t-yellow-400 shadow-[0_0_20px_#fbbf24]" />
+                            </div>
 
                             {/* 2. INNER CYAN SYSTEM RING (THICK BORDER) */}
                             <motion.div 
                                 animate={{ rotate: -360 }}
-                                transition={{ repeat: Infinity, duration: 25, ease: 'linear' }}
-                                className="absolute w-[340px] h-[340px] rounded-full border-[4px] border-cyan-400/30 shadow-[0_0_25px_rgba(34,211,238,0.2)]"
+                                transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
+                                className="absolute w-[340px] h-[340px] rounded-full border-[4px] border-cyan-400/40 shadow-[0_0_25px_rgba(34,211,238,0.2)]"
                             >
-                                {[...Array(24)].map((_, i) => (
-                                    <div key={i} className="absolute w-1 h-3 bg-cyan-400/40" style={{ left: '50%', top: -2, transform: `rotate(${i * 15}deg)` }} />
+                                {[...Array(36)].map((_, i) => (
+                                    <div key={i} className="absolute w-1 h-3 bg-cyan-400/40" style={{ left: '50%', top: -2, transform: `rotate(${i * 10}deg)` }} />
                                 ))}
                             </motion.div>
 
@@ -698,7 +698,7 @@ export default function LocalPlayerOverlay() {
                                     transition={{ repeat: Infinity, duration: 2 }}
                                     className="text-[8px] font-mono text-cyan-400/40 font-black tracking-[0.6em]"
                                 >
-                                    CORE_LINK
+                                    CORE_STABLE
                                 </motion.div>
                             </div>
                         </div>
@@ -715,7 +715,7 @@ export default function LocalPlayerOverlay() {
                             className="absolute left-[-100px] w-[350px] h-full z-10 cursor-grab active:cursor-grabbing"
                         />
 
-                        {/* Panels with ZERO-GAP Connections (Thicker Lines) */}
+                        {/* Panels with ZERO-GAP Connections (Stuck to Ring) */}
                         <div className="absolute left-[-260px] h-full w-[600px] flex items-center justify-center pointer-events-none">
                             {[
                                 { icon: <RefreshCcw size={14} />, label: "Rotation", color: "#fbbf24", onClick: toggleROT },
@@ -740,7 +740,7 @@ export default function LocalPlayerOverlay() {
                                 const totalRotation = (i * angleStep) - wheelRotation;
                                 const rad = (totalRotation * Math.PI) / 180;
                                 
-                                const panelRadius = 240; // Balanced panel position
+                                const panelRadius = 200; // TIGHTLY STUCK TO RING
                                 
                                 const xPos = Math.cos(rad) * panelRadius + 230; 
                                 const yPos = Math.sin(rad) * panelRadius;
