@@ -645,7 +645,7 @@ export default function LocalPlayerOverlay() {
             )}
         </AnimatePresence>
 
-        {/* ADVANCED ROTATABLE INTERACTIVE JOG WHEEL (INWARD CURVE) */}
+        {/* ADVANCED ROTATABLE INTERACTIVE JOG WHEEL (SLEEK & COMPACT) */}
         <AnimatePresence>
             {showExtraPanel && (
                 <motion.div 
@@ -659,7 +659,7 @@ export default function LocalPlayerOverlay() {
                     {/* The Interactive Wheel Area */}
                     <div 
                         onWheel={(e) => {
-                            const sensitivity = 0.5;
+                            const sensitivity = 0.4;
                             setWheelRotation(prev => prev - (e.deltaY * sensitivity));
                         }}
                         className="relative h-full w-full flex items-center justify-start pointer-events-auto overflow-hidden"
@@ -670,51 +670,51 @@ export default function LocalPlayerOverlay() {
                             drag="y"
                             dragConstraints={{ top: -1000, bottom: 1000 }}
                             onDrag={(e, info) => {
-                                const sensitivity = 0.5;
+                                const sensitivity = 0.4;
                                 setWheelRotation(prev => prev + (info.delta.y * sensitivity));
                             }}
-                            className="absolute left-0 w-[400px] h-full z-10 cursor-grab active:cursor-grabbing"
+                            className="absolute left-0 w-[350px] h-full z-10 cursor-grab active:cursor-grabbing"
                         />
 
-                        {/* Icons along the Inward Arc */}
-                        <div className="absolute left-[-450px] h-full w-[800px] flex items-center justify-center pointer-events-none">
+                        {/* Icons along the Inward Arc (Compact) */}
+                        <div className="absolute left-[-350px] h-full w-[700px] flex items-center justify-center pointer-events-none">
                             {[
-                                { icon: <RefreshCcw size={24} />, label: "Rotation", color: "#34D399", onClick: toggleROT },
-                                { icon: <Camera size={24} />, label: "Capture", color: "#38BDF8", onClick: handleCapture },
-                                { icon: <Headphones size={24} />, label: "Audio", color: "#C084FC", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
-                                { icon: <Sliders size={24} />, label: "Equalizer", color: "#F472B6", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
-                                { icon: <ZoomIn size={24} />, label: "Zoom/Fit", color: "#FB923C", onClick: () => {
+                                { icon: <RefreshCcw size={20} />, label: "Rotation", color: "#34D399", onClick: toggleROT },
+                                { icon: <Camera size={20} />, label: "Capture", color: "#38BDF8", onClick: handleCapture },
+                                { icon: <Headphones size={20} />, label: "Audio", color: "#C084FC", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
+                                { icon: <Sliders size={20} />, label: "Equalizer", color: "#F472B6", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
+                                { icon: <ZoomIn size={20} />, label: "Zoom/Fit", color: "#FB923C", onClick: () => {
                                     const idx = ASPECT_RATIOS.indexOf(aspectRatio);
                                     setAspectRatio(ASPECT_RATIOS[(idx + 1) % ASPECT_RATIOS.length]);
                                 } },
-                                { icon: <Settings size={24} />, label: "Settings", color: "#94A3B8", onClick: () => setShowSettings(true) },
-                                { icon: <Monitor size={24} />, label: "Quality", color: "#4ADE80", onClick: () => setShowQualityMenu(true) },
-                                { icon: <MessageSquare size={24} />, label: "Subtitles", color: "#6366F1", onClick: () => { setSettingsTab('SUBTITLES'); setShowSettings(true); } },
-                                { icon: <Zap size={24} />, label: "Hardware", color: "#FACC15", onClick: () => setHwAccel(!hwAccel) },
-                                { icon: <PictureInPicture size={24} />, label: "PIP", color: "#86EFAC", onClick: () => videoRef.current?.requestPictureInPicture() },
-                                { icon: isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />, label: "Mute", color: "#FCD34D", onClick: () => setIsMuted(!isMuted) },
-                                { icon: <SkipForward size={24} />, label: "Next", color: "#A78BFA", onClick: () => { next(); showMXToast('Next Video', <SkipForward size={16}/>); } },
-                                { icon: <SkipBack size={24} />, label: "Prev", color: "#A78BFA", onClick: () => { prev(); showMXToast('Prev Video', <SkipBack size={16}/>); } },
-                                { icon: <Repeat size={24} />, label: "Loop", color: "#67E8F9", onClick: () => setLoopVideo(!loopVideo) }
+                                { icon: <Settings size={20} />, label: "Settings", color: "#94A3B8", onClick: () => setShowSettings(true) },
+                                { icon: <Monitor size={20} />, label: "Quality", color: "#4ADE80", onClick: () => setShowQualityMenu(true) },
+                                { icon: <MessageSquare size={20} />, label: "Subtitles", color: "#6366F1", onClick: () => { setSettingsTab('SUBTITLES'); setShowSettings(true); } },
+                                { icon: <Zap size={20} />, label: "Hardware", color: "#FACC15", onClick: () => setHwAccel(!hwAccel) },
+                                { icon: <PictureInPicture size={20} />, label: "PIP", color: "#86EFAC", onClick: () => videoRef.current?.requestPictureInPicture() },
+                                { icon: isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />, label: "Mute", color: "#FCD34D", onClick: () => setIsMuted(!isMuted) },
+                                { icon: <SkipForward size={20} />, label: "Next", color: "#A78BFA", onClick: () => { next(); showMXToast('Next Video', <SkipForward size={16}/>); } },
+                                { icon: <SkipBack size={20} />, label: "Prev", color: "#A78BFA", onClick: () => { prev(); showMXToast('Prev Video', <SkipBack size={16}/>); } },
+                                { icon: <Repeat size={20} />, label: "Loop", color: "#67E8F9", onClick: () => setLoopVideo(!loopVideo) }
                             ].map((action, i) => {
-                                const angleStep = 22; // Degrees between icons
+                                const angleStep = 22; 
                                 const totalRotation = wheelRotation + (i * angleStep) - 90;
                                 const rad = (totalRotation * Math.PI) / 180;
                                 
-                                // Calculate position on the circle (INWARD CURVE)
-                                const radius = 550;
-                                const xPos = Math.cos(rad) * radius + 400; // Peak of the arc shifted right
+                                // Calculate position on the circle (SLEEK COMPACT)
+                                const radius = 380; 
+                                const xPos = Math.cos(rad) * radius + 320; 
                                 const yPos = Math.sin(rad) * radius;
                                 
                                 // Scale and opacity based on proximity to the center (y=0)
-                                const normalizedDist = Math.abs(yPos) / (radius * 1.5);
-                                const scale = Math.max(0.7, 1.4 - normalizedDist); 
+                                const normalizedDist = Math.abs(yPos) / (radius * 1.4);
+                                const scale = Math.max(0.7, 1.3 - normalizedDist); 
                                 const opacity = Math.max(0.1, 1 - normalizedDist);
 
                                 return (
                                     <motion.div
                                         key={i}
-                                        className="absolute pointer-events-auto flex items-center gap-8 group cursor-pointer"
+                                        className="absolute pointer-events-auto flex items-center gap-6 group cursor-pointer"
                                         style={{ 
                                             x: xPos,
                                             y: yPos,
@@ -725,31 +725,31 @@ export default function LocalPlayerOverlay() {
                                         onClick={(e) => { e.stopPropagation(); action.onClick(); }}
                                     >
                                         <div 
-                                            className="w-18 h-18 rounded-full bg-black/80 backdrop-blur-2xl border-4 border-white/30 flex items-center justify-center transition-all duration-300 group-hover:bg-white/40 shadow-[0_0_30px_rgba(0,0,0,0.8)] group-hover:shadow-[0_0_50px_rgba(255,255,255,0.3)] group-hover:border-white/60"
-                                            style={{ color: action.color, boxShadow: `0 0 50px ${action.color}44` }}
+                                            className="w-14 h-14 rounded-full bg-black/80 backdrop-blur-2xl border-2 border-white/20 flex items-center justify-center transition-all duration-300 group-hover:bg-white/30 shadow-2xl group-hover:border-white/50"
+                                            style={{ color: action.color, boxShadow: `0 0 40px ${action.color}33` }}
                                         >
-                                            <div className="filter drop-shadow-[0_0_12px_currentColor]">
+                                            <div className="filter drop-shadow-[0_0_8px_currentColor]">
                                                 {action.icon}
                                             </div>
                                         </div>
-                                        <div className="flex flex-col min-w-[200px]">
-                                            <span className="text-white font-black text-sm uppercase tracking-[0.5em] italic drop-shadow-[0_4px_12px_rgba(0,0,0,1)] bg-black/20 px-4 py-1 rounded-lg backdrop-blur-md" 
-                                                  style={{ opacity: scale > 1.15 ? 1 : 0.4 }}>
+                                        <div className="flex flex-col min-w-[150px]">
+                                            <span className="text-white font-black text-[10px] uppercase tracking-[0.4em] italic drop-shadow-[0_4px_10px_rgba(0,0,0,1)] bg-black/10 px-3 py-1 rounded backdrop-blur-sm" 
+                                                  style={{ opacity: scale > 1.1 ? 1 : 0.3 }}>
                                                 {action.label}
                                             </span>
-                                            {scale > 1.15 && <motion.div layoutId="active-underline" className="h-1 w-20 bg-white mt-2 rounded-full shadow-2xl" />}
+                                            {scale > 1.1 && <motion.div layoutId="active-underline" className="h-0.5 w-10 bg-white mt-1 rounded-full shadow-lg" />}
                                         </div>
                                     </motion.div>
                                 );
                             })}
                         </div>
                         
-                        {/* Interaction Guide */}
-                        <div className="absolute bottom-12 left-10 flex items-center gap-3 opacity-20 pointer-events-none">
-                            <div className="w-8 h-8 rounded-full border border-white flex items-center justify-center animate-spin-slow">
-                                <RefreshCcw size={12} className="text-white" />
+                        {/* Compact Guide */}
+                        <div className="absolute bottom-10 left-8 flex items-center gap-2 opacity-30 pointer-events-none">
+                            <div className="w-6 h-6 rounded-full border border-white/50 flex items-center justify-center animate-spin-slow">
+                                <RefreshCcw size={10} className="text-white" />
                             </div>
-                            <span className="text-white text-[8px] font-black uppercase tracking-widest">Spin the Wheel to Access Controls</span>
+                            <span className="text-white text-[7px] font-black uppercase tracking-[0.2em]">Spin Wheel</span>
                         </div>
                     </div>
                 </motion.div>
