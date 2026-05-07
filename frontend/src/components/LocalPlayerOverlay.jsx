@@ -664,27 +664,34 @@ export default function LocalPlayerOverlay() {
                         className="relative h-full w-[300px] flex items-center justify-start pointer-events-auto"
                         onClick={e => e.stopPropagation()}
                     >
-                        {/* THE WHEEL CASING (SYNCED ROTATION) */}
+                        {/* THE WHEEL CASING (ULTRA-PREMIUM METALLIC GLASS DIAL) */}
                         <div 
-                            className="absolute left-[-480px] w-[600px] h-[600px] rounded-full border-2 border-white/10 bg-gradient-to-r from-white/[0.05] to-transparent pointer-events-none shadow-[0_0_40px_rgba(255,255,255,0.03)]"
+                            className="absolute left-[-500px] w-[650px] h-[650px] rounded-full border-[3px] border-white/10 bg-gradient-to-r from-white/[0.08] via-transparent to-transparent pointer-events-none"
                             style={{ 
-                                boxShadow: 'inset -30px 0 60px rgba(255,255,255,0.03)',
-                                transform: `rotate(${-wheelRotation}deg)`, // Synced with icon movement
+                                boxShadow: `
+                                    inset -40px 0 80px rgba(255,255,255,0.05),
+                                    inset 0 0 100px rgba(0,0,0,0.5),
+                                    -20px 0 60px rgba(0,0,0,0.8),
+                                    0 0 40px rgba(255,255,255,0.02)
+                                `,
+                                transform: `rotate(${-wheelRotation}deg)`,
                                 transition: 'transform 0.1s ease-out'
                             }}
                         >
-                            {/* Brighter Tick Marks on the Wheel */}
-                            {[...Array(36)].map((_, i) => (
+                            {/* PRECISION DIAL MARKS (Luxury Watch Style) */}
+                            {[...Array(72)].map((_, i) => (
                                 <div 
                                     key={i} 
-                                    className="absolute w-3 h-0.5 bg-white/20" 
+                                    className={`absolute top-50% left-full origin-left transition-opacity duration-500 ${i % 6 === 0 ? 'w-5 h-[2px] bg-white/40' : 'w-3 h-[1px] bg-white/10'}`} 
                                     style={{ 
-                                        left: '100%', 
-                                        top: '50%', 
-                                        transform: `rotate(${i * 10}deg) translateX(-20px)` 
+                                        transform: `rotate(${i * 5}deg) translateX(-25px)`,
+                                        opacity: Math.abs(((i * 5 - wheelRotation) % 360)) < 45 ? 1 : 0.3
                                     }} 
                                 />
                             ))}
+                            
+                            {/* INNER RIM GLOW */}
+                            <div className="absolute inset-4 rounded-full border border-white/5 bg-radial-gradient from-white/[0.02] to-transparent pointer-events-none" />
                         </div>
 
                         {/* Invisible Drag Area with Clamped Logic */}
