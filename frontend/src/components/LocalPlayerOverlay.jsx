@@ -645,7 +645,7 @@ export default function LocalPlayerOverlay() {
             )}
         </AnimatePresence>
 
-        {/* INDUSTRIAL ENDFIELD-STYLE JOG DIAL */}
+        {/* REFINED COMPACT INDUSTRIAL JOG DIAL (ANIMATED) */}
         <AnimatePresence>
             {showExtraPanel && (
                 <motion.div 
@@ -662,30 +662,30 @@ export default function LocalPlayerOverlay() {
                             const maxRot = (14 - 1) * 18;
                             setWheelRotation(prev => Math.max(0, Math.min(prev - (e.deltaY * sensitivity), maxRot)));
                         }}
-                        className="relative h-full w-[450px] flex items-center justify-start pointer-events-auto"
+                        className="relative h-full w-[400px] flex items-center justify-start pointer-events-auto"
                         onClick={e => e.stopPropagation()}
                     >
-                        {/* DECORATIVE CONCENTRIC RINGS (ENDFIELD STYLE) */}
-                        <div className="absolute left-[-500px] w-[800px] h-[800px] flex items-center justify-center pointer-events-none">
-                            {/* Outer Dashed Ring */}
-                            <div className="absolute w-[750px] h-[750px] rounded-full border border-dashed border-white/5 opacity-40 animate-spin-slow" />
-                            {/* Solid Industrial Ring */}
-                            <div className="absolute w-[680px] h-[680px] rounded-full border-[2px] border-white/10" />
-                            {/* Glowing Arc Segment */}
-                            <div 
-                                className="absolute w-[700px] h-[700px] rounded-full border-t-[4px] border-white/20"
-                                style={{ transform: `rotate(${-wheelRotation * 0.5}deg)` }}
+                        {/* ANIMATED CONCENTRIC RINGS (COMPACT) */}
+                        <div className="absolute left-[-400px] w-[600px] h-[600px] flex items-center justify-center pointer-events-none">
+                            {/* Outer Pulse Ring */}
+                            <motion.div 
+                                animate={{ rotate: 360 }}
+                                transition={{ repeat: Infinity, duration: 40, ease: 'linear' }}
+                                className="absolute w-[580px] h-[580px] rounded-full border border-dashed border-cyan-500/10" 
                             />
-                            {/* Inner Status Ring */}
-                            <div className="absolute w-[600px] h-[600px] rounded-full border border-white/5 bg-gradient-to-r from-white/[0.02] to-transparent" />
-                            
-                            {/* Decorative Triangles & Data */}
-                            {[...Array(8)].map((_, i) => (
-                                <div key={i} className="absolute w-full h-full" style={{ transform: `rotate(${i * 45}deg)` }}>
-                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/20" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
-                                    <div className="absolute top-10 left-1/2 -translate-x-1/2 text-[6px] font-mono text-white/20 tracking-tighter">OS_TYPE_449</div>
-                                </div>
-                            ))}
+                            {/* Counter-Rotating Mid Ring */}
+                            <motion.div 
+                                animate={{ rotate: -360 }}
+                                transition={{ repeat: Infinity, duration: 25, ease: 'linear' }}
+                                className="absolute w-[500px] h-[500px] rounded-full border-[2px] border-white/5 shadow-[0_0_20px_rgba(255,255,255,0.02)]" 
+                            />
+                            {/* Inner Data Arc */}
+                            <motion.div 
+                                className="absolute w-[450px] h-[450px] rounded-full border-t-[3px] border-cyan-400/30 shadow-[0_0_15px_rgba(34,211,238,0.1)]"
+                                style={{ transform: `rotate(${-wheelRotation * 0.8}deg)` }}
+                            />
+                            {/* Core Hub */}
+                            <div className="absolute w-[350px] h-[350px] rounded-full bg-gradient-to-r from-cyan-500/[0.03] to-transparent border border-white/5" />
                         </div>
 
                         {/* Invisible Drag Area */}
@@ -700,47 +700,47 @@ export default function LocalPlayerOverlay() {
                                     return Math.max(0, Math.min(newVal, maxRot));
                                 });
                             }}
-                            className="absolute left-[-200px] w-[450px] h-full z-10 cursor-grab active:cursor-grabbing"
+                            className="absolute left-[-200px] w-[400px] h-full z-10 cursor-grab active:cursor-grabbing"
                         />
 
-                        {/* Endfield Glass Panels (Icons) */}
-                        <div className="absolute left-[-420px] h-full w-[700px] flex items-center justify-center pointer-events-none">
+                        {/* Endfield Panels with Energy Wires */}
+                        <div className="absolute left-[-350px] h-full w-[600px] flex items-center justify-center pointer-events-none">
                             {[
-                                { icon: <RefreshCcw size={16} />, label: "Rotation", color: "#FFFFFF", onClick: toggleROT },
-                                { icon: <Camera size={16} />, label: "Capture", color: "#FFFFFF", onClick: handleCapture },
-                                { icon: <Headphones size={16} />, label: "Audio", color: "#FFFFFF", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
-                                { icon: <Sliders size={16} />, label: "Equalizer", color: "#FFFFFF", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
-                                { icon: <ZoomIn size={16} />, label: "Zoom/Fit", color: "#FFFFFF", onClick: () => {
+                                { icon: <RefreshCcw size={14} />, label: "Rotation", color: "#22d3ee", onClick: toggleROT },
+                                { icon: <Camera size={14} />, label: "Capture", color: "#22d3ee", onClick: handleCapture },
+                                { icon: <Headphones size={14} />, label: "Audio", color: "#22d3ee", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
+                                { icon: <Sliders size={14} />, label: "Equalizer", color: "#22d3ee", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
+                                { icon: <ZoomIn size={14} />, label: "Zoom/Fit", color: "#22d3ee", onClick: () => {
                                     const idx = ASPECT_RATIOS.indexOf(aspectRatio);
                                     setAspectRatio(ASPECT_RATIOS[(idx + 1) % ASPECT_RATIOS.length]);
                                 } },
-                                { icon: <Settings size={16} />, label: "Settings", color: "#FFFFFF", onClick: () => setShowSettings(true) },
-                                { icon: <Monitor size={16} />, label: "Quality", color: "#FFFFFF", onClick: () => setShowQualityMenu(true) },
-                                { icon: <MessageSquare size={16} />, label: "Subtitles", color: "#FFFFFF", onClick: () => { setSettingsTab('SUBTITLES'); setShowSettings(true); } },
-                                { icon: <Zap size={16} />, label: "Hardware", color: "#FFFFFF", onClick: () => setHwAccel(!hwAccel) },
-                                { icon: <PictureInPicture size={16} />, label: "PIP", color: "#FFFFFF", onClick: () => videoRef.current?.requestPictureInPicture() },
-                                { icon: isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />, label: "Mute", color: "#FFFFFF", onClick: () => setIsMuted(!isMuted) },
-                                { icon: <SkipForward size={16} />, label: "Next", color: "#FFFFFF", onClick: () => { next(); showMXToast('Next Video', <SkipForward size={16}/>); } },
-                                { icon: <SkipBack size={16} />, label: "Prev", color: "#FFFFFF", onClick: () => { prev(); showMXToast('Prev Video', <SkipBack size={16}/>); } },
-                                { icon: <Repeat size={16} />, label: "Loop", color: "#FFFFFF", onClick: () => setLoopVideo(!loopVideo) }
+                                { icon: <Settings size={14} />, label: "Settings", color: "#22d3ee", onClick: () => setShowSettings(true) },
+                                { icon: <Monitor size={14} />, label: "Quality", color: "#22d3ee", onClick: () => setShowQualityMenu(true) },
+                                { icon: <MessageSquare size={14} />, label: "Subtitles", color: "#22d3ee", onClick: () => { setSettingsTab('SUBTITLES'); setShowSettings(true); } },
+                                { icon: <Zap size={14} />, label: "Hardware", color: "#22d3ee", onClick: () => setHwAccel(!hwAccel) },
+                                { icon: <PictureInPicture size={14} />, label: "PIP", color: "#22d3ee", onClick: () => videoRef.current?.requestPictureInPicture() },
+                                { icon: isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />, label: "Mute", color: "#22d3ee", onClick: () => setIsMuted(!isMuted) },
+                                { icon: <SkipForward size={14} />, label: "Next", color: "#22d3ee", onClick: () => { next(); showMXToast('Next Video', <SkipForward size={16}/>); } },
+                                { icon: <SkipBack size={14} />, label: "Prev", color: "#22d3ee", onClick: () => { prev(); showMXToast('Prev Video', <SkipBack size={16}/>); } },
+                                { icon: <Repeat size={14} />, label: "Loop", color: "#22d3ee", onClick: () => setLoopVideo(!loopVideo) }
                             ].map((action, i) => {
                                 const angleStep = 18; 
                                 const totalRotation = (i * angleStep) - wheelRotation;
                                 const rad = (totalRotation * Math.PI) / 180;
                                 
-                                const radius = 480; 
-                                const xPos = Math.cos(rad) * radius + 80; 
+                                const radius = 380; 
+                                const xPos = Math.cos(rad) * radius + 50; 
                                 const yPos = Math.sin(rad) * radius;
                                 
                                 const normalizedDist = Math.abs(yPos) / (radius * 1.2);
-                                const scale = Math.max(0.6, 1.15 - normalizedDist); 
+                                const scale = Math.max(0.6, 1.1 - normalizedDist); 
                                 const opacity = Math.max(0.1, 1 - normalizedDist);
-                                const isFocused = scale > 1.08;
+                                const isFocused = scale > 1.05;
 
                                 return (
                                     <motion.div
                                         key={i}
-                                        className="absolute pointer-events-auto flex items-center pointer-events-auto cursor-pointer"
+                                        className="absolute pointer-events-auto flex items-center cursor-pointer group"
                                         style={{ 
                                             x: xPos,
                                             y: yPos,
@@ -750,19 +750,24 @@ export default function LocalPlayerOverlay() {
                                         }}
                                         onClick={(e) => { e.stopPropagation(); action.onClick(); }}
                                     >
-                                        {/* Trapezoidal Glass Panel */}
+                                        {/* Energy Wire Connection */}
                                         <div 
-                                            className={`relative w-28 h-14 bg-black/60 backdrop-blur-xl border-l-[3px] border-r-[1px] border-y-[1px] transition-all duration-300 flex items-center justify-between px-3 ${isFocused ? 'border-l-white border-white/40 scale-110' : 'border-white/10 opacity-60'}`}
-                                            style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }}
+                                            className={`absolute left-[-60px] w-20 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent transition-opacity duration-300 ${isFocused ? 'opacity-100' : 'opacity-20'}`} 
+                                        />
+
+                                        {/* Endfield Style Panel */}
+                                        <div 
+                                            className={`relative w-24 h-11 bg-black/80 backdrop-blur-2xl border-l-2 border-r-[0.5px] border-y-[0.5px] transition-all duration-300 flex items-center justify-between px-2 ${isFocused ? 'border-l-cyan-400 border-white/30 shadow-[0_0_20px_rgba(34,211,238,0.15)] scale-105' : 'border-white/10 opacity-60'}`}
+                                            style={{ clipPath: 'polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%)' }}
                                         >
-                                            <div className={`transition-all duration-300 ${isFocused ? 'text-white' : 'text-white/40'}`}>
+                                            <div className={`transition-all duration-300 ${isFocused ? 'text-cyan-400 scale-110' : 'text-white/40'}`}>
                                                 {action.icon}
                                             </div>
                                             <div className="flex flex-col items-end mr-1">
-                                                <span className={`text-[8px] font-black uppercase tracking-tighter transition-all duration-300 ${isFocused ? 'text-white' : 'text-white/40'}`}>
+                                                <span className={`text-[7px] font-black uppercase tracking-tight transition-all duration-300 ${isFocused ? 'text-white' : 'text-white/40'}`}>
                                                     {action.label}
                                                 </span>
-                                                <div className={`h-[1px] w-8 mt-0.5 transition-all duration-300 ${isFocused ? 'bg-white' : 'bg-white/10'}`} />
+                                                {isFocused && <motion.div layoutId="endfield-line" className="h-[1px] w-6 bg-cyan-400 mt-0.5" />}
                                             </div>
                                         </div>
                                     </motion.div>
