@@ -119,10 +119,10 @@ function HeroBanner({ videos }) {
           margin: 0 4px !important;
         }
         .hero-pagination .swiper-pagination-bullet-active {
-          background: #eab308 !important; /* yellow-500 */
+          background: #ff0000 !important;
           width: 24px !important;
           border-radius: 4px !important;
-          box-shadow: 0 0 10px rgba(234, 179, 8, 0.5) !important;
+          box-shadow: 0 0 10px rgba(255, 0, 0, 0.5) !important;
         }
       `}</style>
     </div>
@@ -331,6 +331,7 @@ export default function Home() {
       setLoading(true);
       const start = Date.now();
       try {
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&maxResults=8&order=viewCount&key=${YT_API_KEY}`);
         const fetchPromise = fetchVideos(0, true);
         const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Fetch timeout')), 10000));
         await Promise.race([fetchPromise, timeoutPromise]);
