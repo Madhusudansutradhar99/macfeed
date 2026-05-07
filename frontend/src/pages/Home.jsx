@@ -440,10 +440,10 @@ export default function Home() {
                 </div>
                 
                 <div className="flex items-center gap-4">
-                    <button className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:bg-white/10 transition-all active:scale-90 backdrop-blur-xl">
+                    <button className="more-prev w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:bg-white/10 transition-all active:scale-90 backdrop-blur-xl">
                       <ChevronLeft size={24}/>
                     </button>
-                    <button className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-blue-600 hover:border-blue-500 transition-all active:scale-90 backdrop-blur-xl">
+                    <button className="more-next w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-blue-600 hover:border-blue-500 transition-all active:scale-90 backdrop-blur-xl">
                       <ChevronRight size={24}/>
                     </button>
                 </div>
@@ -453,28 +453,32 @@ export default function Home() {
               <CategoryPills activeCategory={activeTab} setCategory={setActiveTab} />
             </div>
 
-            <motion.div 
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, margin: "-100px" }}
-              variants={{
-                hidden: { opacity: 0 },
-                show: {
-                  opacity: 1,
-                  transition: { staggerChildren: 0.1 }
-                }
+            <Swiper
+              modules={[Navigation, Autoplay, FreeMode]}
+              spaceBetween={30}
+              slidesPerView={2.2}
+              breakpoints={{
+                640: { slidesPerView: 3.2 },
+                768: { slidesPerView: 4.2 },
+                1024: { slidesPerView: 5.2 },
+                1280: { slidesPerView: 6.2 }
               }}
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-12 md:gap-x-10 md:gap-y-20"
+              navigation={{
+                prevEl: '.more-prev',
+                nextEl: '.more-next',
+              }}
+              freeMode={true}
+              className="w-full pb-10"
             >
               {videos.map((video, index) => {
                 const isLast = videos.length === index + 1;
                 return (
-                  <div key={video.id} ref={isLast ? lastVideoElementRef : null}>
+                  <SwiperSlide key={video.id} ref={isLast ? lastVideoElementRef : null}>
                     <PosterCard video={video} index={index} />
-                  </div>
+                  </SwiperSlide>
                 );
               })}
-            </motion.div>
+            </Swiper>
           </div>
 
           {loadingMore && (

@@ -35,33 +35,30 @@ export default function PosterCard({ video, index }) {
         />
         
         {/* Play Overlay */}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center backdrop-blur-[2px]">
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col items-center justify-center backdrop-blur-[4px] p-4 text-center">
           <motion.div 
             whileHover={{ scale: 1.1 }}
-            className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center shadow-[0_0_30px_rgba(37,99,235,0.6)]"
+            className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center shadow-[0_0_30px_rgba(37,99,235,0.6)] mb-4"
           >
             <Play size={28} fill="white" className="text-white ml-1" />
           </motion.div>
-        </div>
-
-        {/* Rating Badge */}
-        <div className="absolute top-4 right-4 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full border border-white/10 flex items-center gap-1.5 z-10">
-          <Star size={12} className="text-yellow-400 fill-yellow-400" />
-          <span className="text-white text-[10px] font-black uppercase tracking-widest">{video.rating || '8.5'}</span>
+          <h4 className="text-white font-black uppercase italic text-xs tracking-tighter leading-tight line-clamp-2 drop-shadow-2xl">
+            {video.title}
+          </h4>
         </div>
       </div>
 
       {/* Info Section */}
-      <div className="mt-6 px-2">
-        <h3 className="text-white font-black text-sm md:text-base uppercase italic tracking-tighter leading-tight line-clamp-1 group-hover:text-blue-400 transition-colors">
+      <div className="mt-4 px-2">
+        <h3 className="text-white/90 font-black text-sm uppercase italic tracking-tighter leading-tight line-clamp-1 group-hover:text-blue-400 transition-colors">
           {video.title}
         </h3>
-        <div className="flex items-center gap-3 mt-2">
-          <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">
+        <div className="flex items-center gap-3 mt-1.5">
+          <span className="text-white/30 text-[9px] font-black uppercase tracking-widest">
             {video.year || '2024'}
           </span>
-          <div className="w-1 h-1 rounded-full bg-white/20" />
-          <span className="px-2 py-0.5 bg-white/5 rounded-md text-white/40 text-[8px] font-black uppercase tracking-widest border border-white/5">
+          <div className="w-1 h-1 rounded-full bg-white/10" />
+          <span className="text-blue-500/50 text-[8px] font-black uppercase tracking-widest">
             {video.category || 'Movies'}
           </span>
         </div>
