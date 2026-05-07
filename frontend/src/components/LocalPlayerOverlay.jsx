@@ -645,108 +645,102 @@ export default function LocalPlayerOverlay() {
             )}
         </AnimatePresence>
 
-        {/* ULTRA-SLEEK SIDE JOG WHEEL (PHYSICAL DIAL LOOK) */}
+        {/* INDUSTRIAL ENDFIELD-STYLE JOG DIAL */}
         <AnimatePresence>
             {showExtraPanel && (
                 <motion.div 
                     initial={{ opacity: 0 }} 
                     animate={{ opacity: 1 }} 
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 z-[150] flex items-center justify-start overflow-hidden"
+                    className="absolute inset-0 z-[150] flex items-center justify-start overflow-hidden pointer-events-none"
                     onClick={() => setShowExtraPanel(false)}
                 >
-                    {/* The Interactive Wheel Area */}
+                    {/* The Interactive Terminal Area */}
                     <div 
                         onWheel={(e) => {
                             const sensitivity = 0.3;
-                            setWheelRotation(prev => prev - (e.deltaY * sensitivity));
+                            const maxRot = (14 - 1) * 18;
+                            setWheelRotation(prev => Math.max(0, Math.min(prev - (e.deltaY * sensitivity), maxRot)));
                         }}
-                        className="relative h-full w-[300px] flex items-center justify-start pointer-events-auto"
+                        className="relative h-full w-[450px] flex items-center justify-start pointer-events-auto"
                         onClick={e => e.stopPropagation()}
                     >
-                        {/* THE WHEEL CASING (FUTURISTIC FACETED HEX-DIAL) */}
-                        <div 
-                            className="absolute left-[-520px] w-[650px] h-[650px] pointer-events-none"
-                            style={{ 
-                                transform: `rotate(${-wheelRotation}deg)`,
-                                transition: 'transform 0.15s ease-out',
-                                clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' // Hexagonal/Octagonal Faceted Shape
-                            }}
-                        >
-                            {/* Metallic Surface with Faceted Borders */}
-                            <div className="absolute inset-0 border-[4px] border-white/20 bg-gradient-to-r from-white/[0.1] via-transparent to-transparent shadow-[inset_0_0_100px_rgba(255,255,255,0.05)]">
-                                {/* Precision Markers on Facets */}
-                                {[...Array(24)].map((_, i) => (
-                                    <div 
-                                        key={i} 
-                                        className="absolute w-6 h-1 bg-white/20" 
-                                        style={{ 
-                                            left: '95%', 
-                                            top: '50%', 
-                                            transform: `rotate(${i * 15}deg) translateX(-10px)` 
-                                        }} 
-                                    />
-                                ))}
-                                
-                                {/* Neon Edge Glow on the visible facet */}
-                                <div className="absolute top-0 right-0 w-2 h-full bg-gradient-to-b from-transparent via-white/40 to-transparent blur-sm" />
-                            </div>
+                        {/* DECORATIVE CONCENTRIC RINGS (ENDFIELD STYLE) */}
+                        <div className="absolute left-[-500px] w-[800px] h-[800px] flex items-center justify-center pointer-events-none">
+                            {/* Outer Dashed Ring */}
+                            <div className="absolute w-[750px] h-[750px] rounded-full border border-dashed border-white/5 opacity-40 animate-spin-slow" />
+                            {/* Solid Industrial Ring */}
+                            <div className="absolute w-[680px] h-[680px] rounded-full border-[2px] border-white/10" />
+                            {/* Glowing Arc Segment */}
+                            <div 
+                                className="absolute w-[700px] h-[700px] rounded-full border-t-[4px] border-white/20"
+                                style={{ transform: `rotate(${-wheelRotation * 0.5}deg)` }}
+                            />
+                            {/* Inner Status Ring */}
+                            <div className="absolute w-[600px] h-[600px] rounded-full border border-white/5 bg-gradient-to-r from-white/[0.02] to-transparent" />
+                            
+                            {/* Decorative Triangles & Data */}
+                            {[...Array(8)].map((_, i) => (
+                                <div key={i} className="absolute w-full h-full" style={{ transform: `rotate(${i * 45}deg)` }}>
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/20" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
+                                    <div className="absolute top-10 left-1/2 -translate-x-1/2 text-[6px] font-mono text-white/20 tracking-tighter">OS_TYPE_449</div>
+                                </div>
+                            ))}
                         </div>
 
-                        {/* Invisible Drag Area with Clamped Logic */}
+                        {/* Invisible Drag Area */}
                         <motion.div 
                             drag="y"
                             dragConstraints={{ top: -2000, bottom: 2000 }}
                             onDrag={(e, info) => {
                                 const sensitivity = 0.4;
-                                const maxRot = (14 - 1) * 18; // 14 icons * 18deg spacing
+                                const maxRot = (14 - 1) * 18;
                                 setWheelRotation(prev => {
-                                    const newVal = prev - (info.delta.y * sensitivity); // Inverted for natural feel
+                                    const newVal = prev - (info.delta.y * sensitivity);
                                     return Math.max(0, Math.min(newVal, maxRot));
                                 });
                             }}
-                            className="absolute left-[-200px] w-[350px] h-full z-10 cursor-grab active:cursor-grabbing"
+                            className="absolute left-[-200px] w-[450px] h-full z-10 cursor-grab active:cursor-grabbing"
                         />
 
-                        {/* Icons along the Far-Left Arc (Clamped Range) */}
-                        <div className="absolute left-[-440px] h-full w-[600px] flex items-center justify-center pointer-events-none">
+                        {/* Endfield Glass Panels (Icons) */}
+                        <div className="absolute left-[-420px] h-full w-[700px] flex items-center justify-center pointer-events-none">
                             {[
-                                { icon: <RefreshCcw size={18} />, label: "Rotation", color: "#34D399", onClick: toggleROT },
-                                { icon: <Camera size={18} />, label: "Capture", color: "#38BDF8", onClick: handleCapture },
-                                { icon: <Headphones size={18} />, label: "Audio", color: "#C084FC", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
-                                { icon: <Sliders size={18} />, label: "Equalizer", color: "#F472B6", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
-                                { icon: <ZoomIn size={18} />, label: "Zoom/Fit", color: "#FB923C", onClick: () => {
+                                { icon: <RefreshCcw size={16} />, label: "Rotation", color: "#FFFFFF", onClick: toggleROT },
+                                { icon: <Camera size={16} />, label: "Capture", color: "#FFFFFF", onClick: handleCapture },
+                                { icon: <Headphones size={16} />, label: "Audio", color: "#FFFFFF", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
+                                { icon: <Sliders size={16} />, label: "Equalizer", color: "#FFFFFF", onClick: () => { setSettingsTab('AUDIO'); setShowSettings(true); } },
+                                { icon: <ZoomIn size={16} />, label: "Zoom/Fit", color: "#FFFFFF", onClick: () => {
                                     const idx = ASPECT_RATIOS.indexOf(aspectRatio);
                                     setAspectRatio(ASPECT_RATIOS[(idx + 1) % ASPECT_RATIOS.length]);
                                 } },
-                                { icon: <Settings size={18} />, label: "Settings", color: "#94A3B8", onClick: () => setShowSettings(true) },
-                                { icon: <Monitor size={18} />, label: "Quality", color: "#4ADE80", onClick: () => setShowQualityMenu(true) },
-                                { icon: <MessageSquare size={18} />, label: "Subtitles", color: "#6366F1", onClick: () => { setSettingsTab('SUBTITLES'); setShowSettings(true); } },
-                                { icon: <Zap size={18} />, label: "Hardware", color: "#FACC15", onClick: () => setHwAccel(!hwAccel) },
-                                { icon: <PictureInPicture size={18} />, label: "PIP", color: "#86EFAC", onClick: () => videoRef.current?.requestPictureInPicture() },
-                                { icon: isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />, label: "Mute", color: "#FCD34D", onClick: () => setIsMuted(!isMuted) },
-                                { icon: <SkipForward size={18} />, label: "Next", color: "#A78BFA", onClick: () => { next(); showMXToast('Next Video', <SkipForward size={16}/>); } },
-                                { icon: <SkipBack size={18} />, label: "Prev", color: "#A78BFA", onClick: () => { prev(); showMXToast('Prev Video', <SkipBack size={16}/>); } },
-                                { icon: <Repeat size={18} />, label: "Loop", color: "#67E8F9", onClick: () => setLoopVideo(!loopVideo) }
+                                { icon: <Settings size={16} />, label: "Settings", color: "#FFFFFF", onClick: () => setShowSettings(true) },
+                                { icon: <Monitor size={16} />, label: "Quality", color: "#FFFFFF", onClick: () => setShowQualityMenu(true) },
+                                { icon: <MessageSquare size={16} />, label: "Subtitles", color: "#FFFFFF", onClick: () => { setSettingsTab('SUBTITLES'); setShowSettings(true); } },
+                                { icon: <Zap size={16} />, label: "Hardware", color: "#FFFFFF", onClick: () => setHwAccel(!hwAccel) },
+                                { icon: <PictureInPicture size={16} />, label: "PIP", color: "#FFFFFF", onClick: () => videoRef.current?.requestPictureInPicture() },
+                                { icon: isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />, label: "Mute", color: "#FFFFFF", onClick: () => setIsMuted(!isMuted) },
+                                { icon: <SkipForward size={16} />, label: "Next", color: "#FFFFFF", onClick: () => { next(); showMXToast('Next Video', <SkipForward size={16}/>); } },
+                                { icon: <SkipBack size={16} />, label: "Prev", color: "#FFFFFF", onClick: () => { prev(); showMXToast('Prev Video', <SkipBack size={16}/>); } },
+                                { icon: <Repeat size={16} />, label: "Loop", color: "#FFFFFF", onClick: () => setLoopVideo(!loopVideo) }
                             ].map((action, i) => {
                                 const angleStep = 18; 
-                                const totalRotation = (i * angleStep) - wheelRotation; // Icon i is centered when wheelRotation = i * 18
+                                const totalRotation = (i * angleStep) - wheelRotation;
                                 const rad = (totalRotation * Math.PI) / 180;
                                 
-                                // Calculate position
-                                const radius = 420; 
-                                const xPos = Math.cos(rad) * radius + 60; 
+                                const radius = 480; 
+                                const xPos = Math.cos(rad) * radius + 80; 
                                 const yPos = Math.sin(rad) * radius;
                                 
                                 const normalizedDist = Math.abs(yPos) / (radius * 1.2);
-                                const scale = Math.max(0.6, 1.2 - normalizedDist); 
+                                const scale = Math.max(0.6, 1.15 - normalizedDist); 
                                 const opacity = Math.max(0.1, 1 - normalizedDist);
-                                const isFocused = scale > 1.1;
+                                const isFocused = scale > 1.08;
 
                                 return (
                                     <motion.div
                                         key={i}
-                                        className="absolute pointer-events-auto flex items-center gap-4 group cursor-pointer"
+                                        className="absolute pointer-events-auto flex items-center pointer-events-auto cursor-pointer"
                                         style={{ 
                                             x: xPos,
                                             y: yPos,
@@ -756,26 +750,21 @@ export default function LocalPlayerOverlay() {
                                         }}
                                         onClick={(e) => { e.stopPropagation(); action.onClick(); }}
                                     >
+                                        {/* Trapezoidal Glass Panel */}
                                         <div 
-                                            className={`w-11 h-11 rounded-full bg-black/95 backdrop-blur-3xl border flex items-center justify-center transition-all duration-300 shadow-2xl ${isFocused ? 'border-white/40 scale-110 shadow-white/5' : 'border-white/5 opacity-40'}`}
-                                            style={{ color: isFocused ? action.color : '#444' }}
+                                            className={`relative w-28 h-14 bg-black/60 backdrop-blur-xl border-l-[3px] border-r-[1px] border-y-[1px] transition-all duration-300 flex items-center justify-between px-3 ${isFocused ? 'border-l-white border-white/40 scale-110' : 'border-white/10 opacity-60'}`}
+                                            style={{ clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)' }}
                                         >
-                                            <div className={isFocused ? "filter drop-shadow-[0_0_6px_currentColor]" : ""}>
+                                            <div className={`transition-all duration-300 ${isFocused ? 'text-white' : 'text-white/40'}`}>
                                                 {action.icon}
                                             </div>
-                                        </div>
-                                        {isFocused && (
-                                            <motion.div 
-                                                initial={{ x: -8, opacity: 0 }} 
-                                                animate={{ x: 0, opacity: 1 }}
-                                                className="flex flex-col min-w-[100px]"
-                                            >
-                                                <span className="text-white font-black text-[8px] uppercase tracking-[0.4em] italic drop-shadow-lg">
+                                            <div className="flex flex-col items-end mr-1">
+                                                <span className={`text-[8px] font-black uppercase tracking-tighter transition-all duration-300 ${isFocused ? 'text-white' : 'text-white/40'}`}>
                                                     {action.label}
                                                 </span>
-                                                <div className="h-0.5 w-6 bg-white mt-1 rounded-full shadow-lg" />
-                                            </motion.div>
-                                        )}
+                                                <div className={`h-[1px] w-8 mt-0.5 transition-all duration-300 ${isFocused ? 'bg-white' : 'bg-white/10'}`} />
+                                            </div>
+                                        </div>
                                     </motion.div>
                                 );
                             })}
