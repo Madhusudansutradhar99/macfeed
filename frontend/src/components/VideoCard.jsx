@@ -94,7 +94,7 @@ const VideoCard = memo(({ video }) => {
     <motion.div
       whileHover={{ y: -10 }}
       whileTap={{ scale: 0.98 }}
-      className={`group cursor-pointer flex flex-col gap-3 w-full transition-opacity duration-300 ${isSaving ? 'opacity-50 pointer-events-none' : ''}`}
+      className={`video-card group cursor-pointer flex flex-col gap-3 w-full transition-opacity duration-300 ${isSaving ? 'opacity-50 pointer-events-none' : ''}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={handleClick}

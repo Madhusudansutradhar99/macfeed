@@ -229,7 +229,7 @@ export default function Header() {
 
       <div ref={dropdownRef} className="flex-1 max-w-4xl mx-auto relative z-[6000]">
         <div
-          className={`flex items-center transition-all duration-500 px-4 py-1.5 rounded-full border-2 ${isFocused ? 'bg-secondary/95 border-accent ring-4 ring-accent/20 w-full shadow-2xl' : 'bg-secondary/40 border-primary w-full hover:bg-secondary/60 hover:border-accent/40'}`}
+          className={`search-container flex items-center transition-all duration-500 px-4 py-1.5 rounded-full border-2 ${isFocused ? 'bg-secondary/95 border-accent ring-4 ring-accent/20 w-full shadow-2xl' : 'bg-secondary/40 border-primary w-full hover:bg-secondary/60 hover:border-accent/40'}`}
           style={isFocused ? { borderColor: '#ff0000', boxShadow: '0 0 20px rgba(255, 0, 0, 0.3)' } : {}}
         >
           <div className={`flex items-center justify-center p-2 rounded-full transition-all ${isFocused || isHeaderHovered ? 'text-accent' : 'text-secondary'}`} style={isFocused || isHeaderHovered ? { color: 'var(--accent-color)' } : {}}>

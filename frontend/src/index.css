@@ -28,20 +28,17 @@
   --accent-hover: #cc0000;
 }
 
-.light button, 
-.light input, 
-.light select,
-.light [role="button"],
 .light .video-card, 
 .light .poster-card,
 .light .hero-card,
-.light .category-pill,
-.light .bg-secondary,
-.light header,
-.light aside {
-  border: 2px solid #ff0000 !important;
-  box-shadow: 0 0 10px rgba(255, 0, 0, 0.2) !important;
-  transition: all 0.3s ease;
+.light .search-container {
+  border: 1px solid rgba(255, 0, 0, 0.3) !important;
+  box-shadow: none !important;
+}
+
+.light .search-container:focus-within {
+  border-color: #ff0000 !important;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.1) !important;
 }
 
 .blue {
