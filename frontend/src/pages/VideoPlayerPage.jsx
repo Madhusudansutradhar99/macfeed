@@ -118,26 +118,28 @@ export default function VideoPlayerPage() {
           <VideoPlayer video={video} onClose={() => navigate(-1)} />
         </div>
 
-        <div className="mt-8 flex flex-col md:flex-row justify-between items-start gap-6">
+        <div className="mt-6 flex flex-col md:flex-row justify-between items-start gap-4">
           <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl font-black text-primary italic uppercase tracking-tighter leading-tight">{video.title}</h1>
-            <div className="flex items-center gap-4 mt-3">
-              <span className="px-3 py-1 bg-accent/20 text-accent text-[10px] font-black rounded-lg uppercase border border-accent/20" style={{ color: 'var(--accent-color)', borderColor: 'var(--accent-color)', backgroundColor: 'var(--accent-color)22' }}>Global</span>
-              <span className="text-secondary text-[10px] font-bold uppercase tracking-widest">{video.category}</span>
+            <h1 className="text-xl sm:text-2xl font-black text-primary italic uppercase tracking-tighter leading-tight">{video.title}</h1>
+            <div className="flex items-center gap-3 mt-2">
+              <span className="px-2 py-0.5 bg-accent/20 text-accent text-[8px] font-black rounded-md uppercase border border-accent/20" style={{ color: 'var(--accent-color)', borderColor: 'var(--accent-color)', backgroundColor: 'var(--accent-color)22' }}>Global</span>
+              <span className="text-secondary text-[9px] font-bold uppercase tracking-widest">{video.category}</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="p-3 bg-secondary rounded-2xl hover:bg-primary/10 transition-colors border border-primary text-primary"><ThumbsUp className="w-5 h-5" /></button>
-            <button className="p-3 bg-secondary rounded-2xl hover:bg-primary/10 transition-colors border border-primary text-primary"><Share2 className="w-5 h-5" /></button>
+          <div className="flex items-center gap-2">
+            <button className="p-2.5 bg-secondary rounded-xl hover:bg-primary/10 transition-colors border border-primary text-primary"><ThumbsUp className="w-4 h-4" /></button>
+            <button className="p-2.5 bg-secondary rounded-xl hover:bg-primary/10 transition-colors border border-primary text-primary"><Share2 className="w-4 h-4" /></button>
           </div>
         </div>
 
-        <div className="mt-12 p-8 bg-secondary rounded-[2.5rem] border border-primary transition-colors duration-500">
-          <p className="text-secondary text-sm leading-relaxed">{video.description || 'No description provided for this video.'}</p>
-        </div>
+        {video.description && (
+          <div className="mt-6 p-6 bg-secondary/30 rounded-3xl border border-primary transition-colors duration-500">
+            <p className="text-secondary text-xs leading-relaxed whitespace-pre-wrap">{video.description}</p>
+          </div>
+        )}
 
         {/* Related Section at BOTTOM */}
-        <div className="mt-12">
+        <div className="mt-8">
           {video.youtube_id ? (
             <YouTubeRelatedVideos
               currentVideoUrl={video.video_url}
