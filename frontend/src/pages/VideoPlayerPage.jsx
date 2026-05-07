@@ -106,40 +106,40 @@ export default function VideoPlayerPage() {
 
   return (
     <div className="min-h-screen bg-primary text-primary transition-colors duration-500">
-      <div className="flex flex-col w-full p-4 sm:p-6 max-w-[1400px] mx-auto">
-        {/* Back Button */}
-        <button onClick={() => window.history.back()} className="flex items-center gap-2 text-secondary hover:text-primary mb-6 w-fit transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-xs font-black uppercase tracking-widest">Back</span>
+      <div className="flex flex-col w-full p-0 sm:p-6 max-w-[1400px] mx-auto">
+        {/* Back Button - Compact on Mobile */}
+        <button onClick={() => window.history.back()} className="flex items-center gap-2 text-secondary hover:text-primary mb-2 sm:mb-6 p-4 sm:p-0 w-fit transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-[10px] font-black uppercase tracking-widest">Back</span>
         </button>
 
-        {/* Main Video Section */}
-        <div className="w-full aspect-video rounded-3xl overflow-hidden bg-black shadow-2xl border border-primary transition-colors duration-500">
+        {/* Main Video Section - Edge to Edge on Mobile */}
+        <div className="w-full aspect-video sm:rounded-3xl overflow-hidden bg-black shadow-2xl border-b sm:border border-primary transition-colors duration-500">
           <VideoPlayer video={video} onClose={() => navigate(-1)} />
         </div>
 
-        <div className="mt-6 flex flex-col md:flex-row justify-between items-start gap-4">
+        <div className="mt-4 sm:mt-6 px-4 sm:px-0 flex flex-col md:flex-row justify-between items-start gap-3">
           <div className="flex-1">
-            <h1 className="text-xl sm:text-2xl font-black text-primary italic uppercase tracking-tighter leading-tight">{video.title}</h1>
-            <div className="flex items-center gap-3 mt-2">
-              <span className="px-2 py-0.5 bg-accent/20 text-accent text-[8px] font-black rounded-md uppercase border border-accent/20" style={{ color: 'var(--accent-color)', borderColor: 'var(--accent-color)', backgroundColor: 'var(--accent-color)22' }}>Global</span>
-              <span className="text-secondary text-[9px] font-bold uppercase tracking-widest">{video.category}</span>
+            <h1 className="text-lg sm:text-2xl font-black text-primary italic uppercase tracking-tighter leading-tight">{video.title}</h1>
+            <div className="flex items-center gap-3 mt-1.5">
+              <span className="px-1.5 py-0.5 bg-accent/20 text-accent text-[7px] font-black rounded-md uppercase border border-accent/20" style={{ color: 'var(--accent-color)', borderColor: 'var(--accent-color)', backgroundColor: 'var(--accent-color)22' }}>Global</span>
+              <span className="text-secondary text-[8px] font-bold uppercase tracking-widest">{video.category}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="p-2.5 bg-secondary rounded-xl hover:bg-primary/10 transition-colors border border-primary text-primary"><ThumbsUp className="w-4 h-4" /></button>
-            <button className="p-2.5 bg-secondary rounded-xl hover:bg-primary/10 transition-colors border border-primary text-primary"><Share2 className="w-4 h-4" /></button>
+            <button className="p-2 bg-secondary rounded-lg hover:bg-primary/10 transition-colors border border-primary text-primary"><ThumbsUp className="w-3.5 h-3.5" /></button>
+            <button className="p-2 bg-secondary rounded-lg hover:bg-primary/10 transition-colors border border-primary text-primary"><Share2 className="w-3.5 h-3.5" /></button>
           </div>
         </div>
 
         {video.description && (
-          <div className="mt-6 p-6 bg-secondary/30 rounded-3xl border border-primary transition-colors duration-500">
-            <p className="text-secondary text-xs leading-relaxed whitespace-pre-wrap">{video.description}</p>
+          <div className="mt-4 mx-4 sm:mx-0 p-4 bg-secondary/30 rounded-2xl border border-primary transition-colors duration-500">
+            <p className="text-secondary text-[10px] leading-relaxed whitespace-pre-wrap">{video.description}</p>
           </div>
         )}
 
         {/* Related Section at BOTTOM */}
-        <div className="mt-8">
+        <div className="mt-6 px-4 sm:px-0">
           {video.youtube_id ? (
             <YouTubeRelatedVideos
               currentVideoUrl={video.video_url}

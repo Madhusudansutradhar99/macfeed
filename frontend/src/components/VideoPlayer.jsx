@@ -17,6 +17,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useVideoMiniPlayer } from '../context/VideoPlayerContext';
+import { ScreenOrientation } from '@capacitor/screen-orientation';
 
 const formatTime = (s) => {
   if (!s || isNaN(s)) return '0:00';
@@ -394,10 +395,17 @@ export default function VideoPlayer({ video, onLike, onClose, onTheaterChange, o
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
-  const toggleFullscreen = useCallback(() => {
+  const toggleFullscreen = useCallback(async () => {
     if (window.innerWidth <= 768) {
-      setIsPortraitFs(!isPortraitFs);
-      showToast(!isPortraitFs ? '⛶ Fullscreen' : 'Exit Fullscreen');
+      if (!isPortraitFs) {
+        setIsPortraitFs(true);
+        showToast('⛶ Landscape FS');
+        try { await ScreenOrientation.lock({ orientation: 'landscape' }); } catch (e) { }
+      } else {
+        setIsPortraitFs(false);
+        showToast('Exit Fullscreen');
+        try { await ScreenOrientation.unlock(); } catch (e) { }
+      }
     } else {
       if (!document.fullscreenElement) containerRef.current?.requestFullscreen();
       else document.exitFullscreen();
