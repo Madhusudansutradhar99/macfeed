@@ -645,68 +645,60 @@ export default function LocalPlayerOverlay() {
             )}
         </AnimatePresence>
 
-        {/* COMPACT LEFT-ALIGNED ENDFIELD TERMINAL */}
+        {/* HALF-CIRCLE ENDFIELD MASTER TERMINAL (STYLISH CONNECTIONS) */}
         <AnimatePresence>
             {showExtraPanel && (
                 <motion.div 
-                    initial={{ opacity: 0, x: -50 }} 
+                    initial={{ opacity: 0, x: -80 }} 
                     animate={{ opacity: 1, x: 0 }} 
-                    exit={{ opacity: 0, x: -50 }}
+                    exit={{ opacity: 0, x: -80 }}
                     className="absolute inset-0 z-[150] flex items-center justify-start overflow-hidden pointer-events-none"
                     onClick={() => setShowExtraPanel(false)}
                 >
-                    {/* The Interactive Terminal Area (Compact & Side-Aligned) */}
+                    {/* Terminal Area (Visible Half-Circle Alignment) */}
                     <div 
                         onWheel={(e) => {
                             const sensitivity = 0.3;
                             const maxRot = (14 - 1) * 18;
                             setWheelRotation(prev => Math.max(0, Math.min(prev - (e.deltaY * sensitivity), maxRot)));
                         }}
-                        className="relative h-full w-[350px] flex items-center justify-start pointer-events-auto"
+                        className="relative h-full w-[400px] flex items-center justify-start pointer-events-auto"
                         onClick={e => e.stopPropagation()}
                     >
-                        {/* COMPACT MULTI-LAYERED TERMINAL */}
-                        <div className="absolute left-[-320px] w-[450px] h-[450px] flex items-center justify-center pointer-events-none">
+                        {/* THE RINGS (HALF-CIRCLE VIEW) */}
+                        <div className="absolute left-[-160px] w-[400px] h-[400px] flex items-center justify-center pointer-events-none">
                             
-                            {/* 1. OUTERMOST SYSTEM RING (ANIMATED GOLD) */}
+                            {/* Outer Pulsing Gold Ring */}
                             <motion.div 
                                 animate={{ rotate: 360 }}
-                                transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
-                                className="absolute w-[440px] h-[440px] rounded-full border-[2px] border-dashed border-yellow-500/20" 
+                                transition={{ repeat: Infinity, duration: 25, ease: 'linear' }}
+                                className="absolute w-[400px] h-[400px] rounded-full border-[1.5px] border-dashed border-yellow-500/30" 
                             />
 
-                            {/* 2. SECONDARY DATA RING (CYAN GLOW) */}
+                            {/* Inner Rotating Cyan Ring */}
                             <motion.div 
                                 animate={{ rotate: -360 }}
-                                transition={{ repeat: Infinity, duration: 15, ease: 'linear' }}
-                                className="absolute w-[400px] h-[400px] rounded-full border border-cyan-400/20 shadow-[0_0_15px_rgba(34,211,238,0.1)]"
+                                transition={{ repeat: Infinity, duration: 18, ease: 'linear' }}
+                                className="absolute w-[340px] h-[340px] rounded-full border-[2px] border-cyan-400/20 shadow-[0_0_20px_rgba(34,211,238,0.15)]"
                             >
-                                {[...Array(24)].map((_, i) => (
-                                    <div key={i} className="absolute w-0.5 h-2 bg-cyan-400/40" style={{ left: '50%', top: 0, transform: `rotate(${i * 15}deg)` }} />
+                                {[...Array(36)].map((_, i) => (
+                                    <div key={i} className="absolute w-0.5 h-3 bg-cyan-400/40" style={{ left: '50%', top: 0, transform: `rotate(${i * 10}deg)` }} />
                                 ))}
                             </motion.div>
 
-                            {/* 3. TIGHT INNER RING (GOLD PULSE) */}
-                            <motion.div 
-                                animate={{ scale: [1, 1.02, 1] }}
-                                transition={{ repeat: Infinity, duration: 2 }}
-                                className="absolute w-[360px] h-[360px] rounded-full border-[1px] border-yellow-400/10"
-                            />
-
-                            {/* 4. THE CORE HUB (COMPACT & BRIGHT) */}
-                            <div className="absolute w-[320px] h-[320px] rounded-full flex items-center justify-center border border-white/5 bg-radial-gradient from-yellow-500/[0.08] to-transparent">
+                            {/* Core Hub Pulse */}
+                            <div className="absolute w-[280px] h-[280px] rounded-full flex items-center justify-center border border-white/5 bg-radial-gradient from-yellow-500/[0.1] to-transparent">
                                 <motion.div 
-                                    animate={{ rotate: 360 }}
-                                    transition={{ repeat: Infinity, duration: 8, ease: 'linear' }}
-                                    className="absolute w-[140px] h-[140px] border-[1.5px] border-yellow-400/40 rounded-full border-dashed p-3"
+                                    animate={{ scale: [1, 1.05, 1] }}
+                                    transition={{ repeat: Infinity, duration: 1.5 }}
+                                    className="w-[100px] h-[100px] border border-cyan-400/20 rounded-full flex items-center justify-center"
                                 >
-                                    <div className="w-full h-full rounded-full border border-cyan-400/10" />
+                                    <div className="w-2 h-2 bg-yellow-400 rounded-full shadow-[0_0_10px_#fbbf24]" />
                                 </motion.div>
-                                <div className="absolute text-[7px] font-mono text-yellow-400/60 tracking-[0.4em] font-black italic">LINK_ESTABLISHED</div>
                             </div>
                         </div>
 
-                        {/* Invisible Drag Area */}
+                        {/* Drag Area */}
                         <motion.div 
                             drag="y"
                             dragConstraints={{ top: -2000, bottom: 2000 }}
@@ -718,11 +710,11 @@ export default function LocalPlayerOverlay() {
                                     return Math.max(0, Math.min(newVal, maxRot));
                                 });
                             }}
-                            className="absolute left-[-100px] w-[350px] h-full z-10 cursor-grab active:cursor-grabbing"
+                            className="absolute left-[-80px] w-[400px] h-full z-10 cursor-grab active:cursor-grabbing"
                         />
 
-                        {/* Endfield Panels (Yellow/Cyan Hybrid) */}
-                        <div className="absolute left-[-300px] h-full w-[600px] flex items-center justify-center pointer-events-none">
+                        {/* Panels with Stylish Connections Originating from Ring */}
+                        <div className="absolute left-[-160px] h-full w-[600px] flex items-center justify-center pointer-events-none">
                             {[
                                 { icon: <RefreshCcw size={14} />, label: "Rotation", color: "#fbbf24", onClick: toggleROT },
                                 { icon: <Camera size={14} />, label: "Capture", color: "#fbbf24", onClick: handleCapture },
@@ -746,13 +738,13 @@ export default function LocalPlayerOverlay() {
                                 const totalRotation = (i * angleStep) - wheelRotation;
                                 const rad = (totalRotation * Math.PI) / 180;
                                 
-                                const radius = 260; // Tighter radius for compact look
-                                const xPos = Math.cos(rad) * radius + 50; 
+                                const radius = 220; // Hub/Ring edge radius
+                                const xPos = Math.cos(rad) * radius + 150; // Panel X position
                                 const yPos = Math.sin(rad) * radius;
                                 
-                                const normalizedDist = Math.abs(yPos) / (radius * 1.2);
-                                const scale = Math.max(0.65, 1.15 - normalizedDist); 
-                                const opacity = Math.max(0.15, 1 - normalizedDist);
+                                const normalizedDist = Math.abs(yPos) / (radius * 1.5);
+                                const scale = Math.max(0.7, 1.15 - normalizedDist); 
+                                const opacity = Math.max(0.2, 1 - normalizedDist);
                                 const isFocused = scale > 1.05;
 
                                 return (
@@ -768,38 +760,40 @@ export default function LocalPlayerOverlay() {
                                         }}
                                         onClick={(e) => { e.stopPropagation(); action.onClick(); }}
                                     >
-                                        {/* Precision Circuit Wires (Yellow/Cyan) */}
-                                        <div className={`absolute left-[-80px] w-[90px] h-10 pointer-events-none transition-opacity duration-300 ${isFocused ? 'opacity-100' : 'opacity-20'}`}>
-                                            <svg width="90" height="40" viewBox="0 0 90 40" fill="none">
-                                                <path d="M0 20 H50 L60 10 H90" stroke={action.color} strokeWidth="0.5" strokeOpacity="0.4" />
-                                                <path d="M0 20 H50 L60 30 H90" stroke={action.color} strokeWidth="0.5" strokeOpacity="0.4" />
-                                                <circle cx="0" cy="20" r="1.5" fill={action.color} />
+                                        {/* STYLISH WIRE (ORIGINATING FROM RING EDGE) */}
+                                        <div className={`absolute left-[-110px] w-[120px] h-10 pointer-events-none transition-opacity duration-300 ${isFocused ? 'opacity-100' : 'opacity-20'}`}>
+                                            <svg width="120" height="40" viewBox="0 0 120 40" fill="none">
+                                                {/* Connecting Path from Ring Edge (x=0) to Panel (x=120) with stylish 45-deg bends */}
+                                                <path d="M0 20 H60 L80 5 H120" stroke={action.color} strokeWidth="0.8" strokeOpacity="0.5" />
+                                                <path d="M0 20 H60 L80 35 H120" stroke={action.color} strokeWidth="0.8" strokeOpacity="0.5" />
+                                                {/* Joint Node */}
+                                                <circle cx="0" cy="20" r="2" fill={action.color} />
                                                 {isFocused && (
                                                     <motion.circle 
-                                                        animate={{ cx: [0, 90] }}
-                                                        transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
-                                                        r="1" fill="white" 
+                                                        animate={{ cx: [0, 120] }}
+                                                        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                                                        r="1.5" fill="white" 
                                                     />
                                                 )}
                                             </svg>
                                         </div>
 
-                                        {/* Endfield Style Panel (Cyan/Gold Hybrid) */}
+                                        {/* Endfield Style Panel */}
                                         <div 
-                                            className={`relative w-24 h-10 bg-black/90 backdrop-blur-3xl border-l-[3px] border-r-[0.5px] border-y-[0.5px] transition-all duration-300 flex items-center justify-between px-2 ${isFocused ? `border-l-[${action.color}] border-white/20 shadow-[0_0_20px_${action.color}33]` : 'border-white/5 opacity-40'}`}
+                                            className={`relative w-28 h-12 bg-black/95 backdrop-blur-3xl border-l-[4px] border-r-[1.5px] border-y-[1.5px] transition-all duration-300 flex items-center justify-between px-3 ${isFocused ? `border-l-[${action.color}] border-white/40 shadow-[0_0_25px_${action.color}33]` : 'border-white/5 opacity-50'}`}
                                             style={{ 
-                                                clipPath: 'polygon(12% 0%, 100% 0%, 88% 100%, 0% 100%)',
-                                                borderLeftColor: isFocused ? action.color : 'rgba(255,255,255,0.05)'
+                                                clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)',
+                                                borderLeftColor: isFocused ? action.color : 'rgba(255,255,255,0.1)'
                                             }}
                                         >
                                             <div className={`transition-all duration-300 ${isFocused ? 'scale-110' : 'text-white/40'}`} style={{ color: isFocused ? action.color : 'rgba(255,255,255,0.4)' }}>
                                                 {action.icon}
                                             </div>
                                             <div className="flex flex-col items-end mr-1">
-                                                <span className={`text-[7px] font-black uppercase tracking-tight transition-all duration-300 ${isFocused ? 'text-white' : 'text-white/40'}`}>
+                                                <span className={`text-[8px] font-black uppercase tracking-tighter transition-all duration-300 ${isFocused ? 'text-white' : 'text-white/40'}`}>
                                                     {action.label}
                                                 </span>
-                                                {isFocused && <motion.div layoutId="endfield-line-hybrid" className="h-[0.5px] w-6 mt-0.5" style={{ backgroundColor: action.color }} />}
+                                                {isFocused && <motion.div layoutId="endfield-line-final" className="h-[1px] w-8 mt-1" style={{ backgroundColor: action.color }} />}
                                             </div>
                                         </div>
                                     </motion.div>
