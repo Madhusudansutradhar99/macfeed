@@ -4,6 +4,21 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  caret-color: transparent;
+}
+
+input, textarea, [contenteditable="true"] {
+  caret-color: auto !important;
+}
+
 :root {
   --bg-primary: #000000;
   --bg-secondary: #0A0A0F;
@@ -79,6 +94,10 @@ body {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent !important;
   touch-action: manipulation;
+}
+
+input, textarea, [contenteditable="true"] {
+  caret-color: auto !important;
 }
 
 #root {

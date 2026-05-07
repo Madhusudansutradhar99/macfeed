@@ -26,31 +26,17 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        navigateFallback: '/index.html',
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'google-fonts-stylesheets' }
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: { cacheName: 'pages' }
           },
           {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'google-fonts-webfonts' }
-          },
-          {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
+            urlPattern: /\.(?:js|css)$/,
             handler: 'StaleWhileRevalidate',
-            options: { cacheName: 'images' }
-          },
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/render\/image\/.*/i,
-            handler: 'StaleWhileRevalidate',
-            options: { cacheName: 'supabase-images' }
-          },
-          {
-            urlPattern: /\/assets\/.*\.js$/,
-            handler: 'StaleWhileRevalidate',
-            options: { cacheName: 'assets-js' }
+            options: { cacheName: 'static-resources' }
           }
         ]
       }
