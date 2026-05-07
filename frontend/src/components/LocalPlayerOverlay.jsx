@@ -645,7 +645,7 @@ export default function LocalPlayerOverlay() {
             )}
         </AnimatePresence>
 
-        {/* ULTRA-SLEEK SIDE JOG WHEEL (HALF-WHEEL) */}
+        {/* ULTRA-SLEEK SIDE JOG WHEEL (PHYSICAL DIAL LOOK) */}
         <AnimatePresence>
             {showExtraPanel && (
                 <motion.div 
@@ -653,7 +653,7 @@ export default function LocalPlayerOverlay() {
                     animate={{ opacity: 1 }} 
                     exit={{ opacity: 0 }}
                     className="absolute inset-0 z-[150] flex items-center justify-start overflow-hidden"
-                    onClick={() => setShowExtraPanel(false)} // Auto-hide when clicking anywhere outside icons
+                    onClick={() => setShowExtraPanel(false)}
                 >
                     {/* The Interactive Wheel Area */}
                     <div 
@@ -661,10 +661,32 @@ export default function LocalPlayerOverlay() {
                             const sensitivity = 0.3;
                             setWheelRotation(prev => prev - (e.deltaY * sensitivity));
                         }}
-                        className="relative h-full w-[350px] flex items-center justify-start pointer-events-auto"
-                        onClick={e => e.stopPropagation()} // Prevent closing when clicking wheel area
+                        className="relative h-full w-[300px] flex items-center justify-start pointer-events-auto"
+                        onClick={e => e.stopPropagation()}
                     >
-                        
+                        {/* THE WHEEL CASING (SUBTLE PHYSICAL RING) */}
+                        <div 
+                            className="absolute left-[-480px] w-[600px] h-[600px] rounded-full border border-white/[0.03] bg-gradient-to-r from-white/[0.02] to-transparent pointer-events-none"
+                            style={{ 
+                                boxShadow: 'inset -20px 0 50px rgba(255,255,255,0.01)',
+                                transform: `rotate(${wheelRotation}deg)`,
+                                transition: 'transform 0.1s linear'
+                            }}
+                        >
+                            {/* Subtle Tick Marks on the Wheel */}
+                            {[...Array(24)].map((_, i) => (
+                                <div 
+                                    key={i} 
+                                    className="absolute w-2 h-0.5 bg-white/10" 
+                                    style={{ 
+                                        left: '100%', 
+                                        top: '50%', 
+                                        transform: `rotate(${i * 15}deg) translateX(-20px)` 
+                                    }} 
+                                />
+                            ))}
+                        </div>
+
                         {/* Invisible Drag Area */}
                         <motion.div 
                             drag="y"
@@ -673,11 +695,11 @@ export default function LocalPlayerOverlay() {
                                 const sensitivity = 0.3;
                                 setWheelRotation(prev => prev + (info.delta.y * sensitivity));
                             }}
-                            className="absolute left-[-150px] w-[300px] h-full z-10 cursor-grab active:cursor-grabbing"
+                            className="absolute left-[-200px] w-[350px] h-full z-10 cursor-grab active:cursor-grabbing"
                         />
 
-                        {/* Icons along the Far-Left Arc (Half-Wheel) */}
-                        <div className="absolute left-[-420px] h-full w-[600px] flex items-center justify-center pointer-events-none">
+                        {/* Icons along the Far-Left Arc (Tighter Spacing) */}
+                        <div className="absolute left-[-440px] h-full w-[600px] flex items-center justify-center pointer-events-none">
                             {[
                                 { icon: <RefreshCcw size={18} />, label: "Rotation", color: "#34D399", onClick: toggleROT },
                                 { icon: <Camera size={18} />, label: "Capture", color: "#38BDF8", onClick: handleCapture },
@@ -697,16 +719,15 @@ export default function LocalPlayerOverlay() {
                                 { icon: <SkipBack size={18} />, label: "Prev", color: "#A78BFA", onClick: () => { prev(); showMXToast('Prev Video', <SkipBack size={16}/>); } },
                                 { icon: <Repeat size={18} />, label: "Loop", color: "#67E8F9", onClick: () => setLoopVideo(!loopVideo) }
                             ].map((action, i) => {
-                                const angleStep = 22; 
+                                const angleStep = 18; // Tighter Spacing
                                 const totalRotation = wheelRotation + (i * angleStep) - 90;
                                 const rad = (totalRotation * Math.PI) / 180;
                                 
-                                // Calculate position on the circle (FAR-LEFT SLIVER)
-                                const radius = 400; 
-                                const xPos = Math.cos(rad) * radius + 100; // Shifted far left so only tip shows
+                                // Calculate position (EVEN FURTHER LEFT)
+                                const radius = 420; 
+                                const xPos = Math.cos(rad) * radius + 60; 
                                 const yPos = Math.sin(rad) * radius;
                                 
-                                // Scale and opacity based on proximity to center
                                 const normalizedDist = Math.abs(yPos) / (radius * 1.2);
                                 const scale = Math.max(0.6, 1.2 - normalizedDist); 
                                 const opacity = Math.max(0.1, 1 - normalizedDist);
@@ -715,7 +736,7 @@ export default function LocalPlayerOverlay() {
                                 return (
                                     <motion.div
                                         key={i}
-                                        className="absolute pointer-events-auto flex items-center gap-5 group cursor-pointer"
+                                        className="absolute pointer-events-auto flex items-center gap-4 group cursor-pointer"
                                         style={{ 
                                             x: xPos,
                                             y: yPos,
@@ -726,23 +747,23 @@ export default function LocalPlayerOverlay() {
                                         onClick={(e) => { e.stopPropagation(); action.onClick(); }}
                                     >
                                         <div 
-                                            className={`w-12 h-12 rounded-full bg-black/90 backdrop-blur-3xl border flex items-center justify-center transition-all duration-300 shadow-2xl ${isFocused ? 'border-white/60 scale-110 shadow-white/10' : 'border-white/10 opacity-50'}`}
-                                            style={{ color: isFocused ? action.color : '#666' }}
+                                            className={`w-11 h-11 rounded-full bg-black/95 backdrop-blur-3xl border flex items-center justify-center transition-all duration-300 shadow-2xl ${isFocused ? 'border-white/40 scale-110 shadow-white/5' : 'border-white/5 opacity-40'}`}
+                                            style={{ color: isFocused ? action.color : '#444' }}
                                         >
-                                            <div className={isFocused ? "filter drop-shadow-[0_0_8px_currentColor]" : ""}>
+                                            <div className={isFocused ? "filter drop-shadow-[0_0_6px_currentColor]" : ""}>
                                                 {action.icon}
                                             </div>
                                         </div>
                                         {isFocused && (
                                             <motion.div 
-                                                initial={{ x: -10, opacity: 0 }} 
+                                                initial={{ x: -8, opacity: 0 }} 
                                                 animate={{ x: 0, opacity: 1 }}
-                                                className="flex flex-col min-w-[120px]"
+                                                className="flex flex-col min-w-[100px]"
                                             >
-                                                <span className="text-white font-black text-[9px] uppercase tracking-[0.3em] italic drop-shadow-lg">
+                                                <span className="text-white font-black text-[8px] uppercase tracking-[0.4em] italic drop-shadow-lg">
                                                     {action.label}
                                                 </span>
-                                                <div className="h-0.5 w-8 bg-white mt-1 rounded-full shadow-lg" />
+                                                <div className="h-0.5 w-6 bg-white mt-1 rounded-full shadow-lg" />
                                             </motion.div>
                                         )}
                                     </motion.div>
