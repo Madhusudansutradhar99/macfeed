@@ -645,56 +645,70 @@ export default function LocalPlayerOverlay() {
             )}
         </AnimatePresence>
 
-        {/* HALF-CIRCLE ENDFIELD MASTER TERMINAL (STYLISH CONNECTIONS) */}
+        {/* HYPER-TECH ENDFIELD TERMINAL (ZERO-GAP & DANGEROUS ANIMATIONS) */}
         <AnimatePresence>
             {showExtraPanel && (
                 <motion.div 
-                    initial={{ opacity: 0, x: -80 }} 
-                    animate={{ opacity: 1, x: 0 }} 
-                    exit={{ opacity: 0, x: -80 }}
+                    initial={{ opacity: 0, x: -100, scale: 0.95 }} 
+                    animate={{ opacity: 1, x: 0, scale: 1 }} 
+                    exit={{ opacity: 0, x: -100, scale: 0.95 }}
                     className="absolute inset-0 z-[150] flex items-center justify-start overflow-hidden pointer-events-none"
                     onClick={() => setShowExtraPanel(false)}
                 >
-                    {/* Terminal Area (Visible Half-Circle Alignment) */}
+                    {/* The Master Terminal (Far-Left Alignment) */}
                     <div 
                         onWheel={(e) => {
                             const sensitivity = 0.3;
                             const maxRot = (14 - 1) * 18;
                             setWheelRotation(prev => Math.max(0, Math.min(prev - (e.deltaY * sensitivity), maxRot)));
                         }}
-                        className="relative h-full w-[400px] flex items-center justify-start pointer-events-auto"
+                        className="relative h-full w-[450px] flex items-center justify-start pointer-events-auto"
                         onClick={e => e.stopPropagation()}
                     >
-                        {/* THE RINGS (HALF-CIRCLE VIEW) */}
-                        <div className="absolute left-[-160px] w-[400px] h-[400px] flex items-center justify-center pointer-events-none">
+                        {/* THE RINGS (HIGH-TECH INDUSTRIAL) */}
+                        <div className="absolute left-[-200px] w-[500px] h-[500px] flex items-center justify-center pointer-events-none">
                             
-                            {/* Outer Pulsing Gold Ring */}
+                            {/* 1. SCANNING BEAM (SWEEP ANIMATION) */}
                             <motion.div 
-                                animate={{ rotate: 360 }}
-                                transition={{ repeat: Infinity, duration: 25, ease: 'linear' }}
-                                className="absolute w-[400px] h-[400px] rounded-full border-[1.5px] border-dashed border-yellow-500/30" 
+                                animate={{ opacity: [0, 0.4, 0], x: [-100, 300] }}
+                                transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                                className="absolute w-[2px] h-[450px] bg-cyan-400 shadow-[0_0_20px_#22d3ee] rotate-[15deg] z-50"
                             />
 
-                            {/* Inner Rotating Cyan Ring */}
+                            {/* 2. OUTER GOLD RING WITH ROTATING ARROW */}
+                            <motion.div 
+                                animate={{ rotate: 360 }}
+                                transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
+                                className="absolute w-[460px] h-[460px] rounded-full border-[1px] border-yellow-500/20" 
+                            >
+                                {/* THE DANGEROUS ARROW */}
+                                <div className="absolute top-[-8px] left-[50%] translate-x-[-50%] flex flex-col items-center">
+                                    <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[10px] border-t-yellow-400 shadow-[0_0_10px_#fbbf24]" />
+                                    <motion.div animate={{ opacity: [1, 0.2, 1] }} transition={{ repeat: Infinity, duration: 0.5 }} className="w-[1px] h-20 bg-gradient-to-b from-yellow-400 to-transparent" />
+                                </div>
+                            </motion.div>
+
+                            {/* 3. INNER CYAN SYSTEM RING */}
                             <motion.div 
                                 animate={{ rotate: -360 }}
-                                transition={{ repeat: Infinity, duration: 18, ease: 'linear' }}
-                                className="absolute w-[340px] h-[340px] rounded-full border-[2px] border-cyan-400/20 shadow-[0_0_20px_rgba(34,211,238,0.15)]"
+                                transition={{ repeat: Infinity, duration: 22, ease: 'linear' }}
+                                className="absolute w-[380px] h-[380px] rounded-full border-[2px] border-cyan-400/30 shadow-[0_0_30px_rgba(34,211,238,0.1)]"
                             >
-                                {[...Array(36)].map((_, i) => (
-                                    <div key={i} className="absolute w-0.5 h-3 bg-cyan-400/40" style={{ left: '50%', top: 0, transform: `rotate(${i * 10}deg)` }} />
+                                {[...Array(12)].map((_, i) => (
+                                    <div key={i} className="absolute w-1 h-4 bg-cyan-400/40" style={{ left: '50%', top: -2, transform: `rotate(${i * 30}deg)` }} />
                                 ))}
                             </motion.div>
 
-                            {/* Core Hub Pulse */}
-                            <div className="absolute w-[280px] h-[280px] rounded-full flex items-center justify-center border border-white/5 bg-radial-gradient from-yellow-500/[0.1] to-transparent">
+                            {/* 4. THE CORE DATA CENTER (NO ICONS HERE) */}
+                            <div className="absolute w-[320px] h-[320px] rounded-full flex flex-col items-center justify-center border border-white/5 bg-radial-gradient from-cyan-400/[0.05] to-transparent">
                                 <motion.div 
-                                    animate={{ scale: [1, 1.05, 1] }}
-                                    transition={{ repeat: Infinity, duration: 1.5 }}
-                                    className="w-[100px] h-[100px] border border-cyan-400/20 rounded-full flex items-center justify-center"
+                                    animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.8, 0.5] }}
+                                    transition={{ repeat: Infinity, duration: 3 }}
+                                    className="text-[9px] font-mono text-cyan-400/60 font-black tracking-[0.5em] mb-2"
                                 >
-                                    <div className="w-2 h-2 bg-yellow-400 rounded-full shadow-[0_0_10px_#fbbf24]" />
+                                    SYSTEM_CORE
                                 </motion.div>
+                                <div className="w-[80px] h-[1px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
                             </div>
                         </div>
 
@@ -705,16 +719,13 @@ export default function LocalPlayerOverlay() {
                             onDrag={(e, info) => {
                                 const sensitivity = 0.4;
                                 const maxRot = (14 - 1) * 18;
-                                setWheelRotation(prev => {
-                                    const newVal = prev - (info.delta.y * sensitivity);
-                                    return Math.max(0, Math.min(newVal, maxRot));
-                                });
+                                setWheelRotation(prev => Math.max(0, Math.min(prev - (info.delta.y * sensitivity), maxRot)));
                             }}
-                            className="absolute left-[-80px] w-[400px] h-full z-10 cursor-grab active:cursor-grabbing"
+                            className="absolute left-[-100px] w-[450px] h-full z-10 cursor-grab active:cursor-grabbing"
                         />
 
-                        {/* Panels with Stylish Connections Originating from Ring */}
-                        <div className="absolute left-[-160px] h-full w-[600px] flex items-center justify-center pointer-events-none">
+                        {/* Panels with Zero-Gap Stylish Connections */}
+                        <div className="absolute left-[-180px] h-full w-[650px] flex items-center justify-center pointer-events-none">
                             {[
                                 { icon: <RefreshCcw size={14} />, label: "Rotation", color: "#fbbf24", onClick: toggleROT },
                                 { icon: <Camera size={14} />, label: "Capture", color: "#fbbf24", onClick: handleCapture },
@@ -738,13 +749,15 @@ export default function LocalPlayerOverlay() {
                                 const totalRotation = (i * angleStep) - wheelRotation;
                                 const rad = (totalRotation * Math.PI) / 180;
                                 
-                                const radius = 220; // Hub/Ring edge radius
-                                const xPos = Math.cos(rad) * radius + 150; // Panel X position
-                                const yPos = Math.sin(rad) * radius;
+                                const ringRadius = 190; // EXACT CYAN RING RADIUS
+                                const panelRadius = 250; // Panel position
                                 
-                                const normalizedDist = Math.abs(yPos) / (radius * 1.5);
-                                const scale = Math.max(0.7, 1.15 - normalizedDist); 
-                                const opacity = Math.max(0.2, 1 - normalizedDist);
+                                const xPos = Math.cos(rad) * panelRadius + 200; 
+                                const yPos = Math.sin(rad) * panelRadius;
+                                
+                                const normalizedDist = Math.abs(yPos) / (panelRadius * 1.5);
+                                const scale = Math.max(0.75, 1.15 - normalizedDist); 
+                                const opacity = Math.max(0.25, 1 - normalizedDist);
                                 const isFocused = scale > 1.05;
 
                                 return (
@@ -760,40 +773,46 @@ export default function LocalPlayerOverlay() {
                                         }}
                                         onClick={(e) => { e.stopPropagation(); action.onClick(); }}
                                     >
-                                        {/* STYLISH WIRE (ORIGINATING FROM RING EDGE) */}
-                                        <div className={`absolute left-[-110px] w-[120px] h-10 pointer-events-none transition-opacity duration-300 ${isFocused ? 'opacity-100' : 'opacity-20'}`}>
-                                            <svg width="120" height="40" viewBox="0 0 120 40" fill="none">
-                                                {/* Connecting Path from Ring Edge (x=0) to Panel (x=120) with stylish 45-deg bends */}
-                                                <path d="M0 20 H60 L80 5 H120" stroke={action.color} strokeWidth="0.8" strokeOpacity="0.5" />
-                                                <path d="M0 20 H60 L80 35 H120" stroke={action.color} strokeWidth="0.8" strokeOpacity="0.5" />
-                                                {/* Joint Node */}
-                                                <circle cx="0" cy="20" r="2" fill={action.color} />
+                                        {/* ZERO-GAP CIRCUIT WIRE (EXTENDS TO RING) */}
+                                        <div className={`absolute left-[-140px] w-[150px] h-10 pointer-events-none transition-opacity duration-300 ${isFocused ? 'opacity-100' : 'opacity-20'}`}>
+                                            <svg width="150" height="40" viewBox="0 0 150 40" fill="none">
+                                                {/* Start exactly at Cyan Ring edge (x=0) */}
+                                                <path d="M10 20 H70 L90 5 H150" stroke={action.color} strokeWidth="1" strokeOpacity="0.6" />
+                                                <path d="M10 20 H70 L90 35 H150" stroke={action.color} strokeWidth="1" strokeOpacity="0.6" />
+                                                <circle cx="10" cy="20" r="2.5" fill={action.color} shadow="0 0 5px white" />
                                                 {isFocused && (
                                                     <motion.circle 
-                                                        animate={{ cx: [0, 120] }}
-                                                        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                                                        r="1.5" fill="white" 
+                                                        animate={{ cx: [10, 150] }}
+                                                        transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
+                                                        r="2" fill="white" 
                                                     />
                                                 )}
                                             </svg>
                                         </div>
 
-                                        {/* Endfield Style Panel */}
+                                        {/* Endfield Style Panel (High Visibility) */}
                                         <div 
-                                            className={`relative w-28 h-12 bg-black/95 backdrop-blur-3xl border-l-[4px] border-r-[1.5px] border-y-[1.5px] transition-all duration-300 flex items-center justify-between px-3 ${isFocused ? `border-l-[${action.color}] border-white/40 shadow-[0_0_25px_${action.color}33]` : 'border-white/5 opacity-50'}`}
+                                            className={`relative w-32 h-12 bg-black/98 backdrop-blur-3xl border-l-[5px] border-r-[2px] border-y-[2px] transition-all duration-300 flex items-center justify-between px-3 ${isFocused ? `border-l-[${action.color}] border-white/40 shadow-[0_0_30px_${action.color}44] scale-105` : 'border-white/10 opacity-60'}`}
                                             style={{ 
                                                 clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)',
                                                 borderLeftColor: isFocused ? action.color : 'rgba(255,255,255,0.1)'
                                             }}
                                         >
-                                            <div className={`transition-all duration-300 ${isFocused ? 'scale-110' : 'text-white/40'}`} style={{ color: isFocused ? action.color : 'rgba(255,255,255,0.4)' }}>
+                                            <div className={`transition-all duration-300 ${isFocused ? 'scale-125' : 'text-white/40'}`} style={{ color: isFocused ? action.color : 'rgba(255,255,255,0.4)' }}>
                                                 {action.icon}
                                             </div>
                                             <div className="flex flex-col items-end mr-1">
-                                                <span className={`text-[8px] font-black uppercase tracking-tighter transition-all duration-300 ${isFocused ? 'text-white' : 'text-white/40'}`}>
+                                                <span className={`text-[8.5px] font-black uppercase tracking-tighter transition-all duration-300 ${isFocused ? 'text-white' : 'text-white/40'}`}>
                                                     {action.label}
                                                 </span>
-                                                {isFocused && <motion.div layoutId="endfield-line-final" className="h-[1px] w-8 mt-1" style={{ backgroundColor: action.color }} />}
+                                                {isFocused && (
+                                                    <motion.div 
+                                                        initial={{ width: 0 }} 
+                                                        animate={{ width: '100%' }} 
+                                                        className="h-[1.5px] mt-1" 
+                                                        style={{ backgroundColor: action.color }} 
+                                                    />
+                                                )}
                                             </div>
                                         </div>
                                     </motion.div>
