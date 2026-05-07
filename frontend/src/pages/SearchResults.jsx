@@ -30,10 +30,7 @@ export default function SearchResults() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user) {
-      setAuthModalOpen(true);
-      navigate('/');
-    }
+    // Search is now allowed for guests too!
   }, [user, navigate, setAuthModalOpen]);
 
   const [results, setResults] = useState([]);
@@ -127,11 +124,21 @@ export default function SearchResults() {
       }
 
       try {
-        globalResults = await Promise.any(fetchPromises);
-        setIsFreeMode(true);
-      } catch (err) {
-        console.warn("All search strategies failed concurrently.");
-      }
+      // Use more reliable public search proxies
+      globalResults = await Promise.any(fetchPromises);
+      setIsFreeMode(true);
+    } catch (e) {
+      // Fallback: If all fail, try a direct fetch from a stable instance
+      try {
+        const res = await fetch(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=videos`);
+        const data = await res.json();
+        globalResults = data.map(v => ({
+           id: `yt-${v.videoId}`, ytId: v.videoId, title: v.title,
+           thumbnail_url: v.thumbnail, video_url: `https://www.youtube.com/embed/${v.videoId}`,
+           source: 'youtube', type: 'global'
+        }));
+      } catch(err) { globalResults = []; }
+    }
 
       if (globalResults.length > 0) {
         setResults(prev => {
@@ -163,8 +170,8 @@ export default function SearchResults() {
         <div>
            <h1 className="text-5xl font-black text-primary uppercase italic tracking-tighter leading-none mb-4">Results</h1>
            <div className="flex items-center gap-4">
-              <span className="px-3 py-1 bg-purple-600 rounded-lg text-[10px] font-black text-white uppercase tracking-widest italic">{q}</span>
-              {isFreeMode && <span className="flex items-center gap-2 text-green-500 text-[10px] font-black uppercase tracking-[0.2em] animate-pulse"><Zap className="w-3 h-3 fill-green-500" /> Global Engine Online</span>}
+              <span className="px-3 py-1 bg-red-600 rounded-lg text-[10px] font-black text-white uppercase tracking-widest italic">{q}</span>
+              {isFreeMode && <span className="flex items-center gap-2 text-green-500 text-[10px] font-black uppercase tracking-[0.2em] animate-pulse"><Zap className="w-3 h-3 fill-green-500" /> MacFeed Search Engine Online</span>}
            </div>
         </div>
         <p className="text-secondary text-[10px] font-black uppercase tracking-[0.4em]">{results.length} Matches Found</p>

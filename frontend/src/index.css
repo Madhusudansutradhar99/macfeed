@@ -19,17 +19,17 @@
 }
 
 .light {
-  --bg-primary: #eff6ff;
-  --bg-secondary: #f8fafc;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --border-color: #e2e8f0;
-  --accent-color: #3b82f6;
-  --accent-hover: #2563eb;
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --card-bg: #f8fafc;
-  --sidebar-bg: #f8fafc;
-  --header-bg: rgba(248, 250, 252, 0.8);
+  --bg-primary: #ffffff;
+  --bg-secondary: #f0f0f0;
+  --text-primary: #000000;
+  --text-secondary: #444444;
+  --border-color: #ff0000;
+  --accent-color: #ff0000;
+  --accent-hover: #cc0000;
+}
+
+.light * {
+  border: 1px solid red !important;
 }
 
 .blue {
@@ -51,19 +51,19 @@ html,
 body {
   margin: 0 !important;
   padding: 0 !important;
-  border: none !important;
-  outline: none !important;
   background-color: #000 !important;
   color: var(--text-primary);
   scroll-behavior: smooth;
   font-size: 13px;
   width: 100%;
   height: 100%;
-  overflow-x: hidden; /* Prevent horizontal scroll only */
-  transition: background-color 0.3s ease, color 0.3s ease;
-  /* Safe Area Support - Handled per component to avoid gaps */
-  padding: 0 !important;
-  margin: 0 !important;
+  overflow-x: hidden;
+  scrollbar-width: none !important; /* Hide scrollbar Firefox */
+  -ms-overflow-style: none !important;  /* Hide scrollbar IE/Edge */
+}
+
+::-webkit-scrollbar {
+  display: none !important; /* Hide scrollbar Chrome/Safari */
 }
 
 * {
