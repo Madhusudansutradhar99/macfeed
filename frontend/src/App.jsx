@@ -67,9 +67,13 @@ export default function App() {
 
 function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
+  
+  // Only redirect to intro if there's NO hash at all (root) and not visited
   const shouldRedirectToIntro = React.useMemo(() => {
     const visited = localStorage.getItem('macfeed_visited');
-    if (!visited && !window.location.hash.includes('/intro')) {
+    const currentHash = window.location.hash;
+    // If we have a meaningful route already, DON'T redirect to intro on refresh
+    if (!visited && (currentHash === '' || currentHash === '#/')) {
       return true;
     }
     return false;
