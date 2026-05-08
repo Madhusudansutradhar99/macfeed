@@ -131,6 +131,26 @@ export default function LocalPlayerOverlay() {
   }, [playing, isLocked, resetControlsTimeout]);
 
   useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !isLocalPlayerOpen || !currentSong) return;
+
+    const saveInterval = setInterval(() => {
+        if (video.currentTime > 5 && video.currentTime < video.duration - 10) {
+            const key = `mx_resume_${currentSong.name || currentSong.title}`;
+            localStorage.setItem(key, video.currentTime.toString());
+        }
+    }, 5000);
+
+    return () => {
+        clearInterval(saveInterval);
+        if (video.currentTime > 5 && video.currentTime < video.duration - 10) {
+            const key = `mx_resume_${currentSong.name || currentSong.title}`;
+            localStorage.setItem(key, video.currentTime.toString());
+        }
+    };
+  }, [isLocalPlayerOpen, currentSong]);
+
+  useEffect(() => {
     if (isLocalPlayerOpen && currentSong && videoRef.current) {
         try {
             const history = JSON.parse(localStorage.getItem('macfeed_local_history') || '[]');
@@ -790,7 +810,7 @@ export default function LocalPlayerOverlay() {
                                             zIndex: 300 + Math.round(opacity * 100)
                                         }}
                                         transition={{ type: 'spring', stiffness: 500, damping: 50, mass: 0.5 }}
-                                        onClick={(e) => { e.stopPropagation(); action.onClick(); }}
+                                        onTap={(e) => { e.stopPropagation(); action.onClick(); }}
                                     >
                                         {/* LONG ZERO-GAP CONNECTION */}
                                         <div className={`absolute left-[-190px] w-[200px] h-10 pointer-events-none transition-opacity duration-300 ${isFocused ? 'opacity-100' : 'opacity-20'}`}>
@@ -1054,23 +1074,40 @@ export default function LocalPlayerOverlay() {
             )}
         </AnimatePresence>
 
-        {/* RESUME DIALOG */}
+        {/* PREMIUM FLOATING RESUME CARD */}
         <AnimatePresence>
             {showResumeDialog && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[2000] flex items-center justify-center bg-black/60 backdrop-blur-md">
-                    <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-[#111] p-8 rounded-[2.5rem] border border-white/10 shadow-2xl max-w-xs w-full text-center space-y-6">
-                        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto">
-                            <RefreshCcw className="text-white/50 w-8 h-8" />
+                <motion.div 
+                    initial={{ y: 100, opacity: 0, scale: 0.9 }} 
+                    animate={{ y: -100, opacity: 1, scale: 1 }} 
+                    exit={{ y: 100, opacity: 0, scale: 0.9 }} 
+                    className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[2000] w-[90%] max-w-sm"
+                >
+                    <div className="bg-[#111]/90 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-accent/20 rounded-2xl flex items-center justify-center text-accent">
+                                <RefreshCcw size={20} className="animate-spin-slow" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-white text-[10px] font-black uppercase tracking-widest opacity-40">RESUME PLAYBACK?</span>
+                                <span className="text-white text-xs font-bold italic">{formatTime(savedTime)}</span>
+                            </div>
                         </div>
-                        <div className="space-y-1">
-                            <h3 className="text-white font-bold text-lg">Resume Playback?</h3>
-                            <p className="text-white/40 text-xs">Start from {formatTime(savedTime)}</p>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => handleResume(false)} 
+                                className="px-4 py-3 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                            >
+                                Restart
+                            </button>
+                            <button 
+                                onClick={() => handleResume(true)} 
+                                className="px-6 py-3 bg-accent text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(var(--accent-rgb),0.3)] hover:scale-105 active:scale-95 transition-all"
+                            >
+                                Resume
+                            </button>
                         </div>
-                        <div className="flex gap-3">
-                            <button onClick={() => handleResume(true)} className="flex-1 py-4 bg-white text-black rounded-2xl font-bold text-sm hover:opacity-90 transition-opacity">Resume</button>
-                            <button onClick={() => handleResume(false)} className="flex-1 py-4 bg-white/5 text-white/40 rounded-2xl font-bold text-sm hover:bg-white/10 transition-colors">Restart</button>
-                        </div>
-                    </motion.div>
+                    </div>
                 </motion.div>
             )}
         </AnimatePresence>
