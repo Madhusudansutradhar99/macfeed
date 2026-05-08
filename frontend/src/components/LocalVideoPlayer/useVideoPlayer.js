@@ -1,135 +1,122 @@
 /**
- * Video.js React hook for enhanced local video playback
- * Controls: disabled (custom UI handled by LocalPlayerOverlay)
- * Optimized for mobile with RAM cap, quality adaptation, and stall recovery
+ * Native / HLS hook using hls.js and MediaCapabilities probing
  */
-
-import { useEffect, useRef, useCallback } from 'react';
-import videojs from 'video.js';
-import 'video.js/dist/video-js.css';
+import { useEffect, useRef } from 'react';
+import Hls from 'hls.js';
 import { getMaxQualityHeight, getHlsConfig, applyHardwareDecodingHints, setupFrameCallbackMonitoring, mitigateMemoryPressure } from './qualityUtils';
+import { isHlsFormat } from './formatChecker';
+import { probeMediaCapabilities } from './probeMediaCapabilities';
+import { Filesystem } from '@capacitor/filesystem';
 
-/**
- * Video.js initialization hook
- * @param {React.MutableRefObject} videoRef - Ref to <video> element
- * @param {Object} options - Configuration options
- * @returns {Object} { player, error }
- */
 export const useVideoPlayer = (videoRef, options = {}) => {
-  const playerRef = useRef(null);
+  const hlsRef = useRef(null);
   const frameCallbackRef = useRef(null);
   const memoryIntervalRef = useRef(null);
   const errorRef = useRef(null);
 
   useEffect(() => {
-    const initializePlayer = async () => {
-      if (!videoRef?.current || playerRef.current) return;
+    let objectUrl = null;
+    let mounted = true;
+
+    const setup = async () => {
+      const video = videoRef?.current;
+      if (!video || !mounted) return;
 
       try {
-        const videoElement = videoRef.current;
-        
-        // Apply hardware decoding hints
-        applyHardwareDecodingHints(videoElement);
+        applyHardwareDecodingHints(video);
 
-        // Video.js configuration
-        const playerOptions = {
-          controls: false, // Custom controls in LocalPlayerOverlay
-          autoplay: false,
-          preload: 'metadata',
-          playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2],
-          fluid: true,
-          aspectRatio: '16:9',
-          html5: {
-            vhs: getHlsConfig(),
-            nativeAudioTracks: true,
-            nativeVideoTracks: true,
-            nativeTextTracks: true
-          },
-          techOrder: ['html5'],
-          ...options
-        };
+        // Determine source from options.currentSong if provided
+        let src = options?.src || options?.videoUrl || null;
+        if (!src && options?.currentSong) {
+          const s = options.currentSong;
+          if (s.path) {
+            const fileUri = await Filesystem.getUri({ path: s.path });
+            src = fileUri.uri;
+          } else if (s.file) {
+            objectUrl = URL.createObjectURL(s.file);
+            src = objectUrl;
+          } else if (s.video_url) {
+            src = s.video_url;
+          }
+        }
+        if (!src) return;
 
-        // Initialize Video.js player
-        const player = videojs(videoElement, playerOptions);
-        playerRef.current = player;
+        // Probe device capabilities
+        const probe = await probeMediaCapabilities();
+        const maxHeight = probe?.maxHeight || getMaxQualityHeight();
 
-        // Setup frame callback monitoring for stall detection
-        player.ready(() => {
-          frameCallbackRef.current = setupFrameCallbackMonitoring(
-            videoElement,
-            () => {
-              console.warn('[Player] Stall detected, attempting recovery');
-              const currentTime = player.currentTime();
-              player.currentTime(currentTime + 0.1); // Micro-skip to unstick
+        // If HLS manifest, use hls.js (MSE) for adaptive switching
+        if (isHlsFormat(src) || String(src).toLowerCase().endsWith('.m3u8')) {
+          if (Hls.isSupported()) {
+            // destroy previous instance
+            if (hlsRef.current) {
+              hlsRef.current.destroy();
+              hlsRef.current = null;
             }
-          );
+            const hls = new Hls({
+              maxBufferLength: 30,
+              maxMaxBufferLength: 60,
+              ...getHlsConfig()
+            });
+            hlsRef.current = hls;
+            hls.loadSource(src);
+            hls.attachMedia(video);
+
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+              const levels = hls.levels || [];
+              let chosen = -1;
+              for (let i = 0; i < levels.length; i++) {
+                const h = levels[i].height || 0;
+                if (h <= maxHeight) chosen = i;
+              }
+              if (chosen >= 0) hls.currentLevel = chosen;
+            });
+          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = src; // native HLS (Safari)
+          } else {
+            // fallback: attempt to set src and let browser try
+            video.src = src;
+          }
+        } else {
+          // Non-HLS: native source (objectURL or http)
+          video.src = src;
+        }
+
+        // Start buffer/monitoring
+        frameCallbackRef.current = setupFrameCallbackMonitoring(video, () => {
+          try { video.currentTime += 0.05; } catch (e) { /* best-effort */ }
         });
 
-        // Set up memory pressure mitigation (every 5s)
         memoryIntervalRef.current = setInterval(() => {
-          mitigateMemoryPressure(videoElement);
+          mitigateMemoryPressure(video);
         }, 5000);
 
-        // Handle player errors
-        player.on('error', () => {
-          const error = player.error();
-          if (error) {
-            console.error('[Player] Error:', error.code, error.message);
-            errorRef.current = {
-              code: error.code,
-              message: error.message,
-              type: error.type
-            };
-          }
-        });
-
-        // Log playback events
-        player.on('play', () => console.debug('[Player] Playing'));
-        player.on('pause', () => console.debug('[Player] Paused'));
-        player.on('loadstart', () => console.debug('[Player] Loading'));
-        player.on('canplay', () => console.debug('[Player] Can play'));
-        player.on('playing', () => console.debug('[Player] Playing (event)'));
-
-        // Capacity monitoring
-        player.on('timeupdate', () => {
-          const buffered = videoElement.buffered;
-          if (buffered.length > 0) {
-            const currentTime = videoElement.currentTime;
-            const bufferedEnd = buffered.end(buffered.length - 1);
-            const bufferAhead = bufferedEnd - currentTime;
-            
-            // Warn if buffer is too large (memory leak risk)
-            if (bufferAhead > 300) {
-              console.warn(`[Memory] Large buffer ahead: ${bufferAhead.toFixed(1)}s`);
-            }
-          }
-        });
-
       } catch (err) {
-        console.error('[Player] Initialization failed:', err);
-        errorRef.current = { message: err.message };
+        console.error('[useVideoPlayer] init failed:', err);
+        errorRef.current = { message: err?.message || String(err) };
       }
     };
 
-    initializePlayer();
+    setup();
 
-    // Cleanup on unmount
     return () => {
+      mounted = false;
+      if (hlsRef.current) {
+        try { hlsRef.current.destroy(); } catch (e) {}
+        hlsRef.current = null;
+      }
+      if (objectUrl) {
+        try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+      }
       if (frameCallbackRef.current && videoRef?.current?.cancelVideoFrameCallback) {
-        videoRef.current.cancelVideoFrameCallback(frameCallbackRef.current);
+        try { videoRef.current.cancelVideoFrameCallback(frameCallbackRef.current); } catch (e) {}
       }
-      if (memoryIntervalRef.current) {
-        clearInterval(memoryIntervalRef.current);
-      }
-      if (playerRef.current) {
-        playerRef.current.dispose?.();
-        playerRef.current = null;
-      }
+      if (memoryIntervalRef.current) clearInterval(memoryIntervalRef.current);
     };
-  }, [videoRef, options]);
+  }, [videoRef, options?.currentSong, options?.src]);
 
   return {
-    player: playerRef.current,
+    hls: hlsRef.current,
     error: errorRef.current
   };
 };

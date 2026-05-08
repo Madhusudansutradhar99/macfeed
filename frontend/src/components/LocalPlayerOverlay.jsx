@@ -12,6 +12,7 @@ import {
 import { useMusicPlayer } from '../context/MusicContext';
 import { Filesystem } from '@capacitor/filesystem';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
+import useVideoPlayer from './LocalVideoPlayer/useVideoPlayer';
 
 const formatTime = (s) => {
   if (!s || isNaN(s)) return '00:00:00';
@@ -48,6 +49,9 @@ export default function LocalPlayerOverlay() {
   const touchStart = useRef({ x: 0, y: 0, time: 0 });
   const lastTap = useRef(0);
   const swipeUpStart = useRef(0);
+
+    // Initialize native/HLS player hook (probes capabilities and attaches hls.js when needed)
+    const { hls, error: playerError } = useVideoPlayer(videoRef, { currentSong, preloadMode });
 
   // Core UI States
   const [showControls, setShowControls] = useState(true);
