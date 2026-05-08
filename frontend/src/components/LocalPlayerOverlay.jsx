@@ -465,7 +465,9 @@ export default function LocalPlayerOverlay() {
             willChange: 'transform, contents',
             transform: 'translate3d(0,0,0) perspective(1000px)',
             backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden'
+            WebkitBackfaceVisibility: 'hidden',
+            filter: showExtraPanel ? 'blur(8px) brightness(0.5)' : 'none',
+            transition: 'filter 0.5s ease'
           }}
           onLoadedMetadata={handleVideoMetadata}
           onCanPlay={() => setIsLoading(false)}
@@ -664,7 +666,7 @@ export default function LocalPlayerOverlay() {
                     initial={{ opacity: 0, x: -50 }} 
                     animate={{ opacity: 1, x: 0 }} 
                     exit={{ opacity: 0, x: -50 }}
-                    className="absolute inset-0 z-[150] flex items-center justify-start overflow-hidden pointer-events-none"
+                    className="absolute inset-0 z-[150] flex items-center justify-start overflow-hidden pointer-events-auto bg-black/20 backdrop-blur-[2px]"
                     onClick={() => setShowExtraPanel(false)}
                 >
                     {/* 
@@ -674,7 +676,7 @@ export default function LocalPlayerOverlay() {
                     */}
                     <div 
                         onWheel={(e) => {
-                            const sensitivity = 0.3;
+                            const sensitivity = 0.8;
                             const maxRot = (14 - 1) * 18;
                             setWheelRotation(prev => Math.max(0, Math.min(prev - (e.deltaY * sensitivity), maxRot)));
                         }}
@@ -686,7 +688,7 @@ export default function LocalPlayerOverlay() {
                             drag="y"
                             dragConstraints={{ top: -2000, bottom: 2000 }}
                             onDrag={(e, info) => {
-                                const sensitivity = 0.4;
+                                const sensitivity = 1.2;
                                 const maxRot = (14 - 1) * 18;
                                 setWheelRotation(prev => Math.max(0, Math.min(prev - (info.delta.y * sensitivity), maxRot)));
                             }}
@@ -779,6 +781,7 @@ export default function LocalPlayerOverlay() {
                                             opacity: opacity,
                                             zIndex: Math.round(opacity * 100)
                                         }}
+                                        transition={{ type: 'spring', stiffness: 500, damping: 50, mass: 0.5 }}
                                         onClick={(e) => { e.stopPropagation(); action.onClick(); }}
                                     >
                                         {/* LONG ZERO-GAP CONNECTION */}
