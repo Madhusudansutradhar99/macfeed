@@ -51,7 +51,7 @@ export default function LocalPlayerOverlay() {
   const swipeUpStart = useRef(0);
 
     // Initialize native/HLS player hook (probes capabilities and attaches hls.js when needed)
-    const { hls, error: playerError } = useVideoPlayer(videoRef, { currentSong, preloadMode });
+    const { hls, error: playerError, maxHeight: playerMaxHeight, smooth: playerSmooth } = useVideoPlayer(videoRef, { currentSong, preloadMode });
 
   // Core UI States
   const [showControls, setShowControls] = useState(true);
@@ -555,6 +555,12 @@ export default function LocalPlayerOverlay() {
         >
           {activeSubtitle && <track src={activeSubtitle} kind="subtitles" srcLang="en" label="English" default />}
         </video>
+
+        { (playerError || playerMaxHeight) && showControls && (
+            <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-[60] px-3 py-2 bg-black/70 text-white text-xs rounded-full">
+                {playerError ? (`Playback error: ${playerError.message}`) : (playerMaxHeight ? (playerSmooth ? `Device reports smooth playback up to ${playerMaxHeight}px` : `Quality capped to ${playerMaxHeight}px for smoother playback`) : null)}
+            </div>
+        )}
 
         {/* Premium Transparent Cinematic Loader with Safety Exit */}
         {isLoading && (

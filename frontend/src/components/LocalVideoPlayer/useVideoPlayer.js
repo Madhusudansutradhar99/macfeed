@@ -13,6 +13,8 @@ export const useVideoPlayer = (videoRef, options = {}) => {
   const frameCallbackRef = useRef(null);
   const memoryIntervalRef = useRef(null);
   const errorRef = useRef(null);
+  const maxHeightRef = useRef(null);
+  const smoothRef = useRef(false);
 
   useEffect(() => {
     let objectUrl = null;
@@ -44,6 +46,8 @@ export const useVideoPlayer = (videoRef, options = {}) => {
         // Probe device capabilities
         const probe = await probeMediaCapabilities();
         const maxHeight = probe?.maxHeight || getMaxQualityHeight();
+        maxHeightRef.current = maxHeight;
+        smoothRef.current = probe?.smooth || false;
 
         // If HLS manifest, use hls.js (MSE) for adaptive switching
         if (isHlsFormat(src) || String(src).toLowerCase().endsWith('.m3u8')) {
@@ -69,7 +73,12 @@ export const useVideoPlayer = (videoRef, options = {}) => {
                 const h = levels[i].height || 0;
                 if (h <= maxHeight) chosen = i;
               }
-              if (chosen >= 0) hls.currentLevel = chosen;
+              if (chosen >= 0) {
+                // cap auto-levels and pick a safe start level
+                hls.autoLevelCapping = chosen;
+                hls.startLevel = chosen;
+                hls.currentLevel = chosen;
+              }
             });
           } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = src; // native HLS (Safari)
@@ -117,7 +126,9 @@ export const useVideoPlayer = (videoRef, options = {}) => {
 
   return {
     hls: hlsRef.current,
-    error: errorRef.current
+    error: errorRef.current,
+    maxHeight: maxHeightRef.current,
+    smooth: smoothRef.current
   };
 };
 
