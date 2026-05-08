@@ -278,7 +278,8 @@ export function MusicProvider({ children }) {
       const localVideo = {
         id: `local-${Date.now()}`, title: file.name, video_url: url,
         thumbnail_url: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800',
-        source: 'local', category: 'Local', path: file.path || null
+        source: 'local', category: 'Local', path: file.path || null,
+        file: file
       };
       setActiveLocalSong(localVideo);
       setIsLocalPlayerOpen(true);

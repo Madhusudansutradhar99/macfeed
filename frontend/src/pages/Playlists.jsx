@@ -27,6 +27,7 @@ export default function Playlists() {
   const [activePlaylist, setActivePlaylist] = useState(null);
   const [recentLocal, setRecentLocal] = useState([]);
   
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
   const fileRegistry = useRef(new Map());
 
@@ -47,7 +48,7 @@ export default function Playlists() {
   };
 
   const handleFileSelect = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files ? e.target.files[0] : (e.dataTransfer ? e.dataTransfer.files[0] : null);
     if (file) {
       const newMeta = {
         id: Date.now(),
@@ -75,7 +76,25 @@ export default function Playlists() {
       localStorage.setItem('macfeed_local_history', JSON.stringify(filtered.slice(0, 50)));
 
       playLocalFile(file);
+      
+      // Clear input to allow re-selection of the same file
+      if (e.target) e.target.value = '';
     }
+  };
+
+  const onDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const onDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const onDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileSelect(e);
   };
 
   const handleRecentPlay = (fileMeta) => {
@@ -150,7 +169,10 @@ export default function Playlists() {
               {/* ── REDESIGNED DROPZONE ── */}
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="group relative w-full aspect-[2/1] md:aspect-[32/10] bg-white/[0.01] border border-white/5 rounded-[2.5rem] md:rounded-[5rem] flex flex-col items-center justify-center cursor-pointer transition-all duration-1000 overflow-hidden hover:bg-white/[0.03] hover:border-accent/20 shadow-2xl"
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDrop={onDrop}
+                className={`group relative w-full aspect-[2/1] md:aspect-[32/10] bg-white/[0.01] border rounded-[2.5rem] md:rounded-[5rem] flex flex-col items-center justify-center cursor-pointer transition-all duration-1000 overflow-hidden shadow-2xl ${isDragging ? 'bg-accent/10 border-accent scale-[1.02]' : 'border-white/5 hover:bg-white/[0.03] hover:border-accent/20'}`}
               >
                  {/* Animated Grid Background */}
                  <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)]" />
@@ -159,13 +181,13 @@ export default function Playlists() {
 
                  <div className="relative z-10 flex flex-col items-center text-center px-6">
                     <div className="relative mb-6 md:mb-10">
-                       <div className="w-20 h-20 md:w-32 md:h-32 rounded-[2rem] md:rounded-[3.5rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-accent group-hover:text-white transition-all duration-1000 group-hover:rotate-[15deg] group-hover:shadow-[0_0_80px_rgba(var(--accent-rgb),0.4)]">
+                       <div className={`w-20 h-20 md:w-32 md:h-32 rounded-[2rem] md:rounded-[3.5rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-accent group-hover:text-white transition-all duration-1000 group-hover:rotate-[15deg] group-hover:shadow-[0_0_80px_rgba(var(--accent-rgb),0.4)] ${isDragging ? 'bg-accent text-white scale-110 rotate-[15deg]' : ''}`}>
                           <Upload className="w-8 h-8 md:w-12 md:h-12" />
                        </div>
                        <motion.div 
                          animate={{ top: ['0%', '100%', '0%'] }} 
                          transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                         className="absolute -left-8 -right-8 h-[1px] md:h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent blur-md pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+                         className={`absolute -left-8 -right-8 h-[1px] md:h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent blur-md pointer-events-none transition-opacity ${isDragging || true ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
                        />
                     </div>
                     
@@ -173,12 +195,19 @@ export default function Playlists() {
                        OPEN <span className="text-accent underline decoration-white/10 underline-offset-8">LOCAL</span> MEDIA
                     </h2>
                     <p className="text-white/30 text-[8px] md:text-[10px] font-black uppercase tracking-[0.4em] max-w-xl leading-relaxed">
-                       DRAG & DROP VIDEO FILES HERE OR CLICK TO BROWSE
+                       {isDragging ? 'RELEASE TO INITIALIZE' : 'DRAG & DROP VIDEO FILES HERE OR CLICK TO BROWSE'}
                     </p>
                  </div>
-                 
-                 <input type="file" ref={fileInputRef} className="hidden" accept="video/*,audio/*,.mkv,.avi,.mov,.wmv,.flv,.3gp,.flac,.wav,.ogg,.m4a" onChange={handleFileSelect} />
               </div>
+
+              {/* Keep input outside to prevent event bubbling issues */}
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept="video/*,audio/*,.mkv,.avi,.mov,.wmv,.flv,.3gp,.flac,.wav,.ogg,.m4a" 
+                onChange={handleFileSelect} 
+              />
 
               {/* ── RECENT SECTION ── */}
               <div className="relative">
