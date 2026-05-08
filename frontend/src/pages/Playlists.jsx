@@ -167,13 +167,19 @@ export default function Playlists() {
               key="local" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}
               className="space-y-24"
             >
-             <div className="relative w-full aspect-[2/1] md:aspect-[32/10] group">
+             <div 
+               onClick={() => fileInputRef.current?.click()}
+               onDragOver={onDragOver}
+               onDragLeave={onDragLeave}
+               onDrop={onDrop}
+               className="relative w-full aspect-[2/1] md:aspect-[32/10] group cursor-pointer"
+             >
                <input 
                  type="file" 
-                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-[2000] block" 
+                 ref={fileInputRef}
+                 className="hidden" 
                  accept="video/*,audio/*,.mkv,.ts,.m3u8,.mp4,.mp3,.webm" 
                  onChange={handleFileSelect} 
-                 style={{ WebkitAppearance: 'none' }}
                />
 
                <div 
