@@ -1,5 +1,5 @@
-import axios from 'axios';
-import { getCache, YT_API_KEY } from './_utils.js';
+import ytSearch from 'yt-search';
+import { getCache } from './_utils.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -22,17 +22,35 @@ export default async function handler(req, res) {
     if (cached) return res.json({ results: cached, source: 'cache' });
   } catch (e) {}
 
-  let results = [];
   try {
-    const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
-      params: { part: 'snippet', relatedToVideoId: videoId, type: 'video', maxResults: 15, key: YT_API_KEY },
-      timeout: 5000
-    });
-    results = response.data.items.map(item => ({
-      id: item.id.videoId, ytId: item.id.videoId, title: item.snippet.title, thumbnail: item.snippet.thumbnails.high.url, source: 'youtube'
-    }));
-    const cache = await getCache();
-    await cache.set(cacheKey, results);
+    const video = await ytSearch({ videoId });
+    if (!video || !video.title) {
+      return res.status(404).json({ error: 'Video not found' });
+    }
+
+    // Search for the title + author to get highly relevant "related" videos
+    const searchResult = await ytSearch(`${video.title} ${video.author?.name || ''}`);
+    const videos = searchResult?.videos || [];
+
+    const results = videos
+      .filter(item => item.videoId !== videoId)
+      .slice(0, 15)
+      .map(item => ({
+        id: item.videoId,
+        ytId: item.videoId,
+        title: item.title,
+        thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${item.videoId}/hqdefault.jpg`,
+        source: 'youtube'
+      }));
+
+    try {
+      const cache = await getCache();
+      await cache.set(cacheKey, results);
+    } catch (e) {}
+    
     res.json({ results, source: 'api' });
-  } catch (e) { res.status(500).json({ error: 'Failed' }); }
+  } catch (e) {
+    console.error('[yt-search related error]', e);
+    res.status(500).json({ error: 'Failed' });
+  }
 }
