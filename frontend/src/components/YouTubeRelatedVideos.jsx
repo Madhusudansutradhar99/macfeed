@@ -4,41 +4,35 @@ import { Play, ChevronLeft, ChevronRight, Loader2, Tv2, Eye, Database, Zap, Glob
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabaseClient';
 
-// YouTube API calls are now routed through backend /api/search (cached)
+// ── L1 CACHE: localStorage with 2hr TTL ──
+const CACHE_PREFIX = 'mf_related_';
+const CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours
 
-const PIPED_INSTANCES = [
-  "https://pipedapi.kavin.rocks",
-  "https://pipedapi.tokhmi.xyz",
-  "https://pipedapi.moomoo.me"
-];
-
-const PROXIES = [
-  "https://api.allorigins.win/get?url=",
-  ""
-];
-
-function extractYouTubeId(url) {
-  if (!url) return null;
-  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([^&?#\s]{11})/);
-  return match ? match[1] : null;
+function getCachedRelated(videoId) {
+  try {
+    const key = CACHE_PREFIX + videoId;
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return data;
+  } catch { return null; }
 }
 
-function formatDuration(iso) {
-  if (!iso) return '';
-  if (typeof iso === 'string' && !iso.startsWith('PT')) return iso; // Already formatted
-  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-  if (!match) return '';
-  const h = parseInt(match[1] || 0);
-  const m = parseInt(match[2] || 0);
-  const s = parseInt(match[3] || 0);
-  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  return `${m}:${String(s).padStart(2, '0')}`;
+function setCachedRelated(videoId, data) {
+  try {
+    const key = CACHE_PREFIX + videoId;
+    localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
+  } catch { }
 }
 
 const YTVideoCard = memo(({ item, onPlay }) => {
   const [hovered, setHovered] = useState(false);
   const videoId = item.ytId || item.id?.videoId || item.id;
-  const thumb = item.thumbnail_url || item.snippet?.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+  const thumb = item.thumbnail_url || item.thumbnail || item.snippet?.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
   const title = item.title || item.snippet?.title || 'Untitled';
   const source = item.source || 'youtube';
 
@@ -60,7 +54,7 @@ const YTVideoCard = memo(({ item, onPlay }) => {
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-primary text-sm font-bold line-clamp-2 leading-snug group-hover:text-accent transition-colors uppercase tracking-tight" style={{ '--accent': 'var(--accent-color)' }}>{title}</div>
-        <div className="text-secondary text-[10px] mt-1 font-black uppercase tracking-widest">{source === 'local' ? 'Internal Content' : (item.snippet?.channelTitle || 'YouTube')}</div>
+        <div className="text-secondary text-[10px] mt-1 font-black uppercase tracking-widest">{item.channelTitle || item.snippet?.channelTitle || (source === 'local' ? 'Internal Content' : 'YouTube')}</div>
       </div>
     </motion.div>
   );
@@ -71,84 +65,66 @@ export default function YouTubeRelatedVideos({ currentVideoUrl, currentVideoId, 
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
+  const [sourceInfo, setSourceInfo] = useState(null);
+
+  const extractYouTubeId = (url) => {
+    if (!url) return null;
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([^&?#\s]{11})/);
+    return match ? match[1] : null;
+  };
 
   const ytId = extractYouTubeId(currentVideoUrl) || currentVideoId;
 
   const fetchData = useCallback(async () => {
-    if (!currentVideoTitle && !ytId) {
+    if (!ytId) {
       setLoading(false);
       return;
     }
 
     setLoading(true);
-    // Use the title for search query to get relevant videos
-    const query = currentVideoTitle && currentVideoTitle !== 'YouTube Video' ? currentVideoTitle : 'trending videos';
+    setSourceInfo(null);
+
+    // 1. L1 CACHE CHECK
+    const cached = getCachedRelated(ytId);
+    if (cached) {
+      setVideos(cached);
+      setSourceInfo('local-cache');
+      setLoading(false);
+      return;
+    }
+
     const fetchPromises = [];
 
-    // 1. Backend Search (Fastest + Cached)
+    // 2. BACKEND RELATED ENDPOINT (L2 Disk Cache)
     fetchPromises.push((async () => {
-      try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(3000) });
-        if (!res.ok) throw new Error('Backend failed');
-        const data = await res.json();
-        if (data.results?.length > 0) {
-          return data.results
-            .filter(v => v.id !== ytId)
-            .map(v => ({
-              ytId: v.id, title: v.title, thumbnail_url: v.thumbnail,
-              duration: '--:--', source: 'youtube'
-            }));
-        }
-      } catch (e) { }
-      throw new Error('No backend results');
+      const res = await fetch(`/api/related?videoId=${ytId}`, { signal: AbortSignal.timeout(6000) });
+      if (!res.ok) throw new Error('Backend failed');
+      const data = await res.json();
+      if (!data.results?.length) throw new Error('Backend empty');
+      return { results: data.results, source: data.source };
     })());
 
-    // Strategy: Backend Search only (has disk cache = L2) + Piped fallback
-    // No direct YouTube API calls from frontend!
-    
-
-    // 3. Piped/Proxies (Scraping Fallback)
-    for (const instance of PIPED_INSTANCES) {
-      for (const proxy of PROXIES) {
+    // 3. Fallback: Search by title if related endpoint fails
+    if (currentVideoTitle && currentVideoTitle !== 'YouTube Video') {
         fetchPromises.push((async () => {
-          try {
-            const targetUrl = `${instance}/search?q=${encodeURIComponent(query)}&filter=videos`;
-            const fetchUrl = proxy ? `${proxy}${encodeURIComponent(targetUrl)}` : targetUrl;
-            const res = await fetch(fetchUrl, { signal: AbortSignal.timeout(4000) });
-            if (!res.ok) throw new Error('Proxy failed');
-            
-            let data;
-            if (proxy.includes('allorigins')) {
-              const pData = await res.json();
-              data = JSON.parse(pData.contents);
-            } else {
-              data = await res.json();
-            }
-
-            const items = data.items || data;
-            if (items?.length > 0) {
-              return items.slice(0, 10).map(v => {
-                const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
-                if (!vidId || vidId === ytId) return null;
-                return {
-                  ytId: vidId, title: v.title,
-                  thumbnail_url: v.thumbnail || v.thumbnails?.[0]?.url || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`,
-                  duration: v.duration ? (typeof v.duration === 'number' ? `${Math.floor(v.duration/60)}:${v.duration%60}` : v.duration) : '--:--',
-                  source: 'youtube'
-                };
-              }).filter(Boolean);
-            }
-          } catch (e) { }
-          throw new Error('Proxy failed');
+            const res = await fetch(`/api/search?q=${encodeURIComponent(currentVideoTitle)}`, { signal: AbortSignal.timeout(6000) });
+            if (!res.ok) throw new Error('Search failed');
+            const data = await res.json();
+            const filtered = (data.results || []).filter(v => v.ytId !== ytId);
+            if (!filtered.length) throw new Error('Search empty');
+            return { results: filtered, source: 'search-fallback' };
         })());
-      }
     }
 
     try {
-      const results = await Promise.any(fetchPromises);
-      setVideos(results);
+      const { results, source } = await Promise.any(fetchPromises);
+      if (results?.length > 0) {
+        setVideos(results);
+        setSourceInfo(source);
+        setCachedRelated(ytId, results);
+      }
     } catch (err) {
-      console.warn("All recommendation sources failed, falling back to local DB.");
+      console.warn("All related video strategies failed.");
       const { data: localData } = await supabase.from('videos').select('*').neq('youtube_id', ytId).limit(10);
       if (localData) {
         setVideos(localData.map(v => ({ ...v, source: 'local' })));
@@ -190,11 +166,15 @@ export default function YouTubeRelatedVideos({ currentVideoUrl, currentVideoId, 
 
   return (
     <section className="mt-10 border-t border-primary/10 pt-8 transition-colors duration-500">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
         <h2 className="text-xl font-black text-primary flex items-center gap-3 uppercase italic tracking-tighter">
           <div className="w-8 h-8 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/20" style={{ backgroundColor: 'var(--accent-color)' }}><Tv2 className="w-4 h-4 text-white" /></div>
           Recommended for you
         </h2>
+        <div className="flex items-center gap-3">
+            {sourceInfo === 'local-cache' && <span className="text-[8px] font-black text-cyan-400 uppercase tracking-widest bg-cyan-400/10 px-2 py-0.5 rounded border border-cyan-400/10">⚡ L1 Cache</span>}
+            {sourceInfo === 'disk-cache' && <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest bg-blue-400/10 px-2 py-0.5 rounded border border-blue-400/10">💾 L2 Cache</span>}
+        </div>
       </div>
 
       {loading ? (
@@ -211,7 +191,7 @@ export default function YouTubeRelatedVideos({ currentVideoUrl, currentVideoId, 
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {videos.map((v, idx) => <YTVideoCard key={v.ytId || v.id || idx} item={v} onPlay={handlePlay} />)}
+          {videos.map((v, idx) => <YTVideoCard key={(v.ytId || v.id) + idx} item={v} onPlay={handlePlay} />)}
         </div>
       )}
     </section>

@@ -337,6 +337,107 @@ app.get('/api/video-info', async (req, res) => {
   }
 });
 
+// Related Videos — Cached by videoId
+app.get('/api/related', async (req, res) => {
+  const { videoId } = req.query;
+  if (!videoId) return res.status(400).json({ error: 'videoId is required' });
+
+  const cacheKey = `related:${videoId}`;
+
+  // Check disk cache first
+  if (diskCache) {
+    try {
+      const cachedData = await diskCache.get(cacheKey);
+      if (cachedData) {
+        cacheStats.hits++;
+        cacheStats.savedUnits += 100;
+        console.log(`🟢 RELATED CACHE HIT: "${videoId}" (saved 100 API units)`);
+        return res.json({ results: cachedData, source: 'disk-cache' });
+      }
+    } catch (e) {}
+  }
+
+  cacheStats.misses++;
+  let results = [];
+
+  // 1. Try YouTube API — relatedToVideoId gives best results
+  if (YT_API_KEY) {
+    try {
+      const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+        params: {
+          part: 'snippet',
+          relatedToVideoId: videoId,
+          type: 'video',
+          maxResults: 20,
+          key: YT_API_KEY
+        },
+        timeout: 5000
+      });
+      cacheStats.apiCalls++;
+      if (response.data.items?.length > 0) {
+        results = response.data.items
+          .filter(item => item.id?.videoId && item.id.videoId !== videoId)
+          .map(item => ({
+            id: item.id.videoId,
+            ytId: item.id.videoId,
+            title: item.snippet?.title || 'Untitled',
+            thumbnail: item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${item.id.videoId}/hqdefault.jpg`,
+            channelTitle: item.snippet?.channelTitle || '',
+            source: 'youtube'
+          }));
+      }
+    } catch (error) {
+      console.warn('Related YT API failed, trying Piped fallback...');
+    }
+  }
+
+  // 2. Fallback: Piped API (server-to-server, FREE)
+  if (results.length === 0) {
+    const instances = [
+      "https://pipedapi.kavin.rocks",
+      "https://pipedapi.tokhmi.xyz",
+      "https://pipedapi.moomoo.me"
+    ];
+    for (const instance of instances) {
+      try {
+        const pRes = await axios.get(`${instance}/streams/${videoId}`, { timeout: 4000 });
+        const relatedStreams = pRes.data.relatedStreams;
+        if (relatedStreams?.length > 0) {
+          results = relatedStreams.slice(0, 20).map(v => {
+            const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop();
+            if (!vidId || vidId === videoId) return null;
+            return {
+              id: vidId,
+              ytId: vidId,
+              title: v.title,
+              thumbnail: v.thumbnail || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`,
+              channelTitle: v.uploaderName || '',
+              duration: v.duration ? (v.duration > 3600 
+                ? `${Math.floor(v.duration/3600)}:${String(Math.floor((v.duration%3600)/60)).padStart(2,'0')}:${String(v.duration%60).padStart(2,'0')}`
+                : `${Math.floor(v.duration/60)}:${String(v.duration%60).padStart(2,'0')}`) : '--:--',
+              source: 'youtube'
+            };
+          }).filter(Boolean);
+          if (results.length > 0) break;
+        }
+      } catch (e) {}
+    }
+  }
+
+  if (results.length > 0) {
+    // Save to disk cache (24hr TTL)
+    if (diskCache) {
+      try {
+        await diskCache.set(cacheKey, results, 86400);
+        console.log(`🔵 RELATED CACHE SET: "${videoId}" (${results.length} related videos saved to disk)`);
+      } catch (e) {}
+    }
+    res.json({ results, source: 'api' });
+  } else {
+    res.status(404).json({ error: 'No related videos found' });
+  }
+});
+
 // Cache Stats Endpoint
 app.get('/api/cache-stats', (req, res) => {
   res.json({
