@@ -99,14 +99,24 @@ export default function LocalPlayerOverlay() {
   const [toast, setToast] = useState(null);
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [savedTime, setSavedTime] = useState(0);
-  const [orientation, setOrientation] = useState('portrait');
+  const [orientation, setOrientation] = useState(window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
   const [wheelRotation, setWheelRotation] = useState(0);
 
   useEffect(() => {
-    if (orientation === 'portrait' && showExtraPanel) {
-        setShowExtraPanel(false);
-    }
-  }, [orientation, showExtraPanel]);
+    const checkOrientation = () => {
+        const orient = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+        setOrientation(orient);
+        if (orient === 'portrait' && showExtraPanel) {
+            setShowExtraPanel(false);
+        }
+    };
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    return () => {
+        window.removeEventListener('resize', checkOrientation);
+        window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, [showExtraPanel]);
 
   const showMXToast = useCallback((msg, icon, color = '#FFFFFF') => {
     setToast({ msg, icon, color });
