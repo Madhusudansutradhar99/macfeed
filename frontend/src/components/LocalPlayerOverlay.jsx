@@ -1089,41 +1089,50 @@ export default function LocalPlayerOverlay() {
             )}
         </AnimatePresence>
 
-        {/* PREMIUM FLOATING RESUME CARD */}
+        {/* PREMIUM CENTER RESUME MODAL */}
         <AnimatePresence>
             {showResumeDialog && (
-                <motion.div 
-                    initial={{ y: 100, opacity: 0, scale: 0.9 }} 
-                    animate={{ y: 0, opacity: 1, scale: 1 }} 
-                    exit={{ y: 100, opacity: 0, scale: 0.9 }} 
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] w-[90%] max-w-sm"
-                >
-                    <div className="bg-[#111]/90 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-accent/20 rounded-2xl flex items-center justify-center text-accent">
-                                <RefreshCcw size={20} className="animate-spin-slow" />
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+                    <motion.div 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                        onClick={() => handleResume(false)}
+                    />
+                    <motion.div 
+                        initial={{ scale: 0.8, opacity: 0, y: 20 }} 
+                        animate={{ scale: 1, opacity: 1, y: 0 }} 
+                        exit={{ scale: 0.8, opacity: 0, y: 20 }} 
+                        className="relative w-full max-w-[320px] bg-[#111]/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-8 shadow-[0_30px_100px_rgba(0,0,0,0.8)]"
+                    >
+                        <div className="flex flex-col items-center text-center gap-6">
+                            <div className="w-20 h-20 bg-accent/20 rounded-[2rem] flex items-center justify-center text-accent shadow-[0_0_30px_rgba(var(--accent-rgb),0.2)]">
+                                <RefreshCcw size={32} className="animate-spin-slow" />
                             </div>
-                            <div className="flex flex-col">
-                                <span className="text-white text-[10px] font-black uppercase tracking-widest opacity-40">RESUME PLAYBACK?</span>
-                                <span className="text-white text-xs font-bold italic">{formatTime(savedTime)}</span>
+                            
+                            <div className="flex flex-col gap-2">
+                                <h3 className="text-white text-xs font-black uppercase tracking-[0.3em] opacity-40">Continue Watching?</h3>
+                                <p className="text-white text-2xl font-bold italic tracking-tight">Resume at {formatTime(savedTime)}</p>
+                            </div>
+
+                            <div className="flex flex-col w-full gap-3 mt-4">
+                                <motion.button 
+                                    onTap={() => handleResume(true)} 
+                                    className="w-full py-5 bg-accent text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-[0_10px_30px_rgba(var(--accent-rgb),0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                >
+                                    Resume Playback
+                                </motion.button>
+                                <motion.button 
+                                    onTap={() => handleResume(false)} 
+                                    className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                >
+                                    Start from Beginning
+                                </motion.button>
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            <motion.button 
-                                onTap={() => handleResume(false)} 
-                                className="px-4 py-3 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-                            >
-                                Restart
-                            </motion.button>
-                            <motion.button 
-                                onTap={() => handleResume(true)} 
-                                className="px-6 py-3 bg-accent text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(var(--accent-rgb),0.3)] hover:scale-105 active:scale-95 transition-all"
-                            >
-                                Resume
-                            </motion.button>
-                        </div>
-                    </div>
-                </motion.div>
+                    </motion.div>
+                </div>
             )}
         </AnimatePresence>
 
