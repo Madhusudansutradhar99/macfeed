@@ -1,15 +1,28 @@
 import axios from 'axios';
-
-function normalizeQuery(value) {
-  return String(value || '')
-    .trim()
-    .replace(/[\-_]+/g, ' ')
-    .replace(/\s+/g, ' ');
-}
+import { getCache, normalizeQuery } from './_utils.js';
 
 function extractQuery(req) {
   const raw = req.query?.q ?? new URL(req.url, 'http://localhost').searchParams.get('q') ?? '';
-  return normalizeQuery(raw);
+  return normalizeQuery(String(raw).replace(/[\-_]+/g, ' '));
+}
+
+function buildQueryVariants(query) {
+  const variants = new Set();
+  const base = normalizeQuery(query);
+  if (base) variants.add(base);
+
+  const noNumbers = normalizeQuery(base.replace(/\b\d+\b/g, ' '));
+  if (noNumbers.length >= 2) variants.add(noNumbers);
+
+  const alnumOnly = normalizeQuery(base.replace(/[^\p{L}\p{N}\s]/gu, ' '));
+  if (alnumOnly.length >= 2) variants.add(alnumOnly);
+
+  const tokens = base.split(' ').filter(Boolean);
+  if (tokens.length >= 2) {
+    variants.add(tokens.slice(0, 2).join(' '));
+  }
+
+  return [...variants].filter((v) => v.length >= 2).slice(0, 4);
 }
 
 function mapYouTubeItems(items = []) {
@@ -48,6 +61,8 @@ async function fetchFallbackResults(query) {
     'https://pipedapi.kavin.rocks',
     'https://pipedapi.tokhmi.xyz',
     'https://pipedapi.moomoo.me',
+    'https://pipedapi.darkness.services',
+    'https://pipedapi.adminforge.de',
   ];
 
   for (const instance of instances) {
@@ -77,6 +92,37 @@ async function fetchFallbackResults(query) {
     }
   }
 
+  // Secondary fallback: Invidious public search APIs
+  const invidiousInstances = [
+    'https://invidious.jing.rocks',
+    'https://inv.nadeko.net',
+    'https://yewtu.be',
+  ];
+
+  for (const instance of invidiousInstances) {
+    try {
+      const response = await axios.get(`${instance}/api/v1/search`, {
+        params: { q: query, type: 'video', sort_by: 'views' },
+        timeout: 4500,
+      });
+
+      const items = response.data || [];
+      if (!Array.isArray(items) || items.length === 0) continue;
+
+      const results = items.slice(0, 20).map((item) => ({
+        ytId: item.videoId,
+        title: item.title || 'Untitled',
+        thumbnail: item.videoThumbnails?.find((t) => t.quality === 'maxresdefault')?.url
+          || item.videoThumbnails?.[0]?.url
+          || (item.videoId ? `https://i.ytimg.com/vi/${item.videoId}/hqdefault.jpg` : undefined),
+      })).filter((item) => item.ytId);
+
+      if (results.length > 0) return results;
+    } catch (error) {
+      // Try next instance.
+    }
+  }
+
   return [];
 }
 
@@ -88,18 +134,41 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Query required' });
   }
 
-  let results = [];
-
-  if (key) {
-    try {
-      results = await fetchYouTubeResults(query, key);
-    } catch (error) {
-      console.warn('[YouTube search failed]', error.response?.data || error.message);
+  const cacheKey = `search:${query}`;
+  try {
+    const cache = await getCache();
+    const cached = await cache.get(cacheKey);
+    if (cached && Array.isArray(cached) && cached.length > 0) {
+      return res.status(200).json({ results: cached, source: 'cache' });
     }
+  } catch (error) {
+    // Ignore cache failures.
   }
 
-  if (results.length === 0) {
-    results = await fetchFallbackResults(query);
+  const variants = buildQueryVariants(query);
+  let results = [];
+
+  for (const variant of variants) {
+    if (key) {
+      try {
+        results = await fetchYouTubeResults(variant, key);
+      } catch (error) {
+        console.warn('[YouTube search failed]', error.response?.data || error.message);
+      }
+    }
+
+    if (results.length === 0) {
+      results = await fetchFallbackResults(variant);
+    }
+
+    if (results.length > 0) break;
+  }
+
+  try {
+    const cache = await getCache();
+    await cache.set(cacheKey, results);
+  } catch (error) {
+    // Ignore cache failures.
   }
 
   return res.status(200).json({
