@@ -83,18 +83,24 @@ export default function Playlists() {
   };
 
   const onDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
+    if (!('ontouchstart' in window)) {
+      e.preventDefault();
+      setIsDragging(true);
+    }
   };
 
   const onDragLeave = () => {
-    setIsDragging(false);
+    if (!('ontouchstart' in window)) {
+      setIsDragging(false);
+    }
   };
 
   const onDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    handleFileSelect(e);
+    if (!('ontouchstart' in window)) {
+      e.preventDefault();
+      setIsDragging(false);
+      handleFileSelect(e);
+    }
   };
 
   const handleRecentPlay = (fileMeta) => {
@@ -169,6 +175,10 @@ export default function Playlists() {
             >
              <div 
                onClick={() => fileInputRef.current?.click()}
+               onTouchEnd={(e) => {
+                 e.preventDefault();
+                 fileInputRef.current?.click();
+               }}
                onDragOver={onDragOver}
                onDragLeave={onDragLeave}
                onDrop={onDrop}
