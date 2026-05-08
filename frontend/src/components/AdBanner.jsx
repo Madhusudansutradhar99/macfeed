@@ -96,7 +96,7 @@ export default function AdBanner({ position = 'corner' }) {
         animate={{ opacity: 1, x: 0, y: 0 }}
         exit={{ opacity: 0, x: 60 }}
         transition={{ delay: 1.5 }}
-        className={`fixed bottom-6 right-6 z-40 rounded-2xl overflow-hidden shadow-2xl border border-primary transition-colors duration-500
+        className={`fixed bottom-6 right-6 z-[5000] rounded-2xl overflow-hidden shadow-2xl border border-primary transition-colors duration-500
           ${isBrand
             ? 'w-44 bg-secondary p-4 flex flex-col items-center gap-2'
             : 'max-w-[250px] bg-transparent'

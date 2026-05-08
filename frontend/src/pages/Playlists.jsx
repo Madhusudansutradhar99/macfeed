@@ -174,11 +174,6 @@ export default function Playlists() {
               className="space-y-24"
             >
              <div 
-               onClick={() => fileInputRef.current?.click()}
-               onTouchEnd={(e) => {
-                 e.preventDefault();
-                 fileInputRef.current?.click();
-               }}
                onDragOver={onDragOver}
                onDragLeave={onDragLeave}
                onDrop={onDrop}
@@ -194,14 +189,14 @@ export default function Playlists() {
                />
 
                <div 
-                 className={`relative w-full h-full bg-secondary/20 border rounded-[2.5rem] md:rounded-[5rem] flex flex-col items-center justify-center transition-all duration-1000 overflow-hidden shadow-2xl ${isDragging ? 'bg-accent/10 border-accent' : 'border-primary hover:bg-secondary/40 hover:border-accent/40'}`}
+                 className={`relative w-full h-full bg-secondary/20 border rounded-[2.5rem] md:rounded-[5rem] flex flex-col items-center justify-center transition-all duration-1000 overflow-hidden shadow-2xl ${isDragging ? 'bg-accent/10 border-accent' : 'border-primary md:hover:bg-secondary/40 md:hover:border-accent/40'}`}
                >
                   <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)] pointer-events-none" />
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-accent/10 opacity-0 md:group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
 
                   <div className="relative z-10 flex flex-col items-center text-center px-6 pointer-events-none">
                      <div className="relative mb-6 md:mb-10">
-                        <div className={`w-16 h-16 md:w-32 md:h-32 rounded-[1.5rem] md:rounded-[3.5rem] bg-secondary border border-primary flex items-center justify-center group-hover:scale-110 group-hover:bg-accent group-hover:text-white transition-all duration-1000 group-hover:rotate-[15deg] group-hover:shadow-[0_0_80px_rgba(var(--accent-rgb),0.4)] ${isDragging ? 'bg-accent text-white rotate-[15deg]' : 'text-primary'}`}>
+                        <div className={`w-16 h-16 md:w-32 md:h-32 rounded-[1.5rem] md:rounded-[3.5rem] bg-secondary border border-primary flex items-center justify-center md:group-hover:scale-110 md:group-hover:bg-accent md:group-hover:text-white transition-all duration-1000 md:group-hover:rotate-[15deg] md:group-hover:shadow-[0_0_80px_rgba(var(--accent-rgb),0.4)] ${isDragging ? 'bg-accent text-white rotate-[15deg]' : 'text-primary'}`}>
                            <Upload className="w-6 h-6 md:w-12 md:h-12" />
                         </div>
                      </div>
