@@ -111,8 +111,8 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
     }
-    onMiniChange?.(true);
-  }, [onMiniChange]);
+    onMiniChange?.(current, playing);
+  }, [onMiniChange, current, playing]);
 
   const handleTouchStart = useCallback((event) => {
     const touch = event.touches[0];
@@ -220,12 +220,12 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
         height: '100%',
         playerVars: {
           autoplay: 1,
-          controls: 1,
+          controls: 0,
           rel: 0,
           modestbranding: 1,
           enablejsapi: 1,
           playsinline: 1,
-          fs: 1,
+          fs: 0,
           disablekb: 1,
         },
         events: {
@@ -402,18 +402,17 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
   if (!video) return null;
 
   return (
-    <div className="flex w-full flex-col">
+    <div className={`flex w-full flex-col ${isFullscreen ? 'fixed inset-0 z-[100] bg-black h-screen w-screen' : ''}`}>
       <div
         ref={containerRef}
-        className={`relative w-full overflow-hidden select-none bg-black ${isFullscreen ? 'rounded-none' : 'rounded-[18px] sm:rounded-2xl'} aspect-video min-h-[320px] sm:min-h-0`}
-        style={{ aspectRatio: '16 / 9' }}
+        className={`${isFullscreen ? 'h-full w-full' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video'} overflow-hidden select-none bg-black flex items-center justify-center`}
         onMouseMove={showControlsTemporarily}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={() => setShowControls((prev) => !prev)}
       >
         {isYouTube ? (
-          <div className="relative h-full w-full bg-black">
+          <div className="relative h-full w-full bg-black flex items-center justify-center">
             {loadFailed ? (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/90 px-6 text-center">
                 <div>
@@ -424,6 +423,7 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
             ) : null}
 
             <div ref={ytDomContainer} className="absolute inset-0 h-full w-full pointer-events-auto" />
+            <div className="absolute inset-0 z-10 w-full h-full cursor-pointer" />
           </div>
         ) : (
           <video

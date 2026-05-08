@@ -11,8 +11,10 @@ import {
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { fetchJson } from '../utils/request';
+import { useVideoMiniPlayer } from '../context/VideoPlayerContext';
 
 export default function VideoPlayerPage() {
+  const { openMini } = useVideoMiniPlayer();
   const { user, setAuthModalOpen } = useAuth();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -128,7 +130,7 @@ export default function VideoPlayerPage() {
         </button>
 
         {/* Main Video Section - Edge to Edge on Mobile */}
-        <div className="w-full aspect-video sm:rounded-3xl overflow-hidden bg-black shadow-2xl border-b sm:border border-primary transition-colors duration-500">
+        <div className="w-full aspect-video rounded-2xl sm:rounded-[32px] overflow-hidden bg-black shadow-2xl border sm:border border-primary transition-colors duration-500 max-h-[85vh] mx-auto flex items-center justify-center">
           {playerError ? (
             <div className="w-full h-full flex items-center justify-center text-center p-6 bg-black text-white">
               <div>
@@ -138,7 +140,15 @@ export default function VideoPlayerPage() {
               </div>
             </div>
           ) : (
-            <VideoPlayer video={video} onClose={() => navigate(-1)} onError={(message) => setPlayerError(message)} />
+            <VideoPlayer 
+              video={video} 
+              onClose={() => navigate(-1)} 
+              onError={(message) => setPlayerError(message)} 
+              onMiniChange={(time, isPlaying) => {
+                openMini(video, time, isPlaying);
+                navigate(-1);
+              }}
+            />
           )}
         </div>
 

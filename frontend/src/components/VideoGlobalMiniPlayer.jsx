@@ -123,17 +123,26 @@ export default function VideoGlobalMiniPlayer() {
         style={{ touchAction: 'none' }}
       >
         <div className="w-[200px] sm:w-[250px] md:w-[370px] bg-secondary rounded-2xl overflow-hidden shadow-2xl border border-primary backdrop-blur-xl transition-all duration-500">
-          {/* Video display */}
           <div className="relative w-full aspect-video bg-black overflow-hidden">
-            <video
-              ref={videoDisplayRef}
-              src={miniVideo?.video_url}
-              poster={miniVideo?.thumbnail_url}
-              className="w-full h-auto object-cover pointer-events-none"
-              style={{ width: '100%', height: 'auto' }}
-              muted={muted}
-              loop={false}
-            />
+            {miniVideo?.source === 'youtube' ? (
+              <iframe
+                src={`${miniVideo.video_url}?autoplay=${playing ? 1 : 0}&controls=0&mute=${muted ? 1 : 0}&start=${Math.floor(currentTime || 0)}`}
+                className="w-full h-full object-cover pointer-events-none"
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                allow="autoplay; encrypted-media"
+                title={miniVideo.title}
+              />
+            ) : (
+              <video
+                ref={videoDisplayRef}
+                src={miniVideo?.video_url}
+                poster={miniVideo?.thumbnail_url}
+                className="w-full h-auto object-cover pointer-events-none"
+                style={{ width: '100%', height: 'auto' }}
+                muted={muted}
+                loop={false}
+              />
+            )}
 
             {/* Hover overlay with play/pause */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
