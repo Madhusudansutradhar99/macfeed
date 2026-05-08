@@ -43,7 +43,7 @@ const DynamicNavItem = ({ item, active, onClick }) => {
       `}
       style={active ? { backgroundColor: 'var(--accent-color)', boxShadow: '0 0 20px var(--accent-color)44' } : {}}
       animate={{ width: hover ? 230 : 44 }}
-      transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+      transition={{ type: 'tween', ease: 'circOut', duration: 0.15 }}
     >
       <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0">
         <item.icon className="w-5 h-5" />
@@ -114,7 +114,7 @@ export default function Sidebar() {
           x: isSidebarOpen ? 0 : '-calc(100% + 40px)',
           opacity: isSidebarOpen ? 1 : 0
         }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
         className="fixed top-20 left-4 h-[calc(100vh-100px)] w-[260px] z-[1100] flex flex-col pointer-events-none will-change-transform"
       >
         <div className="w-full h-full py-6 flex flex-col flex-1 pointer-events-auto relative overflow-y-auto no-scrollbar overflow-x-visible">

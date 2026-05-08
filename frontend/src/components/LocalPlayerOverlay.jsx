@@ -457,7 +457,7 @@ export default function LocalPlayerOverlay() {
           style={{ 
             objectFit: aspectRatio === 'Fit' ? 'contain' : aspectRatio === 'Fill' ? 'cover' : aspectRatio === 'Stretch' ? 'fill' : 'contain', 
             aspectRatio: (aspectRatio === '16:9' || aspectRatio === '4:3') ? aspectRatio.replace(':', '/') : 'auto',
-            filter: `brightness(${brightness}%) contrast(105%)`, // Real-time brightness filter
+            /* REMOVED EXPENSIVE FILTERS FOR BATTERY SAVING */
             contain: 'strict',
             imageRendering: 'optimizeQuality',
             willChange: 'transform, contents',
@@ -526,6 +526,7 @@ export default function LocalPlayerOverlay() {
             {showControls && !isLocked && (
                 <motion.div 
                     initial={{ y: -100 }} animate={{ y: 0 }} exit={{ y: -100 }}
+                    transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
                     className="absolute top-0 left-0 right-0 z-50 p-6 flex items-center justify-between bg-gradient-to-b from-black to-transparent"
                     onClick={e => e.stopPropagation()}
                 >
@@ -562,6 +563,7 @@ export default function LocalPlayerOverlay() {
             {showControls && !isLocked && (
                 <motion.div 
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
                     className="absolute inset-0 flex items-center justify-center gap-16 z-40 pointer-events-none"
                 >
                     <button onClick={e => { e.stopPropagation(); if (videoRef.current) videoRef.current.currentTime -= 10; }} className="pointer-events-auto text-white p-4">
@@ -582,6 +584,7 @@ export default function LocalPlayerOverlay() {
             {showControls && !isLocked && (
                 <motion.div 
                     initial={{ y: 150 }} animate={{ y: 0 }} exit={{ y: 150 }}
+                    transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
                     className="absolute bottom-0 left-0 right-0 z-50 p-6 flex flex-col gap-6 bg-gradient-to-t from-black to-transparent"
                     onClick={e => e.stopPropagation()}
                 >
@@ -671,7 +674,7 @@ export default function LocalPlayerOverlay() {
                             
                             {/* 1. OUTER GOLD RING (STABLE ARROW) */}
                             <motion.div 
-                                animate={{ rotate: 360 }}
+                                animate={showExtraPanel ? { rotate: 360 } : {}}
                                 transition={{ repeat: Infinity, duration: 60, ease: 'linear' }}
                                 className="absolute w-[420px] h-[420px] rounded-full border-[3px] border-dashed border-yellow-500/20" 
                             />
@@ -683,7 +686,7 @@ export default function LocalPlayerOverlay() {
 
                             {/* 2. INNER CYAN SYSTEM RING (THICK BORDER) */}
                             <motion.div 
-                                animate={{ rotate: -360 }}
+                                animate={showExtraPanel ? { rotate: -360 } : {}}
                                 transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
                                 className="absolute w-[340px] h-[340px] rounded-full border-[4px] border-cyan-400/40 shadow-[0_0_25px_rgba(34,211,238,0.2)]"
                             >
@@ -868,7 +871,6 @@ export default function LocalPlayerOverlay() {
                                                         showMXToast(`${q} Rendering Activated`, <Monitor size={14}/>, "#FCD34D");
                                                         if (videoRef.current) {
                                                             videoRef.current.style.imageRendering = (q === '16K' || q === '8K') ? 'high-quality' : 'optimizeSpeed';
-                                                            videoRef.current.style.filter = (q === '16K' || q === '8K') ? 'contrast(1.05) saturate(1.05)' : 'none';
                                                         }
                                                     }}
                                                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${targetQuality === q ? 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
@@ -894,7 +896,6 @@ export default function LocalPlayerOverlay() {
                                         setHwAccel(!hwAccel);
                                         if (videoRef.current) {
                                             videoRef.current.style.willChange = "transform";
-                                            videoRef.current.style.filter = "contrast(1.1) brightness(1.05) saturate(1.1)";
                                         }
                                     }} />
                                     <SettingRow label="Decoder">
