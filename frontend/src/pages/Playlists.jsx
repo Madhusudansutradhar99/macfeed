@@ -201,7 +201,7 @@ export default function Playlists() {
                      </p>
                   </div>
                </div>
-             </div>
+             </label>
 
               <div className="relative">
                  <div className="flex items-center justify-between gap-6 mb-10">
