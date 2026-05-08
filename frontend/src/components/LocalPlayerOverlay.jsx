@@ -50,9 +50,6 @@ export default function LocalPlayerOverlay() {
   const lastTap = useRef(0);
   const swipeUpStart = useRef(0);
 
-    // Initialize native/HLS player hook (probes capabilities and attaches hls.js when needed)
-    const { hls, error: playerError, maxHeight: playerMaxHeight, smooth: playerSmooth } = useVideoPlayer(videoRef, { currentSong, preloadMode });
-
   // Core UI States
   const [showControls, setShowControls] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
@@ -106,6 +103,9 @@ export default function LocalPlayerOverlay() {
   const [orientation, setOrientation] = useState('portrait');
   const [physOrientation, setPhysOrientation] = useState(window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
   const [wheelRotation, setWheelRotation] = useState(0);
+
+  // Initialize native/HLS player hook (probes capabilities and attaches hls.js when needed)
+  const { hls, error: playerError, maxHeight: playerMaxHeight, smooth: playerSmooth } = useVideoPlayer(videoRef, { currentSong, preloadMode });
 
   useEffect(() => {
     const checkOrientation = () => {
