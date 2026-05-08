@@ -175,25 +175,27 @@ export default function Playlists() {
                 className={`group relative w-full aspect-[2/1] md:aspect-[32/10] bg-white/[0.01] border rounded-[2.5rem] md:rounded-[5rem] flex flex-col items-center justify-center cursor-pointer transition-all duration-1000 overflow-hidden shadow-2xl ${isDragging ? 'bg-accent/10 border-accent scale-[1.02]' : 'border-white/5 hover:bg-white/[0.03] hover:border-accent/20'}`}
               >
                  {/* 
-                    MOBILE FIX: 
-                    The input is absolute positioned to cover the entire dropzone area.
-                    This makes every tap a direct interaction with the input, 
-                    which is more reliable on mobile than programmatic .click()
+                    MOBILE & ACCESSIBILITY FIX: 
+                    Using a label that covers the entire area to trigger the hidden input.
+                    This is the most standard and reliable way to handle file selection across all devices.
                  */}
-                 <input 
-                   type="file" 
-                   ref={fileInputRef} 
-                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-50" 
-                   accept="video/*,audio/*,.mkv,.avi,.mov,.wmv,.flv,.3gp,.flac,.wav,.ogg,.m4a" 
-                   onChange={handleFileSelect} 
-                 />
+                 <label className="absolute inset-0 cursor-pointer z-50">
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      className="hidden" 
+                      /* Broadened accept attribute to allow more formats as requested */
+                      accept="video/*,audio/*,.mkv,.avi,.mov,.wmv,.flv,.3gp,.flac,.wav,.ogg,.m4a,.ts,.m3u8,.mp4,.mp3,.aac,.webm" 
+                      onChange={handleFileSelect} 
+                    />
+                 </label>
 
                  {/* Animated Grid Background */}
                  <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)]" />
                  
                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
 
-                 <div className="relative z-10 flex flex-col items-center text-center px-6 pointer-events-none">
+                 <div className="relative z-10 flex flex-col items-center text-center px-6">
                     <div className="relative mb-6 md:mb-10">
                        <div className={`w-20 h-20 md:w-32 md:h-32 rounded-[2rem] md:rounded-[3.5rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-accent group-hover:text-white transition-all duration-1000 group-hover:rotate-[15deg] group-hover:shadow-[0_0_80px_rgba(var(--accent-rgb),0.4)] ${isDragging ? 'bg-accent text-white scale-110 rotate-[15deg]' : ''}`}>
                           <Upload className="w-8 h-8 md:w-12 md:h-12" />
