@@ -1,7 +1,7 @@
-const express = require('express');
-const cors = require('cors');
-const axios = require('axios');
-const { caching } = require('cache-manager');
+import express from 'express';
+import cors from 'cors';
+import axios from 'axios';
+import { caching } from 'cache-manager';
 
 const app = express();
 const YT_API_KEY = process.env.YOUTUBE_API_KEY;
@@ -10,16 +10,16 @@ const YT_API_KEY = process.env.YOUTUBE_API_KEY;
 let memoryCache;
 let cacheStats = { hits: 0, misses: 0, apiCalls: 0, savedUnits: 0 };
 
-(async () => {
-  try {
+// Helper to get or init cache
+const getCache = async () => {
+  if (!memoryCache) {
     memoryCache = await caching('memory', {
       max: 1000,
       ttl: 86400 * 1000, // 24 hours in ms
     });
-  } catch (e) {
-    console.error('Cache initialization failed');
   }
-})();
+  return memoryCache;
+};
 
 function normalizeQuery(q) {
   return (q || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -37,14 +37,15 @@ app.get('/api/search', async (req, res) => {
   const normalizedQ = normalizeQuery(q);
   const cacheKey = `search:${normalizedQ}`;
 
-  if (memoryCache) {
-    try {
-      const cached = await memoryCache.get(cacheKey);
-      if (cached) {
-        cacheStats.hits++;
-        return res.json({ results: cached, source: 'cache' });
-      }
-    } catch (e) {}
+  try {
+    const cache = await getCache();
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      cacheStats.hits++;
+      return res.json({ results: cached, source: 'cache' });
+    }
+  } catch (e) {
+    console.warn('Cache error:', e.message);
   }
 
   cacheStats.misses++;
@@ -71,7 +72,7 @@ app.get('/api/search', async (req, res) => {
         source: 'youtube'
       }));
     } catch (error) {
-      console.warn('YT API Error');
+      console.warn('YT API Error:', error.message);
     }
   }
 
@@ -94,10 +95,13 @@ app.get('/api/search', async (req, res) => {
   }
 
   if (results.length > 0) {
-    if (memoryCache) await memoryCache.set(cacheKey, results);
+    try {
+      const cache = await getCache();
+      await cache.set(cacheKey, results);
+    } catch (e) {}
     res.json({ results, source: 'api' });
   } else {
-    res.status(404).json({ error: 'No results' });
+    res.status(404).json({ error: 'No results found' });
   }
 });
 
@@ -106,10 +110,11 @@ app.get('/api/video-info', async (req, res) => {
   if (!id) return res.status(400).json({ error: 'ID required' });
   
   const cacheKey = `video:${id}`;
-  if (memoryCache) {
-    const cached = await memoryCache.get(cacheKey);
+  try {
+    const cache = await getCache();
+    const cached = await cache.get(cacheKey);
     if (cached) return res.json({ video: cached, source: 'cache' });
-  }
+  } catch (e) {}
 
   try {
     const response = await axios.get('https://www.googleapis.com/youtube/v3/videos', {
@@ -119,7 +124,10 @@ app.get('/api/video-info', async (req, res) => {
     if (response.data.items?.length > 0) {
       const item = response.data.items[0];
       const video = { id: item.id, title: item.snippet.title, thumbnail: item.snippet.thumbnails.high?.url, duration: item.contentDetails?.duration };
-      if (memoryCache) await memoryCache.set(cacheKey, video);
+      try {
+        const cache = await getCache();
+        await cache.set(cacheKey, video);
+      } catch (e) {}
       return res.json({ video, source: 'api' });
     }
     res.status(404).json({ error: 'Not found' });
@@ -131,10 +139,11 @@ app.get('/api/related', async (req, res) => {
   if (!videoId) return res.status(400).json({ error: 'videoId required' });
 
   const cacheKey = `related:${videoId}`;
-  if (memoryCache) {
-    const cached = await memoryCache.get(cacheKey);
+  try {
+    const cache = await getCache();
+    const cached = await cache.get(cacheKey);
     if (cached) return res.json({ results: cached, source: 'cache' });
-  }
+  } catch (e) {}
 
   try {
     const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
@@ -144,7 +153,10 @@ app.get('/api/related', async (req, res) => {
     const results = response.data.items.map(item => ({
       id: item.id.videoId, ytId: item.id.videoId, title: item.snippet.title, thumbnail: item.snippet.thumbnails.high.url, source: 'youtube'
     }));
-    if (memoryCache) await memoryCache.set(cacheKey, results);
+    try {
+      const cache = await getCache();
+      await cache.set(cacheKey, results);
+    } catch (e) {}
     res.json({ results, source: 'api' });
   } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
@@ -153,4 +165,4 @@ app.get('/api/cache-stats', (req, res) => {
   res.json({ hits: cacheStats.hits, misses: cacheStats.misses, cacheType: 'vercel-memory' });
 });
 
-module.exports = app;
+export default app;
