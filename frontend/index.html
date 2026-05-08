@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     
-    <!-- Deployment Version: 1.0.6 - Orientation & Resume Centering -->
+    <!-- Deployment Version: 1.0.7 - Aggressive Orientation Fix -->
 
     <!-- Pre-connect to YouTube -->
     <link rel="preconnect" href="https://www.youtube.com" />
@@ -26,11 +26,19 @@
       }
       // Check for new version and force reload if necessary
       window.addEventListener('load', () => {
-        const currentVersion = '1.0.6'; 
+        const currentVersion = '1.0.7'; 
         const storedVersion = localStorage.getItem('macfeed_version');
         if (storedVersion !== currentVersion) {
           localStorage.setItem('macfeed_version', currentVersion);
-          location.reload(true); // Force clear cache reload
+          // Try to unregister all service workers before reloading
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+              for(let reg of regs) reg.unregister();
+              setTimeout(() => { location.reload(true); }, 500);
+            });
+          } else {
+            location.reload(true);
+          }
         }
       });
     </script>

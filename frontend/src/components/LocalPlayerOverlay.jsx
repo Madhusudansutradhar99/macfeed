@@ -106,17 +106,20 @@ export default function LocalPlayerOverlay() {
     const checkOrientation = () => {
         const orient = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
         setDeviceOrientation(orient);
-        if (orient === 'portrait' && showExtraPanel) {
+        if (orient === 'portrait') {
             setShowExtraPanel(false);
         }
     };
+    // Aggressive polling for orientation changes on mobile
+    const interval = setInterval(checkOrientation, 500);
     window.addEventListener('resize', checkOrientation);
     window.addEventListener('orientationchange', checkOrientation);
     return () => {
+        clearInterval(interval);
         window.removeEventListener('resize', checkOrientation);
         window.removeEventListener('orientationchange', checkOrientation);
     };
-  }, [showExtraPanel]);
+  }, []);
 
   const showMXToast = useCallback((msg, icon, color = '#FFFFFF') => {
     setToast({ msg, icon, color });
