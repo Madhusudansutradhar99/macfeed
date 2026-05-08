@@ -167,46 +167,47 @@ export default function Playlists() {
               key="local" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}
               className="space-y-24"
             >
-              {/* ── REDESIGNED DROPZONE ── */}
-              <div 
-                className="relative w-full z-[1200]"
-                onDragOver={onDragOver}
-                onDragLeave={onDragLeave}
-                onDrop={onDrop}
-              >
-                 <input 
-                   type="file" 
-                   ref={fileInputRef} 
-                   className="hidden" 
-                   accept="video/*,audio/*,.mkv,.ts,.m3u8,.mp4,.mp3,.webm" 
-                   onChange={handleFileSelect} 
-                 />
+             <div className="relative">
+               {/* 
+                   OG BROWSER COMPATIBILITY FIX:
+                   Using standard htmlFor + unique ID. This is the most reliable way 
+                   to trigger a file input on mobile browsers without relying on refs or JS clicks.
+               */}
+               <input 
+                 id="macfeed-local-file-picker"
+                 type="file" 
+                 className="hidden" 
+                 accept="video/*,audio/*,.mkv,.ts,.m3u8,.mp4,.mp3,.webm" 
+                 onChange={handleFileSelect} 
+               />
 
-                 <div 
-                   onClick={() => fileInputRef.current?.click()}
-                   onTouchEnd={(e) => { e.preventDefault(); fileInputRef.current?.click(); }}
-                   className={`group relative w-full aspect-[2/1] md:aspect-[32/10] bg-white/[0.01] border rounded-[2.5rem] md:rounded-[5rem] flex flex-col items-center justify-center cursor-pointer transition-all duration-1000 overflow-hidden shadow-2xl ${isDragging ? 'bg-accent/10 border-accent scale-[1.02]' : 'border-white/5 hover:bg-white/[0.03] hover:border-accent/20'}`}
-                 >
-                    {/* Visual elements */}
-                    <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)] pointer-events-none" />
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
+               <label 
+                 htmlFor="macfeed-local-file-picker"
+                 onDragOver={onDragOver}
+                 onDragLeave={onDragLeave}
+                 onDrop={onDrop}
+                 className={`group relative w-full aspect-[2/1] md:aspect-[32/10] bg-white/[0.01] border rounded-[2.5rem] md:rounded-[5rem] flex flex-col items-center justify-center cursor-pointer transition-all duration-1000 overflow-hidden shadow-2xl z-[1200] ${isDragging ? 'bg-accent/10 border-accent scale-[1.02]' : 'border-white/5 hover:bg-white/[0.03] hover:border-accent/20'}`}
+               >
+                  {/* Visual elements */}
+                  <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)] pointer-events-none" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
 
-                    <div className="relative z-10 flex flex-col items-center text-center px-6 pointer-events-none">
-                       <div className="relative mb-6 md:mb-10">
-                          <div className={`w-16 h-16 md:w-32 md:h-32 rounded-[1.5rem] md:rounded-[3.5rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-accent group-hover:text-white transition-all duration-1000 group-hover:rotate-[15deg] group-hover:shadow-[0_0_80px_rgba(var(--accent-rgb),0.4)] ${isDragging ? 'bg-accent text-white scale-110 rotate-[15deg]' : ''}`}>
-                             <Upload className="w-6 h-6 md:w-12 md:h-12" />
-                          </div>
-                       </div>
-                       
-                       <h2 className="text-2xl md:text-5xl font-black uppercase italic tracking-tighter text-white mb-2">
-                          OPEN <span className="text-accent underline decoration-white/10 underline-offset-8">LOCAL</span> MEDIA
-                       </h2>
-                       <p className="text-white/30 text-[8px] md:text-[10px] font-black uppercase tracking-[0.4em] max-w-xl leading-relaxed">
-                          {isDragging ? 'RELEASE TO INITIALIZE' : 'DRAG & DROP VIDEO FILES HERE OR CLICK TO BROWSE'}
-                       </p>
-                    </div>
-                 </div>
-              </div>
+                  <div className="relative z-10 flex flex-col items-center text-center px-6 pointer-events-none">
+                     <div className="relative mb-6 md:mb-10">
+                        <div className={`w-16 h-16 md:w-32 md:h-32 rounded-[1.5rem] md:rounded-[3.5rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-accent group-hover:text-white transition-all duration-1000 group-hover:rotate-[15deg] group-hover:shadow-[0_0_80px_rgba(var(--accent-rgb),0.4)] ${isDragging ? 'bg-accent text-white scale-110 rotate-[15deg]' : ''}`}>
+                           <Upload className="w-6 h-6 md:w-12 md:h-12" />
+                        </div>
+                     </div>
+                     
+                     <h2 className="text-2xl md:text-5xl font-black uppercase italic tracking-tighter text-white mb-2">
+                        OPEN <span className="text-accent underline decoration-white/10 underline-offset-8">LOCAL</span> MEDIA
+                     </h2>
+                     <p className="text-white/30 text-[8px] md:text-[10px] font-black uppercase tracking-[0.4em] max-w-xl leading-relaxed">
+                        {isDragging ? 'RELEASE TO INITIALIZE' : 'DRAG & DROP VIDEO FILES HERE OR CLICK TO BROWSE'}
+                     </p>
+                  </div>
+               </label>
+             </div>
 
               <div className="relative">
                  <div className="flex items-center justify-between gap-6 mb-10">
