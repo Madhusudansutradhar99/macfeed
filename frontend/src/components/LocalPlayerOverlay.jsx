@@ -102,6 +102,12 @@ export default function LocalPlayerOverlay() {
   const [orientation, setOrientation] = useState('portrait');
   const [wheelRotation, setWheelRotation] = useState(0);
 
+  useEffect(() => {
+    if (orientation === 'portrait' && showExtraPanel) {
+        setShowExtraPanel(false);
+    }
+  }, [orientation, showExtraPanel]);
+
   const showMXToast = useCallback((msg, icon, color = '#FFFFFF') => {
     setToast({ msg, icon, color });
     setTimeout(() => setToast(null), 2000);
@@ -379,7 +385,7 @@ export default function LocalPlayerOverlay() {
     const touchY = e.changedTouches[0].clientY;
     const deltaY = swipeUpStart.current - touchY;
 
-    if (deltaY > 100 && !showExtraPanel && !isLocked) {
+    if (deltaY > 100 && !showExtraPanel && !isLocked && orientation === 'landscape') {
         setShowExtraPanel(true);
         return;
     }
@@ -627,13 +633,15 @@ export default function LocalPlayerOverlay() {
                             <span ref={durationRef} className="text-white text-[10px] font-black min-w-[45px]">00:00</span>
                         </div>
 
-                        {/* Desktop Site Mode: More Button to open Wheel */}
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); setShowExtraPanel(!showExtraPanel); }}
-                            className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-90 border border-white/5"
-                        >
-                            <Settings2 size={24} className={showExtraPanel ? "text-accent animate-spin-slow" : ""} />
-                        </button>
+                        {/* Desktop Site Mode: More Button to open Wheel (Landscape Only) */}
+                        {orientation === 'landscape' && (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setShowExtraPanel(!showExtraPanel); }}
+                                className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-90 border border-white/5"
+                            >
+                                <Settings2 size={24} className={showExtraPanel ? "text-accent animate-spin-slow" : ""} />
+                            </button>
+                        )}
                     </div>
                 </motion.div>
             )}
