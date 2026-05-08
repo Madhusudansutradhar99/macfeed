@@ -369,18 +369,30 @@ export default function LocalPlayerOverlay() {
   const toggleROT = async (e) => {
     e?.stopPropagation();
     const newOrient = orientation === 'portrait' ? 'landscape' : 'portrait';
+    
     try {
         if (newOrient === 'landscape') {
-            if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
-            await ScreenOrientation.lock({ orientation: 'landscape' });
-            showMXToast('LANDSCAPE', <RefreshCcw size={16}/>, '#34D399');
+            if (document.documentElement.requestFullscreen) {
+                await document.documentElement.requestFullscreen().catch(() => {});
+            }
+            if (window.screen?.orientation?.lock) {
+                await window.screen.orientation.lock('landscape').catch(() => {});
+            }
+            await ScreenOrientation.lock({ orientation: 'landscape' }).catch(() => {});
+            showMXToast('ORIENTATION: LANDSCAPE', <RefreshCcw size={16}/>, '#34D399');
         } else {
-            await ScreenOrientation.lock({ orientation: 'portrait' });
-            if (document.fullscreenElement) await document.exitFullscreen();
-            showMXToast('PORTRAIT', <RefreshCcw size={16}/>, '#34D399');
+            if (window.screen?.orientation?.lock) {
+                await window.screen.orientation.lock('portrait').catch(() => {});
+            }
+            await ScreenOrientation.lock({ orientation: 'portrait' }).catch(() => {});
+            if (document.fullscreenElement) {
+                await document.exitFullscreen().catch(() => {});
+            }
+            showMXToast('ORIENTATION: PORTRAIT', <RefreshCcw size={16}/>, '#34D399');
         }
     } catch(err) {
-        showMXToast(newOrient.toUpperCase(), <RefreshCcw size={16}/>, '#34D399');
+        console.warn("Rotation error:", err);
+        showMXToast(`FORCING ${newOrient.toUpperCase()}`, <RefreshCcw size={16}/>, '#34D399');
     }
     setOrientation(newOrient);
   };
