@@ -556,9 +556,9 @@ export default function LocalPlayerOverlay() {
           {activeSubtitle && <track src={activeSubtitle} kind="subtitles" srcLang="en" label="English" default />}
         </video>
 
-        { (playerError || playerMaxHeight) && showControls && (
+        {(playerError || playerMaxHeight) && showControls && (
             <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-[60] px-3 py-2 bg-black/70 text-white text-xs rounded-full">
-                {playerError ? (`Playback error: ${playerError.message}`) : (playerMaxHeight ? (playerSmooth ? `Device reports smooth playback up to ${playerMaxHeight}px` : `Quality capped to ${playerMaxHeight}px for smoother playback`) : null)}
+                {playerError ? `Playback error: ${playerError.message}` : (playerMaxHeight ? (playerSmooth ? `Device reports smooth playback up to ${playerMaxHeight}px` : `Quality capped to ${playerMaxHeight}px for smoother playback`) : null)}
             </div>
         )}
 
