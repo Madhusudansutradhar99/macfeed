@@ -19,23 +19,29 @@ export default function AdBanner({ position = 'corner' }) {
 
   useEffect(() => {
     async function fetchAd() {
-      const { data } = await supabase
-        .from('ads')
-        .select('*')
-        .or(
-          `position.eq.${position === 'banner' ? 'banner' : 'corner'},position.eq.${position === 'banner' ? 'top' : 'bottom-right'}`
-        )
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1);
+      try {
+        const { data, error } = await supabase
+          .from('ads')
+          .select('*')
+          .or(
+            `position.eq.${position === 'banner' ? 'banner' : 'corner'},position.eq.${position === 'banner' ? 'top' : 'bottom-right'}`
+          )
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-      if (data?.length) {
-        setAd(data[0]);
-      } else {
-        // No ad from Supabase → show MacFeed brand placeholder
+        if (!error && data?.length) {
+          setAd(data[0]);
+        } else {
+          // No ad found or error → show MacFeed brand placeholder
+          setAd(FALLBACK_AD);
+        }
+      } catch (err) {
+        console.warn("Ad fetch skipped:", err.message);
         setAd(FALLBACK_AD);
+      } finally {
+        setLoaded(true);
       }
-      setLoaded(true);
     }
     fetchAd();
   }, []);

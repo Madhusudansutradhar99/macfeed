@@ -189,11 +189,11 @@ export default function Header() {
       onMouseEnter={() => setIsHeaderHovered(true)}
       onMouseLeave={() => setIsHeaderHovered(false)}
       transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-      className={`fixed top-0 left-0 right-0 h-[75px] bg-transparent z-[5000] flex items-center px-4 transition-colors duration-500 ${isSearchPage ? 'justify-center' : 'md:px-10'}`}
+      className={`fixed top-0 left-0 right-0 h-[75px] bg-transparent z-[5000] flex items-center px-4 transition-colors duration-500 pointer-events-none ${isSearchPage ? 'justify-center' : 'md:px-10'}`}
       style={isSearchPage ? { backgroundColor: 'transparent', backdropFilter: 'none', WebkitBackdropFilter: 'none', borderBottom: 'none' } : {}}
     >
       {!isSearchPage && (
-        <div className="flex items-center gap-6 shrink-0 mr-10">
+        <div className="flex items-center gap-6 shrink-0 mr-10 pointer-events-auto">
           <button onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))} className="p-3 bg-secondary rounded-2xl hover:bg-primary/10 border border-primary transition-all text-primary">
             <Layout className="w-5 h-5" />
           </button>
@@ -206,7 +206,7 @@ export default function Header() {
         </div>
       )}
 
-      <div ref={dropdownRef} className="flex-1 max-w-4xl mx-auto relative z-[6000]">
+      <div ref={dropdownRef} className="flex-1 max-w-4xl mx-auto relative z-[6000] pointer-events-auto">
         <div
           className={`search-container flex items-center transition-all duration-500 px-4 py-1.5 rounded-full border-2 ${isFocused ? 'bg-secondary/95 border-accent ring-4 ring-accent/20 w-full shadow-2xl' : 'bg-secondary/40 border-primary w-full hover:bg-secondary/60 hover:border-accent/40'}`}
           style={isFocused ? { borderColor: '#ff0000', boxShadow: '0 0 20px rgba(255, 0, 0, 0.3)' } : {}}
@@ -249,7 +249,7 @@ export default function Header() {
       </div>
 
       {!isSearchPage && (
-        <div className="shrink-0 ml-6 md:ml-10 flex items-center gap-4">
+        <div className="shrink-0 ml-6 md:ml-10 flex items-center gap-4 pointer-events-auto">
           <ThemeToggle />
           
           {user ? (
