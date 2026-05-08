@@ -346,6 +346,7 @@ export default function LocalPlayerOverlay() {
   };
 
   const handleTouchStart = (e) => {
+    if (showExtraPanel) return;
     const touch = e.touches[0];
     touchStart.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
     swipeUpStart.current = touch.clientY;
@@ -374,6 +375,7 @@ export default function LocalPlayerOverlay() {
   };
 
   const handleTouchEnd = (e) => {
+    if (showExtraPanel) return;
     const touchY = e.changedTouches[0].clientY;
     const deltaY = swipeUpStart.current - touchY;
 
@@ -539,6 +541,12 @@ export default function LocalPlayerOverlay() {
 
                     <div className="flex items-center gap-4">
                         <button 
+                            onClick={toggleROT}
+                            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white"
+                        >
+                            <RefreshCcw size={18} />
+                        </button>
+                        <button 
                             onClick={(e) => {
                                 e.stopPropagation();
                                 const idx = ASPECT_RATIOS.indexOf(aspectRatio);
@@ -685,7 +693,7 @@ export default function LocalPlayerOverlay() {
                             className="absolute inset-0 z-[200] cursor-grab active:cursor-grabbing"
                         />
                         {/* COMPACT & TIGHT MOBILE WHEEL (Smaller radius and size) */}
-                        <div className="absolute left-[-220px] md:left-[-280px] w-[300px] md:w-[400px] h-[300px] md:h-[400px] flex items-center justify-center pointer-events-none">
+                        <div className="absolute left-[-220px] md:left-[-280px] w-[300px] md:w-[400px] h-[300px] md:h-[400px] flex items-center justify-center pointer-events-none scale-[0.8] md:scale-100 origin-left">
                             
                             {/* 1. OUTER GOLD RING (STABLE ARROW) */}
                             <motion.div 
@@ -750,7 +758,7 @@ export default function LocalPlayerOverlay() {
                                 
                                 // Cyan ring is at 170. Panel is at 350. Wire is 180px long.
                                 // Tighter radius on mobile for better thumb reach
-                                const panelRadius = window.innerWidth < 768 ? 260 : 350; 
+                                const panelRadius = window.innerWidth < 768 ? 200 : 350; 
                                 
                                 const xPos = Math.cos(rad) * panelRadius + 200; // Center offset
                                 const yPos = Math.sin(rad) * panelRadius;

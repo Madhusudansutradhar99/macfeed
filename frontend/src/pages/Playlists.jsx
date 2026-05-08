@@ -156,6 +156,7 @@ export default function Playlists() {
                 <button 
                   key={view}
                   onClick={() => setActiveView(view)}
+                  whileTap={{ scale: 0.95 }}
                   className={`flex-1 md:flex-none px-4 md:px-8 py-2 md:py-3 rounded-xl md:rounded-2xl text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] transition-all relative overflow-hidden group ${activeView === view ? 'text-primary' : 'text-secondary/40 hover:text-primary'}`}
                 >
                   {activeView === view && (
@@ -241,6 +242,7 @@ export default function Playlists() {
                         <motion.div 
                           key={file.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}
                           whileHover={{ y: -10, scale: 1.02 }}
+                          whileTap={{ scale: 0.96 }}
                           className="bg-secondary/40 backdrop-blur-3xl border border-primary rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 group cursor-pointer hover:border-accent/40 transition-all duration-500 shadow-2xl relative overflow-hidden"
                           onClick={() => handleRecentPlay(file)}
                         >
@@ -298,18 +300,19 @@ export default function Playlists() {
                       </form>
                       
                       <div className="space-y-4">
-                         {playlists.map(p => (
-                           <div 
-                             key={p.id} onClick={() => setActivePlaylist(p)}
-                             className={`p-8 rounded-[2.5rem] cursor-pointer transition-all border flex items-center justify-between group relative overflow-hidden ${activePlaylist?.id === p.id ? 'bg-secondary text-primary border-accent shadow-2xl scale-[1.02]' : 'bg-secondary/40 border-primary hover:border-accent/40'}`}
-                           >
+                          {playlists.map(p => (
+                            <motion.div 
+                              key={p.id} onClick={() => setActivePlaylist(p)}
+                              whileTap={{ scale: 0.98 }}
+                              className={`p-8 rounded-[2.5rem] cursor-pointer transition-all border flex items-center justify-between group relative overflow-hidden ${activePlaylist?.id === p.id ? 'bg-secondary text-primary border-accent shadow-2xl scale-[1.02]' : 'bg-secondary/40 border-primary hover:border-accent/40'}`}
+                            >
                               <div className="relative z-10">
                                  <div className={`font-black uppercase italic tracking-tighter text-2xl text-primary`}>{p.name}</div>
                                  <div className={`text-[10px] font-black uppercase tracking-widest mt-2 text-secondary opacity-40`}>{p.videos.length} SEGMENTS</div>
                               </div>
                               <button onClick={(e) => { e.stopPropagation(); deletePlaylist(user.id, p.id); setPlaylists(getPlaylists(user.id)); }} className={`p-3 rounded-xl transition-all opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-secondary hover:text-red-500`}><Trash2 className="w-5 h-5" /></button>
-                           </div>
-                         ))}
+                            </motion.div>
+                          ))}
                       </div>
                    </div>
 
@@ -332,7 +335,11 @@ export default function Playlists() {
 
                            <div className="grid grid-cols-1 gap-6">
                               {activePlaylist.videos.map((v, i) => (
-                                <div key={v.id} onClick={() => navigate(`/watch/${v.id}`)} className="flex items-center gap-8 p-6 rounded-[2.5rem] hover:bg-secondary/40 transition-all group cursor-pointer border border-transparent hover:border-primary">
+                                <motion.div 
+                                  key={v.id} onClick={() => navigate(`/watch/${v.id}`)} 
+                                  whileTap={{ scale: 0.98 }}
+                                  className="flex items-center gap-8 p-6 rounded-[2.5rem] hover:bg-secondary/40 transition-all group cursor-pointer border border-transparent hover:border-primary"
+                                >
                                    <div className="text-primary opacity-10 font-black italic text-4xl w-14 text-center group-hover:text-accent transition-colors">{String(i+1).padStart(2, '0')}</div>
                                    <div className="w-44 aspect-video rounded-[1.5rem] overflow-hidden shrink-0 border border-primary relative">
                                       <img src={v.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
@@ -349,7 +356,7 @@ export default function Playlists() {
                                       </div>
                                    </div>
                                    <button onClick={(e) => { e.stopPropagation(); removeVideoFromPlaylist(user.id, activePlaylist.id, v.id); setActivePlaylist({...activePlaylist, videos: activePlaylist.videos.filter(vid => vid.id !== v.id)}); }} className="p-4 rounded-2xl hover:bg-red-500/10 text-secondary opacity-10 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"><X className="w-6 h-6" /></button>
-                                </div>
+                                </motion.div>
                               ))}
                               {activePlaylist.videos.length === 0 && (
                                 <div className="py-20 text-center opacity-20">
