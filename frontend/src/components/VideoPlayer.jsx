@@ -107,6 +107,13 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
     }
   }, []);
 
+  const handleMiniPlayer = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    onMiniChange?.(true);
+  }, [onMiniChange]);
+
   const handleTouchStart = useCallback((event) => {
     const touch = event.touches[0];
     touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
@@ -348,6 +355,31 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
           event.preventDefault();
           setMuted((prev) => !prev);
           break;
+        case 'j':
+          event.preventDefault();
+          skip(-10);
+          break;
+        case 'l':
+          event.preventDefault();
+          skip(10);
+          break;
+        case 'i':
+          event.preventDefault();
+          handleMiniPlayer();
+          break;
+        case 't':
+          event.preventDefault();
+          // Theater mode is intentionally mapped to fullscreen/minimize only for this simplified player.
+          toggleFullscreen();
+          break;
+        case 'arrowup':
+          event.preventDefault();
+          setVolume((prev) => Math.min(1, Number((prev + 0.1).toFixed(2))));
+          break;
+        case 'arrowdown':
+          event.preventDefault();
+          setVolume((prev) => Math.max(0, Number((prev - 0.1).toFixed(2))));
+          break;
         case 'f':
           event.preventDefault();
           toggleFullscreen();
@@ -365,7 +397,7 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
 
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [skip, toggleFullscreen]);
+  }, [handleMiniPlayer, skip, toggleFullscreen]);
 
   if (!video) return null;
 
@@ -373,7 +405,7 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
     <div className="flex w-full flex-col">
       <div
         ref={containerRef}
-        className={`relative w-full overflow-hidden select-none bg-black ${isFullscreen ? 'rounded-none' : 'rounded-[18px] sm:rounded-2xl'} aspect-video min-h-[280px] sm:min-h-0`}
+        className={`relative w-full overflow-hidden select-none bg-black ${isFullscreen ? 'rounded-none' : 'rounded-[18px] sm:rounded-2xl'} aspect-video min-h-[320px] sm:min-h-0`}
         style={{ aspectRatio: '16 / 9' }}
         onMouseMove={showControlsTemporarily}
         onTouchStart={handleTouchStart}
@@ -421,6 +453,9 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
               </div>
 
               <div className="flex items-center gap-2">
+                <ControlBtn onClick={handleMiniPlayer} title="Minimize video">
+                  <Minimize className="h-5 w-5" />
+                </ControlBtn>
                 <ControlBtn onClick={toggleFullscreen} title="Fullscreen">
                   {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
                 </ControlBtn>
