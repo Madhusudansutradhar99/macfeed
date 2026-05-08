@@ -138,3 +138,5 @@ function AppContent() {
     </AuthProvider>
   );
 }
+
+// Trigger Vercel Build 3
