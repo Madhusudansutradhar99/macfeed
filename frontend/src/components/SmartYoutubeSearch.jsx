@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Play, X, AlertTriangle, Database } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { fetchJson } from '../utils/request';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -68,6 +69,7 @@ const SmartYoutubeSearch = () => {
     setLoading(true);
     setError(null);
     setWarning(null);
+    setResults([]);
 
     const localCacheKey = `yt_cache_${query.toLowerCase()}`;
     const localCached = localStorage.getItem(localCacheKey);
@@ -82,21 +84,25 @@ const SmartYoutubeSearch = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`);
-      const data = await response.json();
+      const { response, data } = await fetchJson(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`, {}, { timeoutMs: 10000, retryTimeoutMs: 5000, retries: 1 });
 
       if (!response.ok) throw new Error(data.error || 'Something went wrong');
 
-      setResults(data.results);
-      if (data.warning) setWarning(data.warning);
+      const nextResults = data?.results || [];
+      setResults(nextResults);
+      if (data?.warning) setWarning(data.warning);
+
+      if (nextResults.length === 0) {
+        setWarning('No results found. Try a different search.');
+      }
 
       localStorage.setItem(localCacheKey, JSON.stringify({
-        data: data.results,
+        data: nextResults,
         timestamp: Date.now()
       }));
 
     } catch (err) {
-      setError(err.message);
+      setError(err?.name === 'AbortError' ? 'Search timed out. Please retry.' : err.message);
     } finally {
       setLoading(false);
     }
@@ -154,8 +160,8 @@ const SmartYoutubeSearch = () => {
             >
               <div className="relative aspect-video">
                 <img 
-                  src={video.thumbnail} 
-                  alt={video.title} 
+                  src={video.thumbnail || video.thumbnail_url || 'https://via.placeholder.com/640x360?text=No+Thumbnail'} 
+                  alt={video.title || 'Video'} 
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -171,7 +177,7 @@ const SmartYoutubeSearch = () => {
               </div>
               <div className="p-4">
                 <h3 className="text-sm font-bold line-clamp-2 leading-snug text-gray-200 group-hover:text-white mb-2">
-                  {video.title}
+                  {video?.title || 'Untitled Video'}
                 </h3>
                 {saveStatus[video.id] === 'saving' && <span className="text-[10px] text-purple-400 animate-pulse uppercase font-black">Syncing to Site...</span>}
                 {saveStatus[video.id] === 'saved' && <span className="text-[10px] text-green-400 uppercase font-black">Added to Library ✓</span>}

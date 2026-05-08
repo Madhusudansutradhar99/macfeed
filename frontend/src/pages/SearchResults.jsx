@@ -6,6 +6,7 @@ import PremiumLoader from '../components/PremiumLoader';
 import { Search, SlidersHorizontal, Video, Globe, AlertCircle, Database, Zap, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { fetchJson } from '../utils/request';
 
 // ── L1 CACHE: localStorage with 2hr TTL ──
 const CACHE_PREFIX = 'mf_search_';
@@ -47,11 +48,15 @@ export default function SearchResults() {
   const [loading, setLoading] = useState(false);
   const [isFreeMode, setIsFreeMode] = useState(false);
   const [cacheSource, setCacheSource] = useState(null);
+  const [error, setError] = useState('');
+  const [empty, setEmpty] = useState(false);
   const q = params.get('q') || '';
 
   const performSearch = useCallback(async (query) => {
     if (!query) return;
     setLoading(true);
+    setError('');
+    setEmpty(false);
     setIsFreeMode(false);
     setCacheSource(null);
     
@@ -79,11 +84,11 @@ export default function SearchResults() {
     // 3. GLOBAL SEARCH — Backend only
     // Strategy: Backend Master Engine (has disk cache = L2)
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(10000) });
+      const { response: res, data } = await fetchJson(`/api/search?q=${encodeURIComponent(query)}`, {}, { timeoutMs: 10000, retryTimeoutMs: 5000, retries: 1 });
       if (!res.ok) throw new Error('Backend failed');
-      const data = await res.json();
-      if (data.results?.length > 0) {
-        const globalResults = data.results.map(v => ({
+      const resultsData = data?.results || [];
+      if (resultsData.length > 0) {
+        const globalResults = resultsData.map(v => ({
           id: `yt-${v.ytId}`, ytId: v.ytId, title: v.title, thumbnail_url: v.thumbnail || v.thumbnail_url,
           video_url: `https://www.youtube.com/embed/${v.ytId}`, source: 'youtube', type: 'global'
         }));
@@ -97,13 +102,24 @@ export default function SearchResults() {
           const uniqueNew = globalResults.filter(g => !existingIds.has(g.id));
           return [...prev, ...uniqueNew];
         });
+      } else {
+        setEmpty(true);
       }
     } catch (err) {
       console.warn("Global search failed:", err.message);
+      setError(err?.name === 'AbortError' ? 'Search timed out after 10 seconds. Please retry.' : 'Search service failed. Please retry.');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    const retryOnReconnect = () => {
+      if (q) performSearch(q);
+    };
+    window.addEventListener('online', retryOnReconnect);
+    return () => window.removeEventListener('online', retryOnReconnect);
+  }, [q, performSearch]);
 
   useEffect(() => { performSearch(q); }, [q, performSearch]);
 
@@ -132,6 +148,16 @@ export default function SearchResults() {
 
       {loading && results.length === 0 && <PremiumLoader />}
 
+      {error && !loading && (
+        <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-red-300 font-black uppercase tracking-[0.2em] text-[10px]">Search failed</p>
+            <p className="text-secondary text-sm mt-1">{error}</p>
+          </div>
+          <button onClick={() => performSearch(q)} className="px-4 py-2 rounded-full bg-white text-black font-black uppercase text-[10px] tracking-[0.2em]">Retry</button>
+        </div>
+      )}
+
       {results.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-8">
           {results.map((video, idx) => (
@@ -150,7 +176,7 @@ export default function SearchResults() {
       ) : !loading ? (
         <div className="py-40 text-center flex flex-col items-center">
            <Search className="w-16 h-16 text-secondary/10 mb-6" />
-            <p className="text-secondary/20 font-black uppercase tracking-[0.5em] text-2xl italic">No Content Matches</p>
+            <p className="text-secondary/20 font-black uppercase tracking-[0.5em] text-2xl italic">{error ? 'Search Unavailable' : empty ? 'No Content Matches' : 'No Results Yet'}</p>
             <div className="mt-8 flex items-center gap-6">
               <button onClick={() => performSearch(q)} className="text-purple-500 font-black text-[10px] uppercase tracking-widest hover:text-white transition-colors">Try Rescan</button>
               <div className="w-[1px] h-4 bg-white/10" />

@@ -4,7 +4,7 @@ import { WifiOff, AlertCircle } from 'lucide-react';
 
 export default function OfflineStatus() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(!navigator.onLine);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -14,7 +14,6 @@ export default function OfflineStatus() {
     const handleOffline = () => {
         setIsOffline(true);
         setShow(true);
-        setTimeout(() => setShow(false), 2000);
     };
 
     window.addEventListener('online', handleOnline);
@@ -41,7 +40,7 @@ export default function OfflineStatus() {
              </div>
              <div className="flex flex-col">
                 <span className="text-white font-black uppercase italic tracking-widest text-[10px]">Connection Lost</span>
-                <span className="text-white/60 text-[8px] font-bold uppercase tracking-widest">Entering Offline Mode</span>
+                <span className="text-white/60 text-[8px] font-bold uppercase tracking-widest">Retrying automatically when you reconnect</span>
              </div>
           </div>
         </motion.div>

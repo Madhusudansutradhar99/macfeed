@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Play, ChevronLeft, ChevronRight, Loader2, Tv2, Eye, Database, Zap, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabaseClient';
+import { fetchJson } from '../utils/request';
 
 // ── L1 CACHE: localStorage with 2hr TTL ──
 const CACHE_PREFIX = 'mf_related_';
@@ -97,20 +98,18 @@ export default function YouTubeRelatedVideos({ currentVideoUrl, currentVideoId, 
 
     // 2. BACKEND RELATED ENDPOINT (L2 Disk Cache)
     fetchPromises.push((async () => {
-      const res = await fetch(`/api/related?videoId=${ytId}`, { signal: AbortSignal.timeout(6000) });
+      const { response: res, data } = await fetchJson(`/api/related?videoId=${ytId}`, {}, { timeoutMs: 6000, retryTimeoutMs: 4000, retries: 1 });
       if (!res.ok) throw new Error('Backend failed');
-      const data = await res.json();
-      if (!data.results?.length) throw new Error('Backend empty');
+      if (!data?.results?.length) throw new Error('Backend empty');
       return { results: data.results, source: data.source };
     })());
 
     // 3. Fallback: Search by title if related endpoint fails
     if (currentVideoTitle && currentVideoTitle !== 'YouTube Video') {
         fetchPromises.push((async () => {
-            const res = await fetch(`/api/search?q=${encodeURIComponent(currentVideoTitle)}`, { signal: AbortSignal.timeout(6000) });
+        const { response: res, data } = await fetchJson(`/api/search?q=${encodeURIComponent(currentVideoTitle)}`, {}, { timeoutMs: 6000, retryTimeoutMs: 4000, retries: 1 });
             if (!res.ok) throw new Error('Search failed');
-            const data = await res.json();
-            const filtered = (data.results || []).filter(v => v.ytId !== ytId);
+        const filtered = (data?.results || []).filter(v => v.ytId !== ytId);
             if (!filtered.length) throw new Error('Search empty');
             return { results: filtered, source: 'search-fallback' };
         })());

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { fetchJson } from '../utils/request';
 
 export default function VideoPlayerPage() {
   const { user, setAuthModalOpen } = useAuth();
@@ -18,6 +19,7 @@ export default function VideoPlayerPage() {
   const [video, setVideo] = useState(null);
   const [related, setRelated] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [playerError, setPlayerError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,6 +32,7 @@ export default function VideoPlayerPage() {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
+      setPlayerError('');
       // 1. Handle Dynamic YouTube ID
       if (id?.toString().startsWith('yt-')) {
         const ytId = id.replace('yt-', '');
@@ -39,17 +42,15 @@ export default function VideoPlayerPage() {
         // If title is missing, try to fetch it from YouTube or Backend
         if (!title || title === 'YouTube Video') {
           try {
-            const res = await fetch(`/api/search?q=${ytId}`);
-            const d = await res.json();
-            if (d.results?.[0] && d.results[0].id === ytId) {
-              title = d.results[0].title;
-              thumb = d.results[0].thumbnail;
+            const { data: d } = await fetchJson(`/api/search?q=${ytId}`, {}, { timeoutMs: 10000, retryTimeoutMs: 5000, retries: 1 });
+            if (d?.results?.[0]) {
+              title = d.results[0].title || title;
+              thumb = d.results[0].thumbnail || thumb;
             } else {
               // Use cached backend endpoint instead of direct YouTube API
               try {
-                const ytInfoRes = await fetch(`/api/video-info?id=${ytId}`);
-                const ytInfoData = await ytInfoRes.json();
-                if (ytInfoData.video) {
+                const { data: ytInfoData } = await fetchJson(`/api/video-info?id=${ytId}`, {}, { timeoutMs: 10000, retryTimeoutMs: 5000, retries: 1 });
+                if (ytInfoData?.video) {
                   title = ytInfoData.video.title || title;
                   thumb = ytInfoData.video.thumbnail || thumb;
                 }
@@ -74,13 +75,23 @@ export default function VideoPlayerPage() {
       const { data, error } = await supabase.from('videos').select('*').eq('id', id).single();
       if (!error && data) {
         setVideo(data);
-        const { data: rel } = await supabase.from('videos').select('*').eq('category', data.category).neq('id', id).limit(10);
+        const { data: rel } = await supabase.from('videos').select('*').eq('category', data?.category).neq('id', id).limit(10);
         setRelated(rel || []);
       }
       setLoading(false);
     }
     fetchData();
   }, [id, searchParams]);
+
+  useEffect(() => {
+    const retryOnReconnect = () => {
+      if (!loading && !video) {
+        window.location.reload();
+      }
+    };
+    window.addEventListener('online', retryOnReconnect);
+    return () => window.removeEventListener('online', retryOnReconnect);
+  }, [loading, video]);
 
   useEffect(() => {
     if (video && !loading) {
@@ -118,7 +129,17 @@ export default function VideoPlayerPage() {
 
         {/* Main Video Section - Edge to Edge on Mobile */}
         <div className="w-full aspect-video sm:rounded-3xl overflow-hidden bg-black shadow-2xl border-b sm:border border-primary transition-colors duration-500">
-          <VideoPlayer video={video} onClose={() => navigate(-1)} />
+          {playerError ? (
+            <div className="w-full h-full flex items-center justify-center text-center p-6 bg-black text-white">
+              <div>
+                <p className="font-black uppercase tracking-[0.25em] text-sm text-red-300">Video failed to load</p>
+                <p className="mt-2 text-white/70 text-sm">{playerError}</p>
+                <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 rounded-full bg-white text-black font-black uppercase text-[10px] tracking-[0.2em]">Retry</button>
+              </div>
+            </div>
+          ) : (
+            <VideoPlayer video={video} onClose={() => navigate(-1)} onError={(message) => setPlayerError(message)} />
+          )}
         </div>
 
         <div className="mt-4 sm:mt-6 px-4 sm:px-0 flex flex-col md:flex-row justify-between items-start gap-3">

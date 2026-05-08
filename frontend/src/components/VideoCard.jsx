@@ -4,6 +4,7 @@ import { Play, Eye, Music } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabaseClient';
 import { useMusicPlayer } from '../context/MusicContext';
+import { fetchJson } from '../utils/request';
 
 // YouTube API calls are now routed through backend /api/video-info (cached)
 
@@ -53,9 +54,8 @@ const VideoCard = memo(({ video }) => {
 
           if (true) {
             try {
-              const res = await fetch(`/api/video-info?id=${ytId}`);
-              const d = await res.json();
-              if (d.video) {
+              const { data: d } = await fetchJson(`/api/video-info?id=${ytId}`, {}, { timeoutMs: 10000, retryTimeoutMs: 5000, retries: 1 });
+              if (d?.video) {
                 finalTitle = d.video.title || finalTitle;
                 finalDuration = d.video.duration ? formatDuration(d.video.duration) : finalDuration;
                 finalThumb = d.video.thumbnail || finalThumb;
@@ -102,7 +102,7 @@ const VideoCard = memo(({ video }) => {
       onClick={handleClick}
     >
       <div className="relative aspect-video rounded-xl md:rounded-[1.5rem] overflow-hidden bg-secondary border border-primary shadow-2xl transition-all duration-500 group-hover:border-accent group-hover:shadow-[0_0_30px_var(--accent-color)]" style={{ '--accent': 'var(--accent-color)' }}>
-        <img src={video.thumbnail_url} alt={video.title} loading="lazy" decoding="async" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-75" />
+        <img src={video?.thumbnail_url || 'https://via.placeholder.com/640x360?text=No+Thumbnail'} alt={video?.title || 'Video'} loading="lazy" decoding="async" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-75" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
         <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md px-2 py-1 rounded-lg text-[10px] font-black text-white border border-white/10">
@@ -121,7 +121,7 @@ const VideoCard = memo(({ video }) => {
       </div>
 
       <div className="px-2">
-        <h3 className="text-primary font-bold text-sm line-clamp-2 leading-tight group-hover:text-accent transition-colors uppercase tracking-tight" style={{ '--accent': 'var(--accent-color)' }}>{video.title}</h3>
+        <h3 className="text-primary font-bold text-sm line-clamp-2 leading-tight group-hover:text-accent transition-colors uppercase tracking-tight" style={{ '--accent': 'var(--accent-color)' }}>{video?.title || 'Untitled Video'}</h3>
         <div className="flex items-center gap-3 mt-1.5">
           <span className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">{video.category}</span>
         </div>

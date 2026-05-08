@@ -12,6 +12,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, FreeMode } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/free-mode';
+import { fetchJson } from '../utils/request';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -97,13 +98,12 @@ export default function Music() {
 
     // Backend Search ONLY (has disk cache)
     try {
-      const res = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(strictQuery)}`);
-      const data = await res.json();
-      if (res.ok && data.results?.length > 0) {
+      const { response, data } = await fetchJson(`${API_BASE_URL}/search?q=${encodeURIComponent(strictQuery)}`, {}, { timeoutMs: 10000, retryTimeoutMs: 5000, retries: 1 });
+      if (response.ok && data?.results?.length > 0) {
         return data.results.map(v => ({
           id: `yt-${v.ytId || v.id}`,
           youtubeId: v.ytId || v.id,
-          title: v.title,
+          title: v?.title || 'Untitled Video',
           thumbnail_url: v.thumbnail || v.thumbnail_url,
           video_url: `https://www.youtube.com/embed/${v.ytId || v.id}`,
           source: 'youtube',
@@ -147,7 +147,7 @@ export default function Music() {
       setYtResults([]);
     } else {
       const q = searchQuery.toLowerCase();
-      const filtered = songs.filter(s => s.title.toLowerCase().includes(q));
+      const filtered = songs.filter(s => s?.title?.toLowerCase().includes(q));
       setFilteredSongs(filtered);
     }
   }, [searchQuery, songs]);
@@ -198,7 +198,7 @@ export default function Music() {
 
   const handleSongClick = async (song) => {
     if (isProcessing) return;
-    if (song.id.toString().startsWith('yt-')) {
+      if (song?.id?.toString().startsWith('yt-')) {
       setIsProcessing(true);
       const ytId = song.youtubeId || song.id.replace('yt-', '');
       try {
@@ -209,7 +209,7 @@ export default function Music() {
           setIsExpanded(true);
         } else {
           const { data: inserted } = await supabase.from('videos').insert([{
-            title: song.title, video_url: song.video_url, youtube_id: ytId,
+            title: song?.title || 'Untitled Video', video_url: song.video_url, youtube_id: ytId,
             thumbnail_url: song.thumbnail_url, source: 'youtube', category: 'Music', views: 0
           }]).select('*');
           if (inserted && inserted.length > 0) {

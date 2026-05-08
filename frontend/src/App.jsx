@@ -6,6 +6,7 @@ import { MusicProvider } from './context/MusicContext';
 import { VideoPlayerProvider } from './context/VideoPlayerContext';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import MainLayout from './layout/MainLayout';
 import MusicMiniPlayer from './components/MusicMiniPlayer';
 import VideoGlobalMiniPlayer from './components/VideoGlobalMiniPlayer';
@@ -97,9 +98,9 @@ function AppContent() {
       {showSplash && <StartupAnimation onComplete={() => setShowSplash(false)} />}
       <MusicProvider>
         <VideoPlayerProvider>
-          <Suspense fallback={null}>
+          <Suspense fallback={<Loader />}>
             <Routes>
-              <Route path="/intro" element={<IntroPage />} />
+              <Route path="/intro" element={<ErrorBoundary resetKey="intro"><IntroPage /></ErrorBoundary>} />
               <Route element={<MainLayout />}>
                 <Route index element={<Home />} />
                 <Route path="/watch/:id" element={<VideoPlayerPage />} />

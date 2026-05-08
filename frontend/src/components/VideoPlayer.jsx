@@ -78,11 +78,12 @@ function ControlBtn({ onClick, title, children, active, className = '' }) {
   );
 }
 
-export default function VideoPlayer({ video, onLike, onClose, onTheaterChange, onMiniChange }) {
+export default function VideoPlayer({ video, onLike, onClose, onTheaterChange, onMiniChange, onError }) {
   const videoRef = useRef(null);
   const ytDomContainer = useRef(null);
   const ytPlayerRef = useRef(null);
   const ytTimerRef = useRef(null);
+  const ytFailSafeRef = useRef(null);
 
   const containerRef = useRef(null);
   const controlsTimeout = useRef(null);
@@ -111,6 +112,7 @@ export default function VideoPlayer({ video, onLike, onClose, onTheaterChange, o
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const [isPortraitFs, setIsPortraitFs] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const toastTimer = useRef(null);
 
   // ── Helpers ──
@@ -209,6 +211,7 @@ export default function VideoPlayer({ video, onLike, onClose, onTheaterChange, o
   useEffect(() => {
     if (video?.source !== 'youtube') {
       if (ytTimerRef.current) clearInterval(ytTimerRef.current);
+      if (ytFailSafeRef.current) clearTimeout(ytFailSafeRef.current);
       if (ytPlayerRef.current) {
         try {
           ytPlayerRef.current.destroy();
@@ -248,6 +251,8 @@ export default function VideoPlayer({ video, onLike, onClose, onTheaterChange, o
         },
         events: {
           onReady: (e) => {
+            setLoadFailed(false);
+            if (ytFailSafeRef.current) clearTimeout(ytFailSafeRef.current);
             setDuration(e.target.getDuration());
             setVolume(e.target.getVolume() / 100);
             if (ytTimerRef.current) clearInterval(ytTimerRef.current);
@@ -277,6 +282,10 @@ export default function VideoPlayer({ video, onLike, onClose, onTheaterChange, o
             )
               setPlaying(false);
           },
+          onError: () => {
+            setLoadFailed(true);
+            onError?.('The YouTube player could not load this video.');
+          },
         },
       });
     };
@@ -290,15 +299,22 @@ export default function VideoPlayer({ video, onLike, onClose, onTheaterChange, o
       const checkYT = setInterval(() => {
         if (window.YT && window.YT.Player) {
           clearInterval(checkYT);
+          if (ytFailSafeRef.current) clearTimeout(ytFailSafeRef.current);
           initYT();
         }
       }, 100);
+      ytFailSafeRef.current = setTimeout(() => {
+        clearInterval(checkYT);
+        setLoadFailed(true);
+        onError?.('The YouTube player timed out while loading.');
+      }, 10000);
     } else {
       setTimeout(initYT, 100);
     }
 
     return () => {
       if (ytTimerRef.current) clearInterval(ytTimerRef.current);
+      if (ytFailSafeRef.current) clearTimeout(ytFailSafeRef.current);
       if (ytPlayerRef.current) {
         try {
           ytPlayerRef.current.destroy();
@@ -565,6 +581,14 @@ export default function VideoPlayer({ video, onLike, onClose, onTheaterChange, o
       >
         {video?.source === 'youtube' ? (
           <div className="w-full h-full bg-black relative overflow-hidden">
+            {loadFailed ? (
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/90 text-center p-6">
+                <div>
+                  <p className="text-red-300 font-black uppercase tracking-[0.25em] text-sm">Playback unavailable</p>
+                  <p className="mt-2 text-white/70 text-xs">Please retry the page or choose another video.</p>
+                </div>
+              </div>
+            ) : null}
             <div
               ref={ytDomContainer}
               className="absolute inset-0 w-full h-full pointer-events-auto transition-all duration-500 ease-in-out"
@@ -592,7 +616,11 @@ export default function VideoPlayer({ video, onLike, onClose, onTheaterChange, o
             onLoadedMetadata={(e) => setDuration(e.target.duration)}
             onProgress={handleProgress}
             onEnded={() => setPlaying(false)}
-            onError={() => setPlaying(false)}
+            onError={() => {
+              setPlaying(false);
+              setLoadFailed(true);
+              onError?.('This video could not be loaded.');
+            }}
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
           />
