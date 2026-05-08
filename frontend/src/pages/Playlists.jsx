@@ -168,40 +168,31 @@ export default function Playlists() {
               className="space-y-24"
             >
               {/* ── REDESIGNED DROPZONE ── */}
-              {/* 
-                  SUPER-ROBUST MOBILE FILE SELECTOR:
-                  Using a <label> with a high z-index and native input.
-                  This pattern is guaranteed to work on all mobile browsers.
-              */}
-              <label 
+              <div 
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
                 onDrop={onDrop}
-                /* 
-                   MOBILE TOUCH FIX:
-                   Using onTouchEnd as a fallback to ensure the input is triggered 
-                   even if the browser is picky about click events on labels.
-                */
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  fileInputRef.current?.click();
-                }}
                 className={`group relative w-full aspect-[2/1] md:aspect-[32/10] bg-white/[0.01] border rounded-[2.5rem] md:rounded-[5rem] flex flex-col items-center justify-center cursor-pointer transition-all duration-1000 overflow-hidden shadow-2xl z-[1200] ${isDragging ? 'bg-accent/10 border-accent scale-[1.02]' : 'border-white/5 hover:bg-white/[0.03] hover:border-accent/20'}`}
               >
+                 {/* 
+                    ULTIMATE MOBILE FIX:
+                    Instead of a hidden input, we use a transparent input that covers the ENTIRE box.
+                    This ensures the browser sees a DIRECT interaction with the input, 
+                    bypassing all mobile security restrictions.
+                 */}
                  <input 
                    type="file" 
                    ref={fileInputRef} 
-                   className="hidden" 
-                   accept="video/*,audio/*,.mkv,.avi,.mov,.wmv,.flv,.3gp,.flac,.wav,.ogg,.m4a,.ts,.m3u8,.mp4,.mp3,.aac,.webm" 
+                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-[1300] appearance-none block" 
+                   accept="video/*,audio/*,.mkv,.ts,.m3u8,.mp4,.mp3,.webm" 
                    onChange={(e) => {
-                     console.log("File selected:", e.target.files?.[0]?.name);
+                     console.log("File selected directly via overlay");
                      handleFileSelect(e);
                    }} 
                  />
 
-                 {/* Animated Grid Background */}
+                 {/* Visual elements (pointer-events-none to let click through to input) */}
                  <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)] pointer-events-none" />
-                 
                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
 
                  <div className="relative z-10 flex flex-col items-center text-center px-6 pointer-events-none">
@@ -209,11 +200,6 @@ export default function Playlists() {
                        <div className={`w-16 h-16 md:w-32 md:h-32 rounded-[1.5rem] md:rounded-[3.5rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-accent group-hover:text-white transition-all duration-1000 group-hover:rotate-[15deg] group-hover:shadow-[0_0_80px_rgba(var(--accent-rgb),0.4)] ${isDragging ? 'bg-accent text-white scale-110 rotate-[15deg]' : ''}`}>
                           <Upload className="w-6 h-6 md:w-12 md:h-12" />
                        </div>
-                       <motion.div 
-                         animate={{ top: ['0%', '100%', '0%'] }} 
-                         transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                         className={`absolute -left-8 -right-8 h-[1px] md:h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent blur-md pointer-events-none transition-opacity ${isDragging || true ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-                       />
                     </div>
                     
                     <h2 className="text-2xl md:text-5xl font-black uppercase italic tracking-tighter text-white mb-2">
@@ -223,7 +209,7 @@ export default function Playlists() {
                        {isDragging ? 'RELEASE TO INITIALIZE' : 'DRAG & DROP VIDEO FILES HERE OR CLICK TO BROWSE'}
                     </p>
                  </div>
-              </label>
+              </div>
 
               <div className="relative">
                  <div className="flex items-center justify-between gap-6 mb-10">
