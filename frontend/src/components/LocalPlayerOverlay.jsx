@@ -669,14 +669,14 @@ export default function LocalPlayerOverlay() {
                         className="relative h-full w-[350px] flex items-center justify-start pointer-events-auto"
                         onClick={e => e.stopPropagation()}
                     >
-                        {/* THE RINGS (BOLD & INDUSTRIAL) */}
-                        <div className="absolute left-[-280px] w-[400px] h-[400px] flex items-center justify-center pointer-events-none">
+                        {/* COMPACT & TIGHT MOBILE WHEEL (Smaller radius and size) */}
+                        <div className="absolute left-[-220px] md:left-[-280px] w-[300px] md:w-[400px] h-[300px] md:h-[400px] flex items-center justify-center pointer-events-none">
                             
                             {/* 1. OUTER GOLD RING (STABLE ARROW) */}
                             <motion.div 
                                 animate={showExtraPanel ? { rotate: 360 } : {}}
                                 transition={{ repeat: Infinity, duration: 60, ease: 'linear' }}
-                                className="absolute w-[420px] h-[420px] rounded-full border-[3px] border-dashed border-yellow-500/20" 
+                                className="absolute w-[320px] md:w-[420px] h-[320px] md:h-[420px] rounded-full border-[3px] border-dashed border-yellow-500/20" 
                             />
                             
                             {/* STABLE SYSTEM ARROW (FIXED AT RIGHT) */}
@@ -688,7 +688,7 @@ export default function LocalPlayerOverlay() {
                             <motion.div 
                                 animate={showExtraPanel ? { rotate: -360 } : {}}
                                 transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
-                                className="absolute w-[340px] h-[340px] rounded-full border-[4px] border-cyan-400/40 shadow-[0_0_25px_rgba(34,211,238,0.2)]"
+                                className="absolute w-[240px] md:w-[340px] h-[240px] md:h-[340px] rounded-full border-[4px] border-cyan-400/40 shadow-[0_0_25px_rgba(34,211,238,0.2)]"
                             >
                                 {[...Array(36)].map((_, i) => (
                                     <div key={i} className="absolute w-1 h-3 bg-cyan-400/40" style={{ left: '50%', top: -2, transform: `rotate(${i * 10}deg)` }} />
@@ -696,7 +696,7 @@ export default function LocalPlayerOverlay() {
                             </motion.div>
 
                             {/* 3. CORE HUB (CLEAN & MINIMAL) */}
-                            <div className="absolute w-[280px] h-[280px] rounded-full flex flex-col items-center justify-center border-[2px] border-white/5 bg-radial-gradient from-cyan-400/[0.08] to-transparent">
+                            <div className="absolute w-[180px] md:w-[280px] h-[180px] md:h-[280px] rounded-full flex flex-col items-center justify-center border-[2px] border-white/5 bg-radial-gradient from-cyan-400/[0.08] to-transparent">
                                 <motion.div 
                                     animate={{ opacity: [0.3, 0.6, 0.3] }}
                                     transition={{ repeat: Infinity, duration: 2 }}
@@ -745,7 +745,8 @@ export default function LocalPlayerOverlay() {
                                 const rad = (totalRotation * Math.PI) / 180;
                                 
                                 // Cyan ring is at 170. Panel is at 350. Wire is 180px long.
-                                const panelRadius = 350; 
+                                // Tighter radius on mobile for better thumb reach
+                                const panelRadius = window.innerWidth < 768 ? 260 : 350; 
                                 
                                 const xPos = Math.cos(rad) * panelRadius + 200; // Center offset
                                 const yPos = Math.sin(rad) * panelRadius;

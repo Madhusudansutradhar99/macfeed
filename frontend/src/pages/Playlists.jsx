@@ -177,6 +177,15 @@ export default function Playlists() {
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
                 onDrop={onDrop}
+                /* 
+                   MOBILE TOUCH FIX:
+                   Using onTouchEnd as a fallback to ensure the input is triggered 
+                   even if the browser is picky about click events on labels.
+                */
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }}
                 className={`group relative w-full aspect-[2/1] md:aspect-[32/10] bg-white/[0.01] border rounded-[2.5rem] md:rounded-[5rem] flex flex-col items-center justify-center cursor-pointer transition-all duration-1000 overflow-hidden shadow-2xl z-[1200] ${isDragging ? 'bg-accent/10 border-accent scale-[1.02]' : 'border-white/5 hover:bg-white/[0.03] hover:border-accent/20'}`}
               >
                  <input 
@@ -197,8 +206,8 @@ export default function Playlists() {
 
                  <div className="relative z-10 flex flex-col items-center text-center px-6 pointer-events-none">
                     <div className="relative mb-6 md:mb-10">
-                       <div className={`w-20 h-20 md:w-32 md:h-32 rounded-[2rem] md:rounded-[3.5rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-accent group-hover:text-white transition-all duration-1000 group-hover:rotate-[15deg] group-hover:shadow-[0_0_80px_rgba(var(--accent-rgb),0.4)] ${isDragging ? 'bg-accent text-white scale-110 rotate-[15deg]' : ''}`}>
-                          <Upload className="w-8 h-8 md:w-12 md:h-12" />
+                       <div className={`w-16 h-16 md:w-32 md:h-32 rounded-[1.5rem] md:rounded-[3.5rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-accent group-hover:text-white transition-all duration-1000 group-hover:rotate-[15deg] group-hover:shadow-[0_0_80px_rgba(var(--accent-rgb),0.4)] ${isDragging ? 'bg-accent text-white scale-110 rotate-[15deg]' : ''}`}>
+                          <Upload className="w-6 h-6 md:w-12 md:h-12" />
                        </div>
                        <motion.div 
                          animate={{ top: ['0%', '100%', '0%'] }} 
@@ -216,7 +225,6 @@ export default function Playlists() {
                  </div>
               </label>
 
-              {/* ── RECENT SECTION ── */}
               <div className="relative">
                  <div className="flex items-center justify-between gap-6 mb-10">
                     <h3 className="text-[12px] font-black uppercase tracking-[0.6em] text-accent italic flex items-center gap-3">
@@ -284,17 +292,15 @@ export default function Playlists() {
             <motion.div 
               key="playlists" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}
             >
-              {/* ── PLAYLISTS REDESIGN ── */}
               {!user ? (
                  <div className="flex flex-col items-center justify-center py-40 text-center border border-white/5 rounded-[5rem] bg-white/[0.01] backdrop-blur-sm">
-                   <Folder className="w-20 h-20 text-white/10 mb-8" />
+                   <LayoutGrid className="w-20 h-20 text-white/10 mb-8" />
                    <h2 className="text-4xl font-black uppercase italic tracking-tighter text-white mb-6">Cloud Sync Restricted</h2>
                    <p className="text-white/30 text-[11px] font-black uppercase tracking-[0.4em] mb-10">Sign in to unlock global collections</p>
                    <button onClick={() => setAuthModalOpen(true)} className="bg-accent hover:opacity-90 text-white px-14 py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-[0.3em] transition-all shadow-[0_0_50px_rgba(var(--accent-rgb),0.3)] hover:scale-105 active:scale-95">Identify Account</button>
                  </div>
               ) : (
                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                   {/* Left: Collection List */}
                    <div className="lg:col-span-4 space-y-8">
                       <form onSubmit={handleCreate} className="relative group">
                          <input 
@@ -321,7 +327,6 @@ export default function Playlists() {
                       </div>
                    </div>
 
-                   {/* Right: Selected Collection Content */}
                    <div className="lg:col-span-8">
                       {activePlaylist ? (
                         <div className="bg-white/[0.02] border border-white/5 rounded-[4rem] p-12 min-h-[700px] shadow-2xl relative overflow-hidden backdrop-blur-3xl">
