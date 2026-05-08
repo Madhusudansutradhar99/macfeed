@@ -4,21 +4,17 @@ import { Play, ChevronLeft, ChevronRight, Loader2, Tv2, Eye, Database, Zap, Glob
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabaseClient';
 
-const YT_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
-
-// Multi-Engine Config for Resilience
-const PROXIES = [
-  "https://api.allorigins.win/get?url=",
-  "https://corsproxy.io/?",
-  "" // Direct
-];
+// YouTube API calls are now routed through backend /api/search (cached)
 
 const PIPED_INSTANCES = [
   "https://pipedapi.kavin.rocks",
   "https://pipedapi.tokhmi.xyz",
-  "https://pipedapi.moomoo.me",
-  "https://pipedapi.systilly.xyz",
-  "https://api.piped.victr.me"
+  "https://pipedapi.moomoo.me"
+];
+
+const PROXIES = [
+  "https://api.allorigins.win/get?url=",
+  ""
 ];
 
 function extractYouTubeId(url) {
@@ -107,26 +103,9 @@ export default function YouTubeRelatedVideos({ currentVideoUrl, currentVideoId, 
       throw new Error('No backend results');
     })());
 
-    // 2. Official YouTube API
-    if (YT_API_KEY) {
-      fetchPromises.push((async () => {
-        try {
-          const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&order=viewCount&key=${YT_API_KEY}`, { signal: AbortSignal.timeout(4000) });
-          if (!res.ok) throw new Error('Official API failed');
-          const data = await res.json();
-          if (data.items?.length > 0) {
-            return data.items
-              .filter(i => i.id?.videoId !== ytId)
-              .map(i => ({
-                ytId: i.id.videoId, snippet: i.snippet,
-                title: i.snippet.title, thumbnail_url: i.snippet.thumbnails.medium?.url,
-                duration: '--:--', source: 'youtube'
-              }));
-          }
-        } catch (e) { }
-        throw new Error('No official API results');
-      })());
-    }
+    // Strategy: Backend Search only (has disk cache = L2) + Piped fallback
+    // No direct YouTube API calls from frontend!
+    
 
     // 3. Piped/Proxies (Scraping Fallback)
     for (const instance of PIPED_INSTANCES) {

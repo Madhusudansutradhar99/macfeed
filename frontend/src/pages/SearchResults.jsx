@@ -7,15 +7,32 @@ import { Search, SlidersHorizontal, Video, Globe, AlertCircle, Database, Zap, Ar
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 
-const YT_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
+// ── L1 CACHE: localStorage with 2hr TTL ──
+const CACHE_PREFIX = 'mf_search_';
+const CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours in ms
 
-// CORS Bypassing & Multi-Engine Config
-const PROXIES = [
-  "https://api.allorigins.win/get?url=",
-  "https://corsproxy.io/?",
-  "" // Direct as last resort
-];
+function getCachedSearch(query) {
+  try {
+    const key = CACHE_PREFIX + query.trim().toLowerCase();
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return data;
+  } catch { return null; }
+}
 
+function setCachedSearch(query, data) {
+  try {
+    const key = CACHE_PREFIX + query.trim().toLowerCase();
+    localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
+  } catch { /* localStorage full — ignore */ }
+}
+
+// CORS Bypassing & Multi-Engine Config (Piped fallback only — no direct YT API)
 const PIPED_INSTANCES = [
   "https://pipedapi.kavin.rocks",
   "https://pipedapi.tokhmi.xyz",
@@ -36,49 +53,52 @@ export default function SearchResults() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isFreeMode, setIsFreeMode] = useState(false);
+  const [cacheSource, setCacheSource] = useState(null);
   const q = params.get('q') || '';
 
   const performSearch = useCallback(async (query) => {
     if (!query) return;
     setLoading(true);
     setIsFreeMode(false);
+    setCacheSource(null);
     
-    // 1. LOCAL SEARCH (Immediate)
+    // 1. LOCAL SEARCH (Immediate — Supabase)
     try {
       const { data: dbData } = await supabase.from('videos').select('*').or(`title.ilike.%${query}%`);
       const localResults = (dbData || []).map(v => ({ ...v, type: 'local', source: 'local' }));
       setResults(localResults);
     } catch (e) { console.error("Local search failed", e); }
 
-    // 2. GLOBAL SEARCH (Parallel Winning Strategy)
+    // 2. L1 CACHE CHECK — localStorage
+    const cached = getCachedSearch(query);
+    if (cached && cached.length > 0) {
+      setCacheSource('local-cache');
+      setIsFreeMode(true);
+      setResults(prev => {
+        const existingIds = new Set(prev.map(p => p.id || p.ytId));
+        const uniqueNew = cached.filter(g => !existingIds.has(g.id));
+        return [...prev, ...uniqueNew];
+      });
+      setLoading(false);
+      return; // 🎯 0 API units used!
+    }
+
+    // 3. GLOBAL SEARCH — Backend only (no direct YT API from frontend!)
     const fetchPromises = [];
 
-    // Strategy A: Backend Master Engine
+    // Strategy A: Backend Master Engine (has disk cache = L2)
     fetchPromises.push((async () => {
       const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(6000) });
       if (!res.ok) throw new Error('Backend failed');
       const data = await res.json();
       if (!data.results?.length) throw new Error('Backend empty');
-      return data.results.map(v => ({
+      return { results: data.results.map(v => ({
         id: `yt-${v.ytId}`, ytId: v.ytId, title: v.title, thumbnail_url: v.thumbnail || v.thumbnail_url,
         video_url: `https://www.youtube.com/embed/${v.ytId}`, source: 'youtube', type: 'global'
-      }));
+      })), src: data.source };
     })());
 
-    // Strategy B: Official API Client-Side
-    if (YT_API_KEY) {
-      fetchPromises.push((async () => {
-        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&order=viewCount&key=${YT_API_KEY}`, { signal: AbortSignal.timeout(5000) });
-        const data = await res.json();
-        if (!data.items?.length) throw new Error('Official API empty');
-        return data.items.map(i => ({
-          id: `yt-${i.id.videoId}`, ytId: i.id.videoId, title: i.snippet.title, thumbnail_url: i.snippet.thumbnails.high?.url,
-          video_url: `https://www.youtube.com/embed/${i.id.videoId}`, source: 'youtube', type: 'global'
-        }));
-      })());
-    }
-
-    // Strategy C: Multi-Proxy Piped (The "Never Fail" Scraper)
+    // Strategy B: Multi-Proxy Piped (The "Never Fail" Scraper — FREE, no API units)
     const CORS_PROXY = "https://api.allorigins.win/get?url=";
     const stableInstance = "https://pipedapi.kavin.rocks";
     fetchPromises.push((async () => {
@@ -88,20 +108,23 @@ export default function SearchResults() {
       const data = JSON.parse(pData.contents);
       const items = data.items || data;
       if (!items?.length) throw new Error('Proxy empty');
-      return items.slice(0, 20).map(v => {
+      return { results: items.slice(0, 20).map(v => {
         const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
         return {
           id: `yt-${vidId}`, ytId: vidId, title: v.title, thumbnail_url: v.thumbnail || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`,
           video_url: `https://www.youtube.com/embed/${vidId}`, source: 'youtube', type: 'global'
         };
-      });
+      }), src: 'piped' };
     })());
 
     try {
       // Wait for the fastest successful strategy
-      const globalResults = await Promise.any(fetchPromises);
+      const { results: globalResults, src } = await Promise.any(fetchPromises);
       if (globalResults?.length > 0) {
         setIsFreeMode(true);
+        setCacheSource(src);
+        // Save to L1 localStorage cache for next time
+        setCachedSearch(query, globalResults);
         setResults(prev => {
           const existingIds = new Set(prev.map(p => p.id || p.ytId));
           const uniqueNew = globalResults.filter(g => !existingIds.has(g.id));
@@ -133,6 +156,8 @@ export default function SearchResults() {
            <div className="flex items-center gap-4">
               <span className="px-3 py-1 bg-red-600 rounded-lg text-[10px] font-black text-white uppercase tracking-widest italic">{q}</span>
               {isFreeMode && <span className="flex items-center gap-2 text-green-500 text-[10px] font-black uppercase tracking-[0.2em] animate-pulse"><Zap className="w-3 h-3 fill-green-500" /> MacFeed Search Engine Online</span>}
+              {cacheSource === 'local-cache' && <span className="flex items-center gap-2 text-cyan-400 text-[10px] font-black uppercase tracking-[0.2em]">⚡ Instant Cache (0 API units)</span>}
+              {cacheSource === 'disk-cache' && <span className="flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-[0.2em]">💾 Server Cache (0 API units)</span>}
            </div>
         </div>
         <p className="text-secondary text-[10px] font-black uppercase tracking-[0.4em]">{results.length} Matches Found</p>

@@ -6,21 +6,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import ThemeToggle from './ThemeToggle';
 
-const YT_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
-
-// CORS Bypassing & Multi-Engine Config
-const PROXIES = [
-  "https://api.allorigins.win/get?url=",
-  "https://corsproxy.io/?",
-  ""
-];
-
-const PIPED_INSTANCES = [
-  "https://pipedapi.kavin.rocks",
-  "https://pipedapi.tokhmi.xyz",
-  "https://pipedapi.moomoo.me",
-  "https://api.piped.victr.me"
-];
+// ── L1 CACHE: localStorage with 2hr TTL ──
+const CACHE_PREFIX = 'mf_search_';
+const CACHE_TTL = 2 * 60 * 60 * 1000;
+function getCachedSearch(query) {
+  try {
+    const key = CACHE_PREFIX + query.trim().toLowerCase();
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) { localStorage.removeItem(key); return null; }
+    return data;
+  } catch { return null; }
+}
+function setCachedSearch(query, data) {
+  try {
+    const key = CACHE_PREFIX + query.trim().toLowerCase();
+    localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
+  } catch { }
+}
 
 const YoutubeIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -37,7 +41,6 @@ export default function Header() {
   const [isFocused, setIsFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [quotaHit, setQuotaHit] = useState(false);
   const [isFreeMode, setIsFreeMode] = useState(false);
   const { user, setAuthModalOpen } = useAuth();
   const navigate = useNavigate();
@@ -69,37 +72,28 @@ export default function Header() {
 
   const scrapeGlobal = async (q) => {
     if (!q) return [];
+
+    // L1 CACHE: Check localStorage first (0 API units)
+    const cached = getCachedSearch(q);
+    if (cached && cached.length > 0) return cached;
     
-    // LAYER 1: Backend Search (Bypass CORS)
+    // Backend Search (has L2 disk cache)
     try {
       const backRes = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: AbortSignal.timeout(4000) });
       if (backRes.ok) {
         const backData = await backRes.json();
         if (backData.results?.length > 0) {
-          return backData.results.slice(0, 10).map(v => ({
+          const mapped = backData.results.slice(0, 10).map(v => ({
             id: `yt-${v.ytId}`, ytId: v.ytId, title: v.title, thumbnail_url: v.thumbnail || v.thumbnail_url,
             video_url: `https://www.youtube.com/embed/${v.ytId}`, source: 'youtube', type: 'global'
           }));
+          setCachedSearch(q, mapped); // Save to L1
+          return mapped;
         }
       }
     } catch(e) {}
 
-    // LAYER 2: Client-Side Official API
-    if (YT_API_KEY && !quotaHit) {
-      try {
-        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&maxResults=8&order=viewCount&key=${YT_API_KEY}`);
-        const data = await res.json();
-        if (data.items && !data.error) {
-          return data.items.map(i => ({
-            id: `yt-${i.id.videoId}`, ytId: i.id.videoId, title: i.snippet.title, thumbnail_url: i.snippet.thumbnails.medium?.url,
-            video_url: `https://www.youtube.com/embed/${i.id.videoId}`, source: 'youtube', type: 'global'
-          }));
-        }
-        if (data.error?.errors?.[0]?.reason === 'quotaExceeded') setQuotaHit(true);
-      } catch (err) {}
-    }
-
-    // LAYER 3: CORS Proxy + Piped (Emergency Backup)
+    // Piped Fallback (FREE, no API units)
     try {
       const CORS_PROXY = "https://api.allorigins.win/get?url=";
       const target = `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(q)}&filter=videos`;
@@ -108,7 +102,7 @@ export default function Header() {
       const data = JSON.parse(pData.contents);
       const items = data.items || data;
       if (items?.length > 0) {
-        return items.slice(0, 10).map(v => {
+        const mapped = items.slice(0, 10).map(v => {
           const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
           return {
             id: `yt-${vidId}`, ytId: vidId, title: v.title,
@@ -116,6 +110,8 @@ export default function Header() {
             video_url: `https://www.youtube.com/embed/${vidId}`, source: 'youtube', type: 'global'
           };
         });
+        setCachedSearch(q, mapped); // Save to L1
+        return mapped;
       }
     } catch(e) {}
 
@@ -126,7 +122,7 @@ export default function Header() {
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (query.trim().length < 2) { setResults([]); return; }
-      setLoading(true); setQuotaHit(false); setIsFreeMode(false);
+      setLoading(true); setIsFreeMode(false);
 
       try {
         // 1. Fetch Local Results FAST
@@ -233,7 +229,6 @@ export default function Header() {
                 className="fixed md:absolute top-[80px] md:top-full left-4 right-4 md:left-0 md:right-0 mx-auto w-auto md:w-full max-w-4xl bg-secondary/95 backdrop-blur-3xl border border-primary rounded-[2rem] shadow-2xl overflow-hidden"
             >
               <div className="max-h-[70vh] overflow-y-auto pb-6">
-                {quotaHit && <div className="mx-8 mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex flex-col gap-1"><div className="flex items-center gap-2 text-red-500 text-[10px] font-black uppercase tracking-widest"><AlertCircle className="w-4 h-4" /> Official YouTube Limit Hit</div><p className="text-[8px] text-primary/30 font-medium leading-relaxed italic">Switching to Direct Raw Scraper...</p></div>}
                 {isFreeMode && <div className="mx-8 mt-4 p-3 bg-accent/10 border border-accent/20 rounded-2xl flex items-center gap-2 shadow-lg" style={{ backgroundColor: 'var(--accent-color)22', borderColor: 'var(--accent-color)44' }}><Zap className="w-4 h-4 text-accent animate-pulse" style={{ color: 'var(--accent-color)' }} /><span className="text-[10px] font-black text-accent uppercase tracking-widest italic" style={{ color: 'var(--accent-color)' }}>Global Free Engine Active</span></div>}
                 <div className="px-10 py-5 text-[10px] font-black text-secondary uppercase tracking-[0.4em] border-b border-primary">Results for "{query}"</div>
                 {results.length > 0 ? results.map((r, idx) => (

@@ -14,20 +14,17 @@ import 'swiper/css';
 import 'swiper/css/free-mode';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
-const YT_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
-
-// CORS Bypassing & Multi-Engine Config
-const PROXIES = [
-  "https://api.allorigins.win/get?url=",
-  "https://corsproxy.io/?",
-  ""
-];
+// YouTube API calls are now routed through backend /api/search (cached)
 
 const PIPED_INSTANCES = [
   "https://pipedapi.kavin.rocks",
   "https://pipedapi.tokhmi.xyz",
-  "https://pipedapi.moomoo.me",
-  "https://api.piped.victr.me"
+  "https://pipedapi.moomoo.me"
+];
+
+const PROXIES = [
+  "https://api.allorigins.win/get?url=",
+  ""
 ];
 
 // Memoized Background to prevent flickering on every click
@@ -111,25 +108,23 @@ export default function Music() {
       ? q 
       : `${q} official music video`;
 
-    if (YT_API_KEY) {
-      try {
-        // videoCategoryId=10 strictly enforces the "Music" category on YouTube
-        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(strictQuery)}&type=video&videoCategoryId=10&maxResults=20&order=viewCount&key=${YT_API_KEY}`);
-        const data = await res.json();
-        if (data.items && !data.error) {
-          return data.items.map(i => ({
-            id: `yt-${i.id.videoId}`,
-            youtubeId: i.id.videoId,
-            title: i.snippet.title,
-            thumbnail_url: i.snippet.thumbnails.medium?.url,
-            video_url: `https://www.youtube.com/embed/${i.id.videoId}`,
-            source: 'youtube',
-            category: 'Music',
-            views: 0
-          }));
-        }
-      } catch (e) { }
-    }
+    // Backend Search first (has disk cache)
+    try {
+      const res = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(strictQuery)}`);
+      const data = await res.json();
+      if (res.ok && data.results?.length > 0) {
+        return data.results.map(v => ({
+          id: `yt-${v.ytId || v.id}`,
+          youtubeId: v.ytId || v.id,
+          title: v.title,
+          thumbnail_url: v.thumbnail || v.thumbnail_url,
+          video_url: `https://www.youtube.com/embed/${v.ytId || v.id}`,
+          source: 'youtube',
+          category: 'Music',
+          views: 0
+        }));
+      }
+    } catch (e) { }
 
     for (const instance of PIPED_INSTANCES) {
       for (const proxy of PROXIES) {

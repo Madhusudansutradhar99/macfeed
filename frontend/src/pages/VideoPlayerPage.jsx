@@ -44,13 +44,16 @@ export default function VideoPlayerPage() {
             if (d.results?.[0] && d.results[0].id === ytId) {
               title = d.results[0].title;
               thumb = d.results[0].thumbnail;
-            } else if (import.meta.env.VITE_YOUTUBE_API_KEY) {
-              const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${ytId}&key=${import.meta.env.VITE_YOUTUBE_API_KEY}`);
-              const ytData = await ytRes.json();
-              if (ytData.items?.[0]) {
-                title = ytData.items[0].snippet.title;
-                thumb = ytData.items[0].snippet.thumbnails.high?.url || thumb;
-              }
+            } else {
+              // Use cached backend endpoint instead of direct YouTube API
+              try {
+                const ytInfoRes = await fetch(`/api/video-info?id=${ytId}`);
+                const ytInfoData = await ytInfoRes.json();
+                if (ytInfoData.video) {
+                  title = ytInfoData.video.title || title;
+                  thumb = ytInfoData.video.thumbnail || thumb;
+                }
+              } catch (e) { }
             }
           } catch (e) { }
         }

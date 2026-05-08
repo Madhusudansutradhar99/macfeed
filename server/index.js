@@ -1,12 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-const NodeCache = require('node-cache');
 const { OAuth2Client } = require('google-auth-library');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const { createClient } = require('@supabase/supabase-js');
+const { caching } = require('cache-manager');
+const { DiskStore } = require('cache-manager-fs-hash');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -16,6 +18,24 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+// ── DISK-PERSISTENT CACHE (survives server restarts) ──
+let diskCache;
+let cacheStats = { hits: 0, misses: 0, apiCalls: 0, savedUnits: 0 };
+
+(async () => {
+  diskCache = await caching(new DiskStore({
+    path: path.join(__dirname, '.cache'),  // Disk storage folder
+    ttl: 86400,       // 24 hours default TTL (in seconds)
+    zip: false,        // Don't compress (faster reads)
+  }));
+  console.log('✅ Disk-persistent cache initialized at ./server/.cache');
+})();
+
+// Normalize query: trim, lowercase, collapse spaces — "  React JS " → "react js"
+function normalizeQuery(q) {
+  return (q || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
 
 // ── SECURITY & MIDDLEWARE ──
 app.use(helmet({
@@ -44,8 +64,6 @@ const authLimiter = rateLimit({
   max: 20,
   message: { error: 'Too many attempts, please try again later.' }
 });
-
-const apiCache = new NodeCache({ stdTTL: 86400 });
 
 // ── AUTH HELPERS ──
 const setSessionCookie = (res, userData) => {
@@ -157,12 +175,31 @@ app.post('/auth/delete-account', authLimiter, async (req, res) => {
 });
 
 // ── API ROUTES ──
+
+// YouTube Search — 2-Layer Backend Cache
 app.get('/api/search', async (req, res) => {
   const { q } = req.query;
   if (!q) return res.status(400).json({ error: 'Query is required' });
-  const cachedData = apiCache.get(q);
-  if (cachedData) return res.json({ results: cachedData, source: 'cache' });
+  
+  const normalizedQ = normalizeQuery(q);
+  const cacheKey = `search:${normalizedQ}`;
 
+  // Check disk cache first
+  if (diskCache) {
+    try {
+      const cachedData = await diskCache.get(cacheKey);
+      if (cachedData) {
+        cacheStats.hits++;
+        cacheStats.savedUnits += 100;  // Each search costs 100 units
+        console.log(`🟢 CACHE HIT: "${normalizedQ}" (saved 100 API units)`);
+        return res.json({ results: cachedData, source: 'disk-cache' });
+      }
+    } catch (e) {
+      console.warn('Cache read error:', e.message);
+    }
+  }
+
+  cacheStats.misses++;
   let results = [];
   
   // 1. Try Official YouTube API via Backend
@@ -171,7 +208,7 @@ app.get('/api/search', async (req, res) => {
       const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
         params: { 
           part: 'snippet', 
-          q: q, 
+          q: normalizedQ, 
           type: 'video', 
           maxResults: 20, 
           order: 'viewCount',
@@ -179,6 +216,7 @@ app.get('/api/search', async (req, res) => {
         },
         timeout: 5000
       });
+      cacheStats.apiCalls++;
       results = response.data.items.map(item => ({
         id: item.id.videoId,
         ytId: item.id.videoId,
@@ -200,7 +238,7 @@ app.get('/api/search', async (req, res) => {
     ];
     for (const instance of instances) {
       try {
-        const pRes = await axios.get(`${instance}/search?q=${encodeURIComponent(q)}&filter=videos`, { timeout: 4000 });
+        const pRes = await axios.get(`${instance}/search?q=${encodeURIComponent(normalizedQ)}&filter=videos`, { timeout: 4000 });
         const items = pRes.data.items || pRes.data;
         if (items?.length > 0) {
           results = items.slice(0, 20).map(v => {
@@ -220,11 +258,98 @@ app.get('/api/search', async (req, res) => {
   }
 
   if (results.length > 0) {
-    apiCache.set(q, results);
-    res.json({ results, source: 'global' });
+    // Save to disk cache (24hr TTL)
+    if (diskCache) {
+      try {
+        await diskCache.set(cacheKey, results, 86400);
+        console.log(`🔵 CACHE SET: "${normalizedQ}" (${results.length} results saved to disk)`);
+      } catch (e) {
+        console.warn('Cache write error:', e.message);
+      }
+    }
+    res.json({ results, source: 'api' });
   } else {
     res.status(404).json({ error: 'No results found' });
   }
+});
+
+// YouTube Video Info — Proxied through backend with caching
+app.get('/api/video-info', async (req, res) => {
+  const { id } = req.query;
+  if (!id) return res.status(400).json({ error: 'Video ID is required' });
+
+  const cacheKey = `video:${id}`;
+
+  // Check disk cache
+  if (diskCache) {
+    try {
+      const cachedData = await diskCache.get(cacheKey);
+      if (cachedData) {
+        cacheStats.hits++;
+        cacheStats.savedUnits += 1;  // videos.list costs 1 unit per call
+        return res.json({ video: cachedData, source: 'disk-cache' });
+      }
+    } catch (e) {}
+  }
+
+  cacheStats.misses++;
+
+  if (!YT_API_KEY) {
+    return res.status(503).json({ error: 'No API key configured' });
+  }
+
+  try {
+    const response = await axios.get('https://www.googleapis.com/youtube/v3/videos', {
+      params: {
+        part: 'snippet,contentDetails',
+        id: id,
+        key: YT_API_KEY
+      },
+      timeout: 5000
+    });
+    cacheStats.apiCalls++;
+
+    if (response.data.items?.length > 0) {
+      const item = response.data.items[0];
+      const videoInfo = {
+        id: item.id,
+        title: item.snippet.title,
+        thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
+        duration: item.contentDetails?.duration || null,
+        channelTitle: item.snippet.channelTitle,
+        description: item.snippet.description?.substring(0, 500)
+      };
+
+      // Cache for 24 hours
+      if (diskCache) {
+        try {
+          await diskCache.set(cacheKey, videoInfo, 86400);
+        } catch (e) {}
+      }
+
+      return res.json({ video: videoInfo, source: 'api' });
+    }
+
+    res.status(404).json({ error: 'Video not found' });
+  } catch (error) {
+    console.warn('Video info fetch failed:', error.message);
+    res.status(500).json({ error: 'Failed to fetch video info' });
+  }
+});
+
+// Cache Stats Endpoint
+app.get('/api/cache-stats', (req, res) => {
+  res.json({
+    hits: cacheStats.hits,
+    misses: cacheStats.misses,
+    apiCalls: cacheStats.apiCalls,
+    savedUnits: cacheStats.savedUnits,
+    hitRate: cacheStats.hits + cacheStats.misses > 0
+      ? ((cacheStats.hits / (cacheStats.hits + cacheStats.misses)) * 100).toFixed(1) + '%'
+      : '0%',
+    cacheType: 'disk-persistent',
+    ttl: '24 hours'
+  });
 });
 
 app.listen(PORT, () => {

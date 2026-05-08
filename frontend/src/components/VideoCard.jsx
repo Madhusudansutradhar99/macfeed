@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabaseClient';
 import { useMusicPlayer } from '../context/MusicContext';
 
-const YT_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
+// YouTube API calls are now routed through backend /api/video-info (cached)
 
 const YoutubeIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -51,14 +51,16 @@ const VideoCard = memo(({ video }) => {
           let finalDuration = video.duration || '00:00';
           let finalThumb = video.thumbnail_url;
 
-          if (YT_API_KEY) {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${ytId}&key=${YT_API_KEY}`);
-            const d = await res.json();
-            if (d.items?.[0]) {
-              finalTitle = d.items[0].snippet.title;
-              finalDuration = formatDuration(d.items[0].contentDetails.duration);
-              finalThumb = d.items[0].snippet.thumbnails.high?.url || finalThumb;
-            }
+          if (true) {
+            try {
+              const res = await fetch(`/api/video-info?id=${ytId}`);
+              const d = await res.json();
+              if (d.video) {
+                finalTitle = d.video.title || finalTitle;
+                finalDuration = d.video.duration ? formatDuration(d.video.duration) : finalDuration;
+                finalThumb = d.video.thumbnail || finalThumb;
+              }
+            } catch (e) { /* Use existing data if backend fails */ }
           }
 
           const { data: inserted } = await supabase.from('videos').insert([{
