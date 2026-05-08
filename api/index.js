@@ -52,23 +52,40 @@ app.get('/api/search', async (req, res) => {
   let results = [];
   
   if (YT_API_KEY) {
+    // ── SMART CATEGORY DETECTION ──
+    let categoryId = null;
+    const lowerQ = normalizedQ.toLowerCase();
+    if (lowerQ.includes('song') || lowerQ.includes('music') || lowerQ.includes('gana') || lowerQ.includes('bhajan')) {
+      categoryId = '10'; // Music
+    } else if (lowerQ.includes('movie') || lowerQ.includes('film') || lowerQ.includes('trailer')) {
+      categoryId = '30'; // Movies & Entertainment
+    }
+
     try {
+      const searchParams = { 
+        part: 'snippet', 
+        q: normalizedQ, 
+        type: 'video', 
+        maxResults: 25, 
+        order: 'viewCount',
+        videoDuration: 'medium', // Avoids Shorts (4min+ videos)
+        relevanceLanguage: 'hi',
+        safeSearch: 'moderate',
+        key: YT_API_KEY 
+      };
+
+      if (categoryId) searchParams.videoCategoryId = categoryId;
+
       const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
-        params: { 
-          part: 'snippet', 
-          q: normalizedQ, 
-          type: 'video', 
-          maxResults: 20, 
-          order: 'viewCount',
-          key: YT_API_KEY 
-        },
-        timeout: 5000
+        params: searchParams,
+        timeout: 6000
       });
+      
       results = response.data.items.map(item => ({
         id: item.id.videoId,
         ytId: item.id.videoId,
         title: item.snippet.title,
-        thumbnail: item.snippet.thumbnails.high.url,
+        thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
         source: 'youtube'
       }));
     } catch (error) {
