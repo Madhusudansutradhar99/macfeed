@@ -185,7 +185,6 @@ export default function LocalPlayerOverlay() {
             const video = videoRef.current;
             if (!video) return;
             setIsLoading(true);
-            video.preload = preloadMode.toLowerCase();
             
             try {
                 if (currentSong.path) {
@@ -198,24 +197,23 @@ export default function LocalPlayerOverlay() {
                     video.src = currentSong.video_url;
                 }
 
+                video.preload = 'auto';
                 video.load();
                 if ('decoding' in video) video.decoding = 'async';
                 
-                video.style.transform = 'translate3d(0,0,0)';
-                video.style.willChange = 'transform, contents';
-                video.style.contain = 'strict';
+                // Performance optimizations
+                video.style.transform = 'translate3d(0,0,0) scale3d(1,1,1)';
+                video.style.willChange = 'auto';
+                video.style.contain = 'layout style paint';
                 video.style.backfaceVisibility = 'hidden';
-                video.style.webkitPerspective = '1000';
-                video.style.imageRendering = 'optimizeSpeed';
+                video.style.WebkitBackfaceVisibility = 'hidden';
                 
-                video.play().catch(() => setPlaying(false));
+                // Don't play immediately - let the 'playing' state handle it
+                setPlaying(true); // Trigger play via the effect below
                 
-                const width = video.videoWidth || 0;
-                if (width > 4000) {
-                    showMXToast(`Ultra High Res Detected: ${width}p`, <Zap size={14}/>, "#FCD34D");
-                }
             } catch (err) {
                 console.error("Player setup error:", err);
+                setIsLoading(false);
             }
         };
         setupPlayer();
@@ -323,15 +321,35 @@ export default function LocalPlayerOverlay() {
   }, [volume, isMuted, playbackRate, volumeBoost, loopVideo]);
 
   useEffect(() => {
-    if (videoRef.current) {
-        if (playing) {
-            videoRef.current.play().catch(e => {
-                console.warn("Play failed:", e);
+    const video = videoRef.current;
+    if (!video) return;
+    
+    if (playing) {
+        // Wait for data to be available before playing
+        const playIfReady = () => {
+            if (video.readyState >= 2) { // HAVE_CURRENT_DATA or better
+                video.play().catch(e => {
+                    console.debug("[Play] Deferred play attempt:", e.name);
+                });
+            }
+        };
+        
+        // Try immediate play first
+        const playPromise = video.play().catch(e => {
+            if (e.name === 'AbortError') {
+                // Wait for canplay event
+                video.addEventListener('canplay', playIfReady, { once: true });
+            } else {
+                console.debug("[Play] Error:", e.message);
                 setPlaying(false);
-            });
-        } else {
-            videoRef.current.pause();
-        }
+            }
+        });
+        
+        return () => {
+            video.removeEventListener('canplay', playIfReady);
+        };
+    } else {
+        video.pause();
     }
   }, [playing]);
 
