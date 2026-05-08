@@ -99,13 +99,14 @@ export default function LocalPlayerOverlay() {
   const [toast, setToast] = useState(null);
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [savedTime, setSavedTime] = useState(0);
-  const [deviceOrientation, setDeviceOrientation] = useState(window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
+  const [orientation, setOrientation] = useState('portrait');
+  const [physOrientation, setPhysOrientation] = useState(window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
   const [wheelRotation, setWheelRotation] = useState(0);
 
   useEffect(() => {
     const checkOrientation = () => {
         const orient = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
-        setDeviceOrientation(orient);
+        setPhysOrientation(orient);
         if (orient === 'portrait') {
             setShowExtraPanel(false);
         }
@@ -418,7 +419,7 @@ export default function LocalPlayerOverlay() {
     const touchY = e.changedTouches[0].clientY;
     const deltaY = swipeUpStart.current - touchY;
 
-    if (deltaY > 100 && !showExtraPanel && !isLocked && deviceOrientation === 'landscape') {
+    if (deltaY > 100 && !showExtraPanel && !isLocked && physOrientation === 'landscape') {
         setShowExtraPanel(true);
         return;
     }
@@ -667,7 +668,7 @@ export default function LocalPlayerOverlay() {
                         </div>
 
                         {/* Desktop Site Mode: More Button to open Wheel (Landscape Only) */}
-                        {deviceOrientation === 'landscape' && (
+                        {physOrientation === 'landscape' && (
                             <button 
                                 onClick={(e) => { e.stopPropagation(); setShowExtraPanel(!showExtraPanel); }}
                                 className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-90 border border-white/5"
@@ -1108,18 +1109,18 @@ export default function LocalPlayerOverlay() {
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <button 
-                                onClick={() => handleResume(false)} 
+                            <motion.button 
+                                onTap={() => handleResume(false)} 
                                 className="px-4 py-3 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
                             >
                                 Restart
-                            </button>
-                            <button 
-                                onClick={() => handleResume(true)} 
+                            </motion.button>
+                            <motion.button 
+                                onTap={() => handleResume(true)} 
                                 className="px-6 py-3 bg-accent text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(var(--accent-rgb),0.3)] hover:scale-105 active:scale-95 transition-all"
                             >
                                 Resume
-                            </button>
+                            </motion.button>
                         </div>
                     </div>
                 </motion.div>
