@@ -99,13 +99,13 @@ export default function LocalPlayerOverlay() {
   const [toast, setToast] = useState(null);
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [savedTime, setSavedTime] = useState(0);
-  const [orientation, setOrientation] = useState(window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
+  const [deviceOrientation, setDeviceOrientation] = useState(window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
   const [wheelRotation, setWheelRotation] = useState(0);
 
   useEffect(() => {
     const checkOrientation = () => {
         const orient = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
-        setOrientation(orient);
+        setDeviceOrientation(orient);
         if (orient === 'portrait' && showExtraPanel) {
             setShowExtraPanel(false);
         }
@@ -415,7 +415,7 @@ export default function LocalPlayerOverlay() {
     const touchY = e.changedTouches[0].clientY;
     const deltaY = swipeUpStart.current - touchY;
 
-    if (deltaY > 100 && !showExtraPanel && !isLocked && orientation === 'landscape') {
+    if (deltaY > 100 && !showExtraPanel && !isLocked && deviceOrientation === 'landscape') {
         setShowExtraPanel(true);
         return;
     }
@@ -664,7 +664,7 @@ export default function LocalPlayerOverlay() {
                         </div>
 
                         {/* Desktop Site Mode: More Button to open Wheel (Landscape Only) */}
-                        {orientation === 'landscape' && (
+                        {deviceOrientation === 'landscape' && (
                             <button 
                                 onClick={(e) => { e.stopPropagation(); setShowExtraPanel(!showExtraPanel); }}
                                 className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-90 border border-white/5"
@@ -831,8 +831,9 @@ export default function LocalPlayerOverlay() {
                                                 <circle cx="10" cy="20" r="3.5" fill={action.color} />
                                                 {isFocused && (
                                                     <motion.circle 
-                                                        animate={{ cx: [10, 200] }}
-                                                        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                                                        initial={{ cx: 10 }}
+                                                        animate={{ cx: 200 }}
+                                                        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
                                                         r="2.5" fill="white" 
                                                     />
                                                 )}
