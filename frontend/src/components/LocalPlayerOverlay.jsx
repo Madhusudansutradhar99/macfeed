@@ -12,7 +12,6 @@ import {
 import { useMusicPlayer } from '../context/MusicContext';
 import { Filesystem } from '@capacitor/filesystem';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
-import { useVideoPlayer } from './LocalVideoPlayer/useVideoPlayer';
 
 const formatTime = (s) => {
   if (!s || isNaN(s)) return '00:00:00';
@@ -49,12 +48,6 @@ export default function LocalPlayerOverlay() {
   const touchStart = useRef({ x: 0, y: 0, time: 0 });
   const lastTap = useRef(0);
   const swipeUpStart = useRef(0);
-
-  // Initialize Video.js player with mobile optimizations
-  const { player: videoPlayer } = useVideoPlayer(videoRef, {
-    preload: 'metadata',
-    autoplay: false
-  });
 
   // Core UI States
   const [showControls, setShowControls] = useState(true);
