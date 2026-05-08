@@ -24,11 +24,11 @@
       }
       // Check for new version and force reload if necessary
       window.addEventListener('load', () => {
-        const currentVersion = '1.0.5'; 
+        const currentVersion = '1.0.6'; 
         const storedVersion = localStorage.getItem('macfeed_version');
         if (storedVersion !== currentVersion) {
           localStorage.setItem('macfeed_version', currentVersion);
-          // Optional: location.reload(); // Only if needed
+          location.reload(true); // Force clear cache reload
         }
       });
     </script>

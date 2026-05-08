@@ -15,12 +15,6 @@ self.addEventListener('install', event => {
 
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) return response;
-        return fetch(event.request).catch(() => {
-            // Fallback for offline if needed
-        });
-      })
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
