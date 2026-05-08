@@ -111,13 +111,13 @@ export default function Sidebar() {
       <motion.aside 
         initial={false}
         animate={{ 
-          x: isSidebarOpen ? 0 : '-calc(100% + 40px)',
+          x: isSidebarOpen ? 0 : '-150%',
           opacity: isSidebarOpen ? 1 : 0
         }}
         transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
         className="fixed top-20 left-4 h-[calc(100vh-100px)] w-[260px] z-[1100] flex flex-col pointer-events-none will-change-transform"
       >
-        <div className="w-full h-full py-6 flex flex-col flex-1 pointer-events-auto relative overflow-y-auto no-scrollbar overflow-x-visible">
+        <div className={`w-full h-full py-6 flex flex-col flex-1 relative overflow-y-auto no-scrollbar overflow-x-visible ${isSidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
           <nav className="flex-1 flex flex-col gap-3 px-1">
             {navItems.map((item) => {
               const active = location.pathname === item.path;
