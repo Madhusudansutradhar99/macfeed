@@ -93,31 +93,8 @@ export default function Header() {
       }
     } catch(e) {}
 
-    // Piped Fallback (FREE, no API units)
-    try {
-      const CORS_PROXY = "https://api.allorigins.win/get?url=";
-      const target = `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(q)}&filter=videos`;
-      const res = await fetch(`${CORS_PROXY}${encodeURIComponent(target)}`, { signal: AbortSignal.timeout(5000) });
-      const pData = await res.json();
-      const data = JSON.parse(pData.contents);
-      const items = data.items || data;
-      if (items?.length > 0) {
-        const mapped = items.slice(0, 10).map(v => {
-          const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
-          return {
-            id: `yt-${vidId}`, ytId: vidId, title: v.title,
-            thumbnail_url: v.thumbnail || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`,
-            video_url: `https://www.youtube.com/embed/${vidId}`, source: 'youtube', type: 'global'
-          };
-        });
-        setCachedSearch(q, mapped); // Save to L1
-        return mapped;
-      }
-    } catch(e) {}
-
     return [];
   };
-
 
   useEffect(() => {
     const timer = setTimeout(async () => {

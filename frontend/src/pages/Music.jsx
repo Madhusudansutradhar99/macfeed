@@ -14,18 +14,6 @@ import 'swiper/css';
 import 'swiper/css/free-mode';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
-// YouTube API calls are now routed through backend /api/search (cached)
-
-const PIPED_INSTANCES = [
-  "https://pipedapi.kavin.rocks",
-  "https://pipedapi.tokhmi.xyz",
-  "https://pipedapi.moomoo.me"
-];
-
-const PROXIES = [
-  "https://api.allorigins.win/get?url=",
-  ""
-];
 
 // Memoized Background to prevent flickering on every click
 const MusicBackground = memo(() => (
@@ -103,12 +91,11 @@ export default function Music() {
   }
 
   const scrapeGlobal = async (q) => {
-    // Forcefully make the query music-focused
     const strictQuery = (q.toLowerCase().includes('song') || q.toLowerCase().includes('music') || q.toLowerCase().includes('audio')) 
       ? q 
       : `${q} official music video`;
 
-    // Backend Search first (has disk cache)
+    // Backend Search ONLY (has disk cache)
     try {
       const res = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(strictQuery)}`);
       const data = await res.json();
@@ -126,41 +113,6 @@ export default function Music() {
       }
     } catch (e) { }
 
-    for (const instance of PIPED_INSTANCES) {
-      for (const proxy of PROXIES) {
-        try {
-          const target = `${instance}/search?q=${encodeURIComponent(strictQuery)}&filter=music_videos`;
-          const fetchUrl = proxy ? `${proxy}${encodeURIComponent(target)}` : target;
-          const res = await fetch(fetchUrl, { signal: AbortSignal.timeout(4000) });
-          let data;
-          if (proxy.includes('allorigins')) {
-            const pData = await res.json();
-            data = JSON.parse(pData.contents);
-          } else {
-            data = await res.json();
-          }
-          if (data && (data.items || data.length > 0)) {
-            const items = data.items || data;
-            return items.slice(0, 10).map(v => {
-              const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
-              if (!vidId) return null;
-              return {
-                id: `yt-${vidId}`,
-                youtubeId: vidId,
-                title: v.title,
-                thumbnail_url: v.thumbnail || v.thumbnails?.[0]?.url || `https://i.ytimg.com/vi/${vidId}/mqdefault.jpg`,
-                video_url: `https://www.youtube.com/embed/${vidId}`,
-                source: 'youtube',
-                category: 'Music',
-                views: 0
-              };
-            }).filter(Boolean);
-          }
-        } catch (e) {
-          // ignore
-        }
-      }
-    }
     return [];
   };
 
@@ -174,26 +126,7 @@ export default function Music() {
       try {
         const q = searchQuery.toLowerCase().includes('music') ? searchQuery : `${searchQuery} music video`;
         const results = await scrapeGlobal(q);
-        if (results && results.length > 0) {
-          setYtResults(results);
-        } else {
-          // Fallback to local proxy if scrape fails completely
-          const response = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(q)}`);
-          const data = await response.json();
-          if (response.ok && data.results) {
-            const formatted = data.results.map(vid => ({
-              id: `yt-${vid.youtubeId}`,
-              youtubeId: vid.youtubeId,
-              title: vid.title,
-              thumbnail_url: vid.thumbnail,
-              video_url: `https://www.youtube.com/embed/${vid.youtubeId}`,
-              source: 'youtube',
-              category: 'Music',
-              views: 0
-            }));
-            setYtResults(formatted);
-          }
-        }
+        setYtResults(results || []);
       } catch (err) {
         console.error('YouTube Search Failed:', err);
       } finally {
@@ -257,7 +190,7 @@ export default function Music() {
         category: 'Music'
       });
       localStorage.setItem('macfeed_history', JSON.stringify(filtered.slice(0, 100)));
-      setHistoryTrigger(prev => prev + 1); // Force re-render to show updated history
+      setHistoryTrigger(prev => prev + 1);
     } catch (e) {
       console.error('Failed to save history', e);
     }
@@ -267,7 +200,7 @@ export default function Music() {
     if (isProcessing) return;
     if (song.id.toString().startsWith('yt-')) {
       setIsProcessing(true);
-      const ytId = song.id.replace('yt-', '');
+      const ytId = song.youtubeId || song.id.replace('yt-', '');
       try {
         const { data: existing } = await supabase.from('videos').select('*').eq('youtube_id', ytId).limit(1);
         if (existing && existing.length > 0) {

@@ -32,14 +32,7 @@ function setCachedSearch(query, data) {
   } catch { /* localStorage full — ignore */ }
 }
 
-// CORS Bypassing & Multi-Engine Config (Piped fallback only — no direct YT API)
-const PIPED_INSTANCES = [
-  "https://pipedapi.kavin.rocks",
-  "https://pipedapi.tokhmi.xyz",
-  "https://pipedapi.moomoo.me",
-  "https://pipedapi.systilly.xyz",
-  "https://api.piped.victr.me"
-];
+// Global Search is now handled entirely by the backend /api/search (with L2 caching)
 
 export default function SearchResults() {
   const { user, setAuthModalOpen } = useAuth();
@@ -83,46 +76,20 @@ export default function SearchResults() {
       return; // 🎯 0 API units used!
     }
 
-    // 3. GLOBAL SEARCH — Backend only (no direct YT API from frontend!)
-    const fetchPromises = [];
-
-    // Strategy A: Backend Master Engine (has disk cache = L2)
-    fetchPromises.push((async () => {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(6000) });
+    // 3. GLOBAL SEARCH — Backend only
+    // Strategy: Backend Master Engine (has disk cache = L2)
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) throw new Error('Backend failed');
       const data = await res.json();
-      if (!data.results?.length) throw new Error('Backend empty');
-      return { results: data.results.map(v => ({
-        id: `yt-${v.ytId}`, ytId: v.ytId, title: v.title, thumbnail_url: v.thumbnail || v.thumbnail_url,
-        video_url: `https://www.youtube.com/embed/${v.ytId}`, source: 'youtube', type: 'global'
-      })), src: data.source };
-    })());
-
-    // Strategy B: Multi-Proxy Piped (The "Never Fail" Scraper — FREE, no API units)
-    const CORS_PROXY = "https://api.allorigins.win/get?url=";
-    const stableInstance = "https://pipedapi.kavin.rocks";
-    fetchPromises.push((async () => {
-      const target = `${stableInstance}/search?q=${encodeURIComponent(query)}&filter=videos`;
-      const res = await fetch(`${CORS_PROXY}${encodeURIComponent(target)}`, { signal: AbortSignal.timeout(8000) });
-      const pData = await res.json();
-      const data = JSON.parse(pData.contents);
-      const items = data.items || data;
-      if (!items?.length) throw new Error('Proxy empty');
-      return { results: items.slice(0, 20).map(v => {
-        const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
-        return {
-          id: `yt-${vidId}`, ytId: vidId, title: v.title, thumbnail_url: v.thumbnail || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`,
-          video_url: `https://www.youtube.com/embed/${vidId}`, source: 'youtube', type: 'global'
-        };
-      }), src: 'piped' };
-    })());
-
-    try {
-      // Wait for the fastest successful strategy
-      const { results: globalResults, src } = await Promise.any(fetchPromises);
-      if (globalResults?.length > 0) {
+      if (data.results?.length > 0) {
+        const globalResults = data.results.map(v => ({
+          id: `yt-${v.ytId}`, ytId: v.ytId, title: v.title, thumbnail_url: v.thumbnail || v.thumbnail_url,
+          video_url: `https://www.youtube.com/embed/${v.ytId}`, source: 'youtube', type: 'global'
+        }));
+        
         setIsFreeMode(true);
-        setCacheSource(src);
+        setCacheSource(data.source);
         // Save to L1 localStorage cache for next time
         setCachedSearch(query, globalResults);
         setResults(prev => {
@@ -132,7 +99,10 @@ export default function SearchResults() {
         });
       }
     } catch (err) {
-      console.warn("All global search strategies failed or timed out.");
+      console.warn("Global search failed:", err.message);
+    } finally {
+      setLoading(false);
+    }
     } finally {
       setLoading(false);
     }
