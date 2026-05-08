@@ -21,3 +21,5 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js');
   });
 }
+
+// Build Trigger: 05/08/2026 13:25:31
