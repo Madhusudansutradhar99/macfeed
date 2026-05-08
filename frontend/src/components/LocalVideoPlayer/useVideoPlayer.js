@@ -15,6 +15,7 @@ export const useVideoPlayer = (videoRef, options = {}) => {
   const errorRef = useRef(null);
   const maxHeightRef = useRef(null);
   const smoothRef = useRef(false);
+  const sourceModeRef = useRef('native');
 
   useEffect(() => {
     let objectUrl = null;
@@ -51,6 +52,7 @@ export const useVideoPlayer = (videoRef, options = {}) => {
 
         // If HLS manifest, use hls.js (MSE) for adaptive switching
         if (isHlsFormat(src) || String(src).toLowerCase().endsWith('.m3u8')) {
+          sourceModeRef.current = 'hls';
           if (Hls.isSupported()) {
             // destroy previous instance
             if (hlsRef.current) {
@@ -88,13 +90,23 @@ export const useVideoPlayer = (videoRef, options = {}) => {
           }
         } else {
           // Non-HLS: native source (objectURL or http)
+          sourceModeRef.current = 'native';
           video.src = src;
         }
 
         // Start buffer/monitoring
-        frameCallbackRef.current = setupFrameCallbackMonitoring(video, () => {
-          try { video.currentTime += 0.05; } catch (e) { /* best-effort */ }
-        });
+        if (sourceModeRef.current === 'hls') {
+          frameCallbackRef.current = setupFrameCallbackMonitoring(video, () => {
+            try {
+              const hls = hlsRef.current;
+              if (hls && Hls.isSupported()) {
+                hls.startLoad(-1);
+              } else {
+                video.play().catch(() => {});
+              }
+            } catch (e) { /* best-effort */ }
+          });
+        }
 
         memoryIntervalRef.current = setInterval(() => {
           mitigateMemoryPressure(video);
