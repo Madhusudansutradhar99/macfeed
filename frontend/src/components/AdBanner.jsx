@@ -19,29 +19,17 @@ export default function AdBanner({ position = 'corner' }) {
 
   useEffect(() => {
     async function fetchAd() {
+      // Temporarily bypass Supabase fetch to prevent 404 console errors
+      // if the 'ads' table does not exist in the user's database.
+      /*
       try {
         const { data, error } = await supabase
           .from('ads')
-          .select('*')
-          .or(
-            `position.eq.${position === 'banner' ? 'banner' : 'corner'},position.eq.${position === 'banner' ? 'top' : 'bottom-right'}`
-          )
-          .eq('is_active', true)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (!error && data?.length) {
-          setAd(data[0]);
-        } else {
-          // No ad found or error → show MacFeed brand placeholder
-          setAd(FALLBACK_AD);
-        }
-      } catch (err) {
-        console.warn("Ad fetch skipped:", err.message);
-        setAd(FALLBACK_AD);
-      } finally {
-        setLoaded(true);
-      }
+          ...
+      } catch (err) { ... }
+      */
+      setAd(FALLBACK_AD);
+      setLoaded(true);
     }
     fetchAd();
   }, []);

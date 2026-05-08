@@ -168,6 +168,7 @@ export default function Playlists() {
               className="space-y-24"
             >
              <div 
+               onClick={() => fileInputRef.current?.click()}
                onDragOver={onDragOver}
                onDragLeave={onDragLeave}
                onDrop={onDrop}
@@ -179,6 +180,7 @@ export default function Playlists() {
                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50" 
                  accept="video/*,audio/*,.mkv,.ts,.m3u8,.mp4,.mp3,.webm" 
                  onChange={handleFileSelect} 
+                 onClick={(e) => e.stopPropagation()}
                />
 
                <div 
