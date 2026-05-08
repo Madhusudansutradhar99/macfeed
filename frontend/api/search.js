@@ -22,30 +22,22 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { q } = req.query;
+  const q = String(req.query?.q ?? new URL(req.url, 'http://localhost').searchParams.get('q') ?? '')
+    .trim()
+    .replace(/[\-_]+/g, ' ')
+    .replace(/\s+/g, ' ');
   const YT_API_KEY = process.env.YOUTUBE_API_KEY;
 
   if (!q) {
     return res.status(400).json({ error: 'Query is required' });
   }
 
-  // Quota Check
-  const today = new Date().toLocaleDateString();
-  if (dailyQuota.lastReset !== today) {
-    dailyQuota.count = 0;
-    dailyQuota.lastReset = today;
-  }
-
-  if (dailyQuota.count >= 100) {
-    return res.status(429).json({ 
-      error: 'API Quota Exceeded for today. Please try again tomorrow.' 
-    });
-  }
-
   // Cache Check
   if (cache.has(q)) {
     return res.status(200).json({ ...cache.get(q), source: 'vercel-cache' });
   }
+
+  let results = [];
 
   try {
     const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
@@ -54,32 +46,62 @@ export default async function handler(req, res) {
         q: q,
         type: 'video',
         maxResults: 15,
+        safeSearch: 'none',
         key: YT_API_KEY
-      }
+      },
+      timeout: 6000
     });
 
-    dailyQuota.count++;
-
-    const results = response.data.items.map(item => ({
+    results = (response.data.items || []).map(item => ({
       id: item.id.videoId,
+      ytId: item.id.videoId,
       youtubeId: item.id.videoId,
       title: item.snippet.title,
-      thumbnail: item.snippet.thumbnails.high.url,
+      thumbnail: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
       description: item.snippet.description
     }));
-
-    const responseData = {
-      results,
-      quotaCount: dailyQuota.count,
-      warning: dailyQuota.count >= 80 ? 'Warning: You are approaching your daily limit (80/100)' : null
-    };
-
-    // Store in cache
-    cache.set(q, responseData);
-
-    return res.status(200).json({ ...responseData, source: 'api' });
   } catch (error) {
-    console.error('YouTube API Error:', error.response?.data || error.message);
-    return res.status(500).json({ error: 'Failed to fetch from YouTube' });
+    console.warn('YouTube API Error:', error.response?.data || error.message);
   }
+
+  // Fallback to Piped if YouTube failed or returned no items.
+  if (results.length === 0) {
+    const instances = [
+      'https://pipedapi.kavin.rocks',
+      'https://pipedapi.tokhmi.xyz',
+      'https://pipedapi.moomoo.me'
+    ];
+
+    for (const instance of instances) {
+      try {
+        const pRes = await axios.get(`${instance}/search`, {
+          params: { q, filter: 'videos' },
+          timeout: 4500
+        });
+
+        const items = pRes.data?.items || pRes.data || [];
+        if (items.length > 0) {
+          results = items.slice(0, 15).map(v => {
+            const vidId = v.videoId || v.url?.split('v=')[1] || v.url?.split('/').pop();
+            return {
+              id: vidId,
+              ytId: vidId,
+              youtubeId: vidId,
+              title: v.title,
+              thumbnail: v.thumbnail || (vidId ? `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg` : undefined),
+              description: v.description || ''
+            };
+          }).filter(v => v.ytId);
+
+          if (results.length > 0) break;
+        }
+      } catch (e) {
+        // Try next instance.
+      }
+    }
+  }
+
+  const responseData = { results, source: results.length > 0 ? 'api' : 'empty' };
+  cache.set(q, responseData);
+  return res.status(200).json(responseData);
 }
