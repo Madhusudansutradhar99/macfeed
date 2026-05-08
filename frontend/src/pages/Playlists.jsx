@@ -168,33 +168,33 @@ export default function Playlists() {
               className="space-y-24"
             >
              <div className="relative">
-               {/* 
-                   OG BROWSER COMPATIBILITY FIX:
-                   Using standard htmlFor + unique ID. This is the most reliable way 
-                   to trigger a file input on mobile browsers without relying on refs or JS clicks.
-               */}
                <input 
-                 id="macfeed-local-file-picker"
                  type="file" 
+                 ref={fileInputRef}
                  className="hidden" 
                  accept="video/*,audio/*,.mkv,.ts,.m3u8,.mp4,.mp3,.webm" 
                  onChange={handleFileSelect} 
                />
 
-               <label 
-                 htmlFor="macfeed-local-file-picker"
+               <div 
+                 onClick={() => fileInputRef.current?.click()}
+                 onTouchEnd={(e) => {
+                   // Ensure direct trigger on touch devices
+                   e.preventDefault();
+                   fileInputRef.current?.click();
+                 }}
                  onDragOver={onDragOver}
                  onDragLeave={onDragLeave}
                  onDrop={onDrop}
-                 className={`group relative w-full aspect-[2/1] md:aspect-[32/10] bg-white/[0.01] border rounded-[2.5rem] md:rounded-[5rem] flex flex-col items-center justify-center cursor-pointer transition-all duration-1000 overflow-hidden shadow-2xl z-[1200] ${isDragging ? 'bg-accent/10 border-accent scale-[1.02]' : 'border-white/5 hover:bg-white/[0.03] hover:border-accent/20'}`}
+                 className={`group relative w-full aspect-[2/1] md:aspect-[32/10] bg-white/[0.01] border rounded-[2.5rem] md:rounded-[5rem] flex flex-col items-center justify-center cursor-pointer transition-all duration-1000 overflow-hidden shadow-2xl z-[1200] ${isDragging ? 'bg-accent/10 border-accent' : 'border-white/5 hover:bg-white/[0.03] hover:border-accent/20'}`}
                >
-                  {/* Visual elements */}
-                  <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)] pointer-events-none" />
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
+                  {/* Visual elements (Removing pointer-events-none to ensure clicks are registered) */}
+                  <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)]" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
 
-                  <div className="relative z-10 flex flex-col items-center text-center px-6 pointer-events-none">
+                  <div className="relative z-10 flex flex-col items-center text-center px-6">
                      <div className="relative mb-6 md:mb-10">
-                        <div className={`w-16 h-16 md:w-32 md:h-32 rounded-[1.5rem] md:rounded-[3.5rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-accent group-hover:text-white transition-all duration-1000 group-hover:rotate-[15deg] group-hover:shadow-[0_0_80px_rgba(var(--accent-rgb),0.4)] ${isDragging ? 'bg-accent text-white scale-110 rotate-[15deg]' : ''}`}>
+                        <div className={`w-16 h-16 md:w-32 md:h-32 rounded-[1.5rem] md:rounded-[3.5rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-accent group-hover:text-white transition-all duration-1000 group-hover:rotate-[15deg] group-hover:shadow-[0_0_80px_rgba(var(--accent-rgb),0.4)] ${isDragging ? 'bg-accent text-white rotate-[15deg]' : ''}`}>
                            <Upload className="w-6 h-6 md:w-12 md:h-12" />
                         </div>
                      </div>
@@ -206,7 +206,7 @@ export default function Playlists() {
                         {isDragging ? 'RELEASE TO INITIALIZE' : 'DRAG & DROP VIDEO FILES HERE OR CLICK TO BROWSE'}
                      </p>
                   </div>
-               </label>
+               </div>
              </div>
 
               <div className="relative">
