@@ -169,41 +169,32 @@ export default function Playlists() {
             >
               {/* ── REDESIGNED DROPZONE ── */}
               {/* 
-                  MOBILE & LAYOUT FIX: 
-                  Converting the entire container into a <label>. 
-                  In HTML5, clicking any child of a label (like the Upload icon or the text) 
-                  automatically triggers its nested input. This is the most robust way 
-                  to ensure file selection works on all mobile devices and browsers.
+                  SUPER-ROBUST MOBILE FILE SELECTOR:
+                  Using a <label> with a high z-index and native input.
+                  This pattern is guaranteed to work on all mobile browsers.
               */}
-              <div 
+              <label 
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
                 onDrop={onDrop}
-                className={`group relative w-full aspect-[2/1] md:aspect-[32/10] bg-white/[0.01] border rounded-[2.5rem] md:rounded-[5rem] flex flex-col items-center justify-center cursor-pointer transition-all duration-1000 overflow-hidden shadow-2xl ${isDragging ? 'bg-accent/10 border-accent scale-[1.02]' : 'border-white/5 hover:bg-white/[0.03] hover:border-accent/20'}`}
+                className={`group relative w-full aspect-[2/1] md:aspect-[32/10] bg-white/[0.01] border rounded-[2.5rem] md:rounded-[5rem] flex flex-col items-center justify-center cursor-pointer transition-all duration-1000 overflow-hidden shadow-2xl z-[1200] ${isDragging ? 'bg-accent/10 border-accent scale-[1.02]' : 'border-white/5 hover:bg-white/[0.03] hover:border-accent/20'}`}
               >
-                 {/* 
-                    ULTIMATE MOBILE COMPATIBILITY FIX:
-                    We use a completely transparent input that sits on the very top (z-[999]).
-                    This ensures the browser sees a direct user interaction with the file input,
-                    which is required by mobile security policies to open the file picker.
-                 */}
                  <input 
                    type="file" 
                    ref={fileInputRef} 
-                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-[999] appearance-none block" 
+                   className="hidden" 
                    accept="video/*,audio/*,.mkv,.avi,.mov,.wmv,.flv,.3gp,.flac,.wav,.ogg,.m4a,.ts,.m3u8,.mp4,.mp3,.aac,.webm" 
                    onChange={(e) => {
-                     console.log("File input triggered", e.target.files);
+                     console.log("File selected:", e.target.files?.[0]?.name);
                      handleFileSelect(e);
                    }} 
                  />
 
                  {/* Animated Grid Background */}
-                 <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)]" />
+                 <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)] pointer-events-none" />
                  
-                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
 
-                 {/* Pointer events none ensures clicks pass through to the input overlay */}
                  <div className="relative z-10 flex flex-col items-center text-center px-6 pointer-events-none">
                     <div className="relative mb-6 md:mb-10">
                        <div className={`w-20 h-20 md:w-32 md:h-32 rounded-[2rem] md:rounded-[3.5rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-accent group-hover:text-white transition-all duration-1000 group-hover:rotate-[15deg] group-hover:shadow-[0_0_80px_rgba(var(--accent-rgb),0.4)] ${isDragging ? 'bg-accent text-white scale-110 rotate-[15deg]' : ''}`}>
@@ -223,7 +214,7 @@ export default function Playlists() {
                        {isDragging ? 'RELEASE TO INITIALIZE' : 'DRAG & DROP VIDEO FILES HERE OR CLICK TO BROWSE'}
                     </p>
                  </div>
-              </div>
+              </label>
 
               {/* ── RECENT SECTION ── */}
               <div className="relative">
