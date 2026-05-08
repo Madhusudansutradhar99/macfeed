@@ -103,9 +103,6 @@ export default function SearchResults() {
     } finally {
       setLoading(false);
     }
-    } finally {
-      setLoading(false);
-    }
   }, []);
 
   useEffect(() => { performSearch(q); }, [q, performSearch]);
