@@ -779,7 +779,7 @@ export default function LocalPlayerOverlay() {
                                             y: yPos,
                                             scale: scale,
                                             opacity: opacity,
-                                            zIndex: Math.round(opacity * 100)
+                                            zIndex: 300 + Math.round(opacity * 100)
                                         }}
                                         transition={{ type: 'spring', stiffness: 500, damping: 50, mass: 0.5 }}
                                         onClick={(e) => { e.stopPropagation(); action.onClick(); }}

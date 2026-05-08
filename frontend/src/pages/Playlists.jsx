@@ -242,8 +242,8 @@ export default function Playlists() {
                         <motion.div 
                           key={file.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}
                           whileHover={{ y: -10, scale: 1.02, boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}
-                          whileTap={{ scale: 0.9, rotate: -2, borderRadius: '4rem' }}
-                          className="bg-secondary/40 backdrop-blur-3xl border border-primary rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 group cursor-pointer hover:border-accent/40 transition-all duration-500 shadow-2xl relative overflow-hidden"
+                          whileTap={{ scale: 0.92, rotate: -2, borderRadius: '4rem' }}
+                          className="bg-secondary/40 backdrop-blur-3xl border border-primary rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 group cursor-pointer hover:border-accent/40 transition-[border-color,background-color,box-shadow] duration-500 shadow-2xl relative overflow-hidden"
                           onClick={() => handleRecentPlay(file)}
                         >
                            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
