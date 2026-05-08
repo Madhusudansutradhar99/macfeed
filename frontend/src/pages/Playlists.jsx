@@ -130,7 +130,7 @@ export default function Playlists() {
          <div className="absolute top-[30%] left-[40%] w-[20%] h-[20%] bg-accent/10 blur-[100px]" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-12 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pt-24 pb-12 relative z-[100] pointer-events-auto">
         
         {/* ── HEADER ── */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
@@ -167,16 +167,14 @@ export default function Playlists() {
               key="local" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}
               className="space-y-24"
             >
-             <div 
-               onClick={() => fileInputRef.current?.click()}
+             <label 
                onDragOver={onDragOver}
                onDragLeave={onDragLeave}
                onDrop={onDrop}
-               className="relative w-full aspect-[2/1] md:aspect-[32/10] group cursor-pointer"
+               className="relative w-full aspect-[2/1] md:aspect-[32/10] group cursor-pointer block"
              >
                <input 
                  type="file" 
-                 ref={fileInputRef}
                  className="hidden" 
                  accept="video/*,audio/*,.mkv,.ts,.m3u8,.mp4,.mp3,.webm" 
                  onChange={handleFileSelect} 
