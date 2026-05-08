@@ -273,6 +273,19 @@ export default function VideoPlayer({ video, onLike, onClose, onTheaterChange, o
                 }
               }
             }, 200); // Higher frequency for real-time response
+            // Ensure the generated iframe allows fullscreen / autoplay / picture-in-picture
+            setTimeout(() => {
+              try {
+                const iframe = ytDomContainer.current?.querySelector('iframe');
+                if (iframe) {
+                  iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture; encrypted-media');
+                  iframe.setAttribute('allowfullscreen', '');
+                  iframe.setAttribute('playsinline', '1');
+                  iframe.style.touchAction = 'manipulation';
+                  iframe.style.webkitTapHighlightColor = 'transparent';
+                }
+              } catch (err) { /* ignore */ }
+            }, 50);
           },
           onStateChange: (e) => {
             if (e.data === window.YT.PlayerState.PLAYING) setPlaying(true);
@@ -323,6 +336,39 @@ export default function VideoPlayer({ video, onLike, onClose, onTheaterChange, o
       }
     };
   }, [video?.video_url, video?.source]);
+
+  // Fullscreen & orientation handlers (mobile-friendly)
+  useEffect(() => {
+    const onFsChange = async () => {
+      const isFs = !!document.fullscreenElement;
+      setIsFullscreen(isFs);
+      if (isFs && window.innerWidth <= 768) {
+        try { await ScreenOrientation.lock({ orientation: 'landscape' }); } catch (e) { }
+      } else {
+        try { await ScreenOrientation.unlock(); } catch (e) { }
+        try { window.screen?.orientation?.unlock?.(); } catch (e) { }
+      }
+    };
+
+    const onOrientation = () => {
+      // If orientation changed to portrait while an element is fullscreen, try to exit fullscreen
+      try {
+        if (document.fullscreenElement && window.innerHeight > window.innerWidth) {
+          document.exitFullscreen().catch(() => {});
+        }
+      } catch (e) {}
+    };
+
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+    window.addEventListener('orientationchange', onOrientation);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', onFsChange);
+      document.removeEventListener('webkitfullscreenchange', onFsChange);
+      window.removeEventListener('orientationchange', onOrientation);
+    };
+  }, []);
 
   // ── State Sync ──
   useEffect(() => {
@@ -412,20 +458,33 @@ export default function VideoPlayer({ video, onLike, onClose, onTheaterChange, o
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
+    // Mobile: request fullscreen on the container, then lock to landscape if supported.
     if (window.innerWidth <= 768) {
-      if (!isPortraitFs) {
-        setIsPortraitFs(true);
-        showToast('⛶ Landscape FS');
-        try { await ScreenOrientation.lock({ orientation: 'landscape' }); } catch (e) { }
-      } else {
-        setIsPortraitFs(false);
-        showToast('Exit Fullscreen');
-        try { await ScreenOrientation.unlock(); } catch (e) { }
+      try {
+        if (!document.fullscreenElement) {
+          if (containerRef.current) {
+            const req = containerRef.current.requestFullscreen?.bind(containerRef.current) || containerRef.current.webkitRequestFullscreen?.bind(containerRef.current);
+            if (req) await req();
+          }
+          setIsPortraitFs(true);
+          showToast('⛶ Entering fullscreen');
+          try { await ScreenOrientation.lock({ orientation: 'landscape' }); } catch (e) { }
+        } else {
+          await document.exitFullscreen().catch(() => {});
+          try { await ScreenOrientation.unlock(); } catch (e) { }
+          setIsPortraitFs(false);
+          showToast('Exit Fullscreen');
+        }
+      } catch (e) {
+        // Fallback: toggle state only
+        setIsPortraitFs((s) => !s);
       }
-    } else {
-      if (!document.fullscreenElement) containerRef.current?.requestFullscreen();
-      else document.exitFullscreen();
+      return;
     }
+
+    // Desktop behavior: standard fullscreen API
+    if (!document.fullscreenElement) await containerRef.current?.requestFullscreen?.().catch(() => {});
+    else await document.exitFullscreen().catch(() => {});
   }, [isPortraitFs, showToast]);
 
   // ── Keyboard shortcuts ──

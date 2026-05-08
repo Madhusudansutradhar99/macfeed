@@ -479,6 +479,37 @@ export default function LocalPlayerOverlay() {
     lastTap.current = now;
   };
 
+    // Fullscreen & orientation safety handlers for mobile
+    useEffect(() => {
+        const onFsChange = async () => {
+            const isFs = !!document.fullscreenElement;
+            if (isFs) {
+                try { await ScreenOrientation.lock({ orientation: 'landscape' }); } catch (e) {}
+            } else {
+                try { await ScreenOrientation.unlock(); } catch (e) {}
+                try { window.screen?.orientation?.unlock?.(); } catch (e) {}
+            }
+        };
+
+        const onOrientation = () => {
+            try {
+                if (document.fullscreenElement && window.innerHeight > window.innerWidth) {
+                    document.exitFullscreen().catch(() => {});
+                }
+            } catch (e) {}
+        };
+
+        document.addEventListener('fullscreenchange', onFsChange);
+        document.addEventListener('webkitfullscreenchange', onFsChange);
+        window.addEventListener('orientationchange', onOrientation);
+
+        return () => {
+            document.removeEventListener('fullscreenchange', onFsChange);
+            document.removeEventListener('webkitfullscreenchange', onFsChange);
+            window.removeEventListener('orientationchange', onOrientation);
+        };
+    }, []);
+
   useEffect(() => {
     const handleKey = (e) => {
         if (!isLocalPlayerOpen) return;
@@ -510,7 +541,7 @@ export default function LocalPlayerOverlay() {
       <motion.div
         ref={containerRef}
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[9999] bg-[#000] flex flex-col items-center justify-center overflow-hidden font-sans select-none touch-none"
+        className="fixed inset-0 z-[9999] bg-[#000] flex flex-col items-center justify-center overflow-hidden font-sans select-none touch-none px-2 sm:px-0"
         onMouseMove={resetControlsTimeout}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -530,10 +561,13 @@ export default function LocalPlayerOverlay() {
 
         <video
           ref={videoRef}
-          className="w-full h-full relative z-[10]"
-          style={{ 
-            objectFit: aspectRatio === 'Fit' ? 'contain' : aspectRatio === 'Fill' ? 'cover' : aspectRatio === 'Stretch' ? 'fill' : 'contain', 
-            aspectRatio: (aspectRatio === '16:9' || aspectRatio === '4:3') ? aspectRatio.replace(':', '/') : 'auto',
+                    className="w-full max-w-full relative z-[10]"
+                    style={{ 
+                        width: '100%',
+                        height: 'auto',
+                        maxHeight: '100vh',
+                        objectFit: aspectRatio === 'Fit' ? 'contain' : aspectRatio === 'Fill' ? 'cover' : aspectRatio === 'Stretch' ? 'fill' : 'contain', 
+                        aspectRatio: (aspectRatio === '16:9' || aspectRatio === '4:3') ? aspectRatio.replace(':', '/') : 'auto',
             /* REMOVED EXPENSIVE FILTERS FOR BATTERY SAVING */
             contain: 'strict',
             imageRendering: 'optimizeQuality',
