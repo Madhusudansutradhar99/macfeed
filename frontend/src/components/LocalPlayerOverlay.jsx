@@ -659,16 +659,31 @@ export default function LocalPlayerOverlay() {
                     className="absolute inset-0 z-[150] flex items-center justify-start overflow-hidden pointer-events-none"
                     onClick={() => setShowExtraPanel(false)}
                 >
-                    {/* The Master Terminal (Aligned Strictly to Left) */}
+                    {/* 
+                        EXPANDED INTERACTIVE AREA (LEFT SIDE):
+                        Now covers a larger width to ensure scrolling anywhere on the left
+                        rotates the wheel, not just on the frames.
+                    */}
                     <div 
                         onWheel={(e) => {
                             const sensitivity = 0.3;
                             const maxRot = (14 - 1) * 18;
                             setWheelRotation(prev => Math.max(0, Math.min(prev - (e.deltaY * sensitivity), maxRot)));
                         }}
-                        className="relative h-full w-[350px] flex items-center justify-start pointer-events-auto"
+                        className="relative h-full w-[400px] md:w-[500px] flex items-center justify-start pointer-events-auto group/wheel"
                         onClick={e => e.stopPropagation()}
                     >
+                        {/* Drag Area (Full height & width of the interactive zone) */}
+                        <motion.div 
+                            drag="y"
+                            dragConstraints={{ top: -2000, bottom: 2000 }}
+                            onDrag={(e, info) => {
+                                const sensitivity = 0.4;
+                                const maxRot = (14 - 1) * 18;
+                                setWheelRotation(prev => Math.max(0, Math.min(prev - (info.delta.y * sensitivity), maxRot)));
+                            }}
+                            className="absolute inset-0 z-[200] cursor-grab active:cursor-grabbing"
+                        />
                         {/* COMPACT & TIGHT MOBILE WHEEL (Smaller radius and size) */}
                         <div className="absolute left-[-220px] md:left-[-280px] w-[300px] md:w-[400px] h-[300px] md:h-[400px] flex items-center justify-center pointer-events-none">
                             
@@ -707,17 +722,6 @@ export default function LocalPlayerOverlay() {
                             </div>
                         </div>
 
-                        {/* Drag Area (Safe-Zone for Mobile) */}
-                        <motion.div 
-                            drag="y"
-                            dragConstraints={{ top: -2000, bottom: 2000 }}
-                            onDrag={(e, info) => {
-                                const sensitivity = 0.4;
-                                const maxRot = (14 - 1) * 18;
-                                setWheelRotation(prev => Math.max(0, Math.min(prev - (info.delta.y * sensitivity), maxRot)));
-                            }}
-                            className="absolute left-[-280px] w-[250px] h-full z-10 cursor-grab active:cursor-grabbing"
-                        />
 
                         {/* Panels with ZERO-GAP Connections (Aligned to Ring Center) */}
                         <div className="absolute left-[-280px] w-[400px] h-full flex items-center justify-center pointer-events-none">
