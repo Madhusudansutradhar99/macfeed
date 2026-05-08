@@ -43,12 +43,14 @@ export default function LocalPlayerOverlay() {
     next, prev
   } = useMusicPlayer();
 
-  const videoRef = useRef(null);
-  const containerRef = useRef(null);
-  const controlsTimeout = useRef(null);
-  const touchStart = useRef({ x: 0, y: 0, time: 0 });
-  const lastTap = useRef(0);
-  const swipeUpStart = useRef(0);
+    const videoRef = useRef(null);
+    const renderCanvasRef = useRef(null);
+    const containerRef = useRef(null);
+    const controlsTimeout = useRef(null);
+    const touchStart = useRef({ x: 0, y: 0, time: 0 });
+    const lastTap = useRef(0);
+    const swipeUpStart = useRef(0);
+    const renderLoopRef = useRef(null);
 
   // Core UI States
   const [showControls, setShowControls] = useState(true);
@@ -103,6 +105,7 @@ export default function LocalPlayerOverlay() {
   const [orientation, setOrientation] = useState('portrait');
   const [physOrientation, setPhysOrientation] = useState(window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
   const [wheelRotation, setWheelRotation] = useState(0);
+    const [usePreviewRenderer, setUsePreviewRenderer] = useState(false);
 
   // Initialize native/HLS player hook (probes capabilities and attaches hls.js when needed)
   const { hls, error: playerError, maxHeight: playerMaxHeight, smooth: playerSmooth } = useVideoPlayer(videoRef, { currentSong, preloadMode });
@@ -125,6 +128,14 @@ export default function LocalPlayerOverlay() {
         window.removeEventListener('orientationchange', checkOrientation);
     };
   }, []);
+
+    useEffect(() => {
+        return () => {
+            if (renderLoopRef.current) {
+                cancelAnimationFrame(renderLoopRef.current);
+            }
+        };
+    }, []);
 
   const showMXToast = useCallback((msg, icon, color = '#FFFFFF') => {
     setToast({ msg, icon, color });
@@ -271,6 +282,10 @@ export default function LocalPlayerOverlay() {
             setShowResumeDialog(true);
         }
     }
+
+    const isLocalSource = Boolean(currentSong?.file || currentSong?.path);
+    const targetCap = playerMaxHeight || 1080;
+    setUsePreviewRenderer(isLocalSource && (playerSmooth === false || v.videoHeight > targetCap || v.videoHeight >= 2160));
   };
 
   const handleResume = (confirm) => {
@@ -323,6 +338,38 @@ export default function LocalPlayerOverlay() {
         videoRef.current.loop = loopVideo;
     }
   }, [volume, isMuted, playbackRate, volumeBoost, loopVideo]);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        const canvas = renderCanvasRef.current;
+        if (!video || !canvas || !usePreviewRenderer) return;
+
+        const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+        if (!ctx) return;
+
+        const targetHeight = Math.max(480, Math.min(playerMaxHeight || 720, 720));
+        const aspect = (video.videoWidth || 16) / Math.max(video.videoHeight || 9, 1);
+        canvas.width = Math.max(1, Math.round(targetHeight * aspect));
+        canvas.height = targetHeight;
+
+        const drawFrame = () => {
+            if (video.readyState >= 2) {
+                try {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                } catch (e) {}
+            }
+            renderLoopRef.current = requestAnimationFrame(drawFrame);
+        };
+
+        drawFrame();
+
+        return () => {
+            if (renderLoopRef.current) {
+                cancelAnimationFrame(renderLoopRef.current);
+                renderLoopRef.current = null;
+            }
+        };
+    }, [usePreviewRenderer, playerMaxHeight, currentSong?.id]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -541,6 +588,7 @@ export default function LocalPlayerOverlay() {
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
             filter: showExtraPanel ? 'blur(8px) brightness(0.5)' : 'none',
+                        opacity: usePreviewRenderer ? 0.01 : 1,
             transition: 'filter 0.5s ease'
           }}
           onLoadedMetadata={handleVideoMetadata}
@@ -555,6 +603,16 @@ export default function LocalPlayerOverlay() {
         >
           {activeSubtitle && <track src={activeSubtitle} kind="subtitles" srcLang="en" label="English" default />}
         </video>
+
+                {usePreviewRenderer && (
+                    <canvas
+                        ref={renderCanvasRef}
+                        className="absolute inset-0 z-[11] w-full h-full"
+                        style={{
+                            objectFit: aspectRatio === 'Fit' ? 'contain' : aspectRatio === 'Fill' ? 'cover' : aspectRatio === 'Stretch' ? 'fill' : 'contain'
+                        }}
+                    />
+                )}
 
         {(playerError || playerMaxHeight) && showControls && (
             <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-[60] px-3 py-2 bg-black/70 text-white text-xs rounded-full">
