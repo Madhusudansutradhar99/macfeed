@@ -1090,9 +1090,9 @@ export default function LocalPlayerOverlay() {
             {showResumeDialog && (
                 <motion.div 
                     initial={{ y: 100, opacity: 0, scale: 0.9 }} 
-                    animate={{ y: -100, opacity: 1, scale: 1 }} 
+                    animate={{ y: 0, opacity: 1, scale: 1 }} 
                     exit={{ y: 100, opacity: 0, scale: 0.9 }} 
-                    className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[2000] w-[90%] max-w-sm"
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] w-[90%] max-w-sm"
                 >
                     <div className="bg-[#111]/90 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
