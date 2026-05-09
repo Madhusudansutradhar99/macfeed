@@ -185,19 +185,13 @@ export default function MusicMiniPlayer() {
       {currentSong?.source !== 'youtube' && (
         <audio
           ref={audioRef}
+          src={currentSong?.video_url}
           autoPlay={playing}
           style={{ display: 'none' }}
           onLoadedMetadata={(e) => ctx.setDuration?.(e.target.duration)}
           onTimeUpdate={(e) => ctx.setCurrentTime?.(e.target.currentTime)}
           onEnded={next}
-        >
-          <source src={currentSong?.video_url} type="audio/mpeg" />
-          <source src={currentSong?.video_url} type="audio/wav" />
-          <source src={currentSong?.video_url} type="audio/flac" />
-          <source src={currentSong?.video_url} type="audio/aac" />
-          <source src={currentSong?.video_url} type="audio/ogg" />
-          <source src={currentSong?.video_url} type="audio/mp4" />
-        </audio>
+        />
       )}
 
       {/* ══ EXPANDED PLAYER — individually fixed, no full-screen wrapper ══ */}
@@ -211,7 +205,7 @@ export default function MusicMiniPlayer() {
 
           {/* TOP BAR */}
           <div className="absolute top-2 md:top-4 w-full flex justify-center z-50 px-2 md:px-10">
-            <div className="w-full max-w-4xl h-12 bg-white/5 backdrop-blur-[30px] border border-white/10 rounded-full flex items-center justify-between px-6 shadow-2xl">
+            <div className="w-full max-w-[320px] h-12 bg-white/5 backdrop-blur-[30px] border border-white/10 rounded-full flex items-center justify-between px-4 shadow-2xl">
               <div className="hidden md:flex gap-1">
                 <button className="p-2 hover:bg-white/10 rounded-full text-white cursor-pointer outline-none" onClick={prev}><ChevronLeft className="w-5 h-5" /></button>
                 <button className="p-2 hover:bg-white/10 rounded-full text-white cursor-pointer outline-none" onClick={next}><ChevronRight className="w-5 h-5" /></button>
@@ -241,8 +235,8 @@ export default function MusicMiniPlayer() {
               className="w-full !py-2 md:!py-20"
             >
               {playlist.map((song, i) => (
-                <SwiperSlide key={song.id} className="w-[94vw] md:w-[420px] outline-none select-none">
-                  <div className={`relative w-full aspect-[1/1.0] md:aspect-[1/0.8] rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 transition-all duration-1000 bg-black
+                <SwiperSlide key={song.id} className="w-[94vw] md:w-[320px] outline-none select-none">
+                  <div className={`relative w-full aspect-[4/5] md:aspect-[9/16] rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 transition-all duration-1000 bg-black
                     ${currentIdx === i ? 'scale-100 border-white/20' : 'scale-[0.8] opacity-30 grayscale border-white/5'}`}>
 
                     {/* Thumbnail always visible as fallback — prevents black flash during swipe */}

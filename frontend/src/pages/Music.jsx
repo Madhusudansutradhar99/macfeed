@@ -244,7 +244,8 @@ export default function Music() {
         video_url: audioData.publicUrl,
         thumbnail_url: thumbnailPublicUrl,
         source: 'local',
-        category: 'Music'
+        category: 'Music',
+        user_id: user?.id
       };
 
       const { data: insertedData, error: dbErr } = await supabase.from('videos').insert([newSong]).select().single();
@@ -416,8 +417,8 @@ export default function Music() {
 
   const displaySongs = getDisplaySongs();
   const heroSong = displaySongs.length > 0 ? displaySongs[0] : songs[0];
-  const sideSongs = displaySongs.slice(1, 4);
-  const bottomSongs = displaySongs.slice(4, 16);
+  const sideSongs = displaySongs.slice(0, 5);
+  const bottomSongs = displaySongs.slice(5, 16);
   const rawHistory = JSON.parse(localStorage.getItem('macfeed_history') || '[]').filter(h => h.category === 'Music');
   const recentlyPlayed = deduplicate(rawHistory.length > 0 ? rawHistory : songs).slice(0, 4);
 
