@@ -307,6 +307,7 @@ export default function Music() {
       const liked = JSON.parse(localStorage.getItem('macfeed_liked') || '[]');
       return deduplicate(liked.filter(l => l.category === 'Music'));
     }
+    if (activeTab === 'My Uploads') return deduplicate(songs.filter(s => s.source === 'local'));
     if (activeTab === 'Artists') return deduplicate(songs).slice().sort(() => Math.random() - 0.5);
     return deduplicate(filteredSongs);
   };
@@ -464,7 +465,7 @@ export default function Music() {
               </AnimatePresence>
             </div>
             <div className="flex gap-4 md:gap-8 overflow-x-auto w-full md:w-auto no-scrollbar">
-              {['New', 'All Hits', 'Artists', 'History'].map((tab) => (
+              {['New', 'My Uploads', 'All Hits', 'Artists', 'History'].map((tab) => (
                 <button key={tab} onClick={() => { setActiveTab(tab); setSearchQuery(''); }} className={`text-[10px] font-black uppercase tracking-[0.3em] transition-all relative py-2 shrink-0 ${activeTab === tab && !searchQuery ? 'text-white' : 'text-white/30 hover:text-white'}`}>
                   {tab}
                   {activeTab === tab && !searchQuery && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />}
