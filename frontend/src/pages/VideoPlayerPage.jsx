@@ -146,7 +146,11 @@ export default function VideoPlayerPage() {
               onError={(message) => setPlayerError(message)} 
               onMiniChange={(time, isPlaying) => {
                 openMini(video, time, isPlaying);
-                navigate(-1);
+                if (window.history.length > 2) {
+                  navigate(-1);
+                } else {
+                  navigate('/');
+                }
               }}
             />
           )}

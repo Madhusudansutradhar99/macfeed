@@ -477,7 +477,7 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
     >
       <div
         ref={containerRef}
-        className={`${isFullscreen ? 'h-full w-full' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video'} overflow-hidden select-none bg-black flex items-center justify-center`}
+        className={`${isFullscreen ? 'h-full w-full' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video'} overflow-hidden select-none bg-black flex items-center justify-center touch-none`}
         onMouseMove={showControlsTemporarily}
         onTouchStart={handleTouchStart}
         onTouchEnd={(e) => {
@@ -513,7 +513,7 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
               </div>
             ) : null}
 
-            <div ref={ytDomContainer} className="absolute inset-0 h-full w-full pointer-events-auto" />
+            <div ref={ytDomContainer} className="absolute inset-0 h-full w-full pointer-events-none" />
             
             {/* FIX: Transparent overlay to capture taps ONLY when controls are hidden or when clicking background */}
             {!showControls && (
@@ -619,12 +619,23 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
                 onClick={handleSeek}
               >
                 <div className="absolute inset-0 h-full rounded-full bg-white/10 opacity-0 group-hover/seek:opacity-100 transition-opacity" />
-                <div className="h-full rounded-full bg-white/40" style={{ width: `${(current / (duration || 1)) * 100 || 0}%` }} />
+                <div className="h-full rounded-full bg-accent" style={{ width: `${(current / (duration || 1)) * 100 || 0}%`, backgroundColor: 'var(--accent-color, #facc15)' }} />
               </div>
 
               <div className="flex items-center justify-between gap-1 text-white">
                 <div className="flex items-center gap-0.5">
-                  <ControlBtn onClick={() => setPlaying((prev) => !prev)} title={playing ? 'Pause' : 'Play'}>
+                  <ControlBtn onClick={(e) => {
+                    e.stopPropagation();
+                    const next = !playing;
+                    setPlaying(next); // Instant UI update
+                    if (isYouTube && ytPlayerRef.current?.playVideo) {
+                      if (next) ytPlayerRef.current.playVideo();
+                      else ytPlayerRef.current.pauseVideo();
+                    } else if (nativeVideoRef.current) {
+                      if (next) nativeVideoRef.current.play();
+                      else nativeVideoRef.current.pause();
+                    }
+                  }} title={playing ? 'Pause' : 'Play'}>
                     {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 fill-white" />}
                   </ControlBtn>
                   <ControlBtn onClick={() => skip(-10)} title="Back 10s">
