@@ -13,6 +13,12 @@ function formatTime(s) {
   return `${m}:${sec}`;
 }
 
+const getYouTubeEmbedUrl = (url, playing, muted, time) => {
+  const match = url?.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+  const id = match ? match[1] : '';
+  return `https://www.youtube.com/embed/${id}?autoplay=${playing ? 1 : 0}&controls=0&mute=${muted ? 1 : 0}&start=${Math.floor(time || 0)}&enablejsapi=1`;
+};
+
 export default function VideoGlobalMiniPlayer() {
   const ctx = useVideoMiniPlayer();
   const navigate = useNavigate();
@@ -126,7 +132,7 @@ export default function VideoGlobalMiniPlayer() {
           <div className="relative w-full aspect-video bg-black overflow-hidden">
             {miniVideo?.source === 'youtube' ? (
               <iframe
-                src={`${miniVideo.video_url}?autoplay=${playing ? 1 : 0}&controls=0&mute=${muted ? 1 : 0}&start=${Math.floor(currentTime || 0)}`}
+                src={getYouTubeEmbedUrl(miniVideo.video_url, playing, muted, currentTime)}
                 className="w-full h-full object-cover pointer-events-none"
                 style={{ width: '100%', height: '100%', border: 'none' }}
                 allow="autoplay; encrypted-media"

@@ -496,10 +496,8 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
           }
         }}
         onClick={(e) => {
-          // If clicking the container itself (not buttons), toggle controls
-          if (e.target === e.currentTarget) {
-            toggleControls(e);
-          }
+          // Buttons use stopPropagation, so clicks reaching here are background clicks
+          toggleControls(e);
         }}
       >
         {isYouTube ? (
