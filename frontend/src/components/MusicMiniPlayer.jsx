@@ -257,11 +257,11 @@ export default function MusicMiniPlayer() {
               coverflowEffect={{ rotate: 0, stretch: 0, depth: 100, modifier: 2.5, slideShadows: false }}
               modules={[EffectCoverflow, Mousewheel]}
               onSlideChange={(sw) => playlist[sw.activeIndex] && playVideo(playlist[sw.activeIndex])}
-              className="w-full !py-2 md:!py-20"
+              className="w-full !pb-32 !pt-4 md:!py-20"
             >
               {playlist.map((song, i) => (
                 <SwiperSlide key={song.id} className="w-[94vw] md:w-[320px] outline-none select-none">
-                  <div className={`relative w-full aspect-[4/5] md:aspect-[4/5] rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 transition-all duration-1000 bg-black
+                  <div className={`relative w-full aspect-[2/3] md:aspect-[4/5] rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 transition-all duration-1000 bg-black
                     ${currentIdx === i ? 'scale-100 border-white/20' : 'scale-[0.8] opacity-30 grayscale border-white/5'}`}>
 
                     {/* Thumbnail always visible as fallback — prevents black flash during swipe */}
@@ -306,23 +306,23 @@ export default function MusicMiniPlayer() {
                 initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
                 className="absolute bottom-2 md:bottom-6 w-full flex justify-center z-50 px-2 md:px-10"
               >
-                <div className="w-full max-w-[700px] bg-white/10 backdrop-blur-[50px] border border-white/10 rounded-[2.5rem] md:rounded-full flex flex-col md:flex-row items-center justify-between p-3 md:px-6 shadow-2xl gap-4 md:gap-0 relative">
+                <div className="w-full max-w-[700px] bg-white/10 backdrop-blur-[50px] border border-white/10 rounded-[2rem] md:rounded-full flex flex-col md:flex-row items-center justify-between p-2 md:px-6 shadow-2xl gap-2 md:gap-0 relative">
                   <button onClick={() => setShowBottomBar(false)} className="absolute -top-3 right-4 md:-top-3 md:right-10 w-8 h-8 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white rounded-full flex items-center justify-center border border-red-500/50 backdrop-blur-md transition-all z-[60]">
                     <X className="w-4 h-4" />
                   </button>
                   {/* Buttons */}
-                  <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-full border border-white/5 shrink-0">
-                    <button onClick={() => handleSeek(currentTime - 10)} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><Rewind className="w-4 h-4" /></button>
-                    <button onClick={prev} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><SkipBack className="w-4 h-4 fill-current" /></button>
-                    <button onClick={() => setPlaying(!playing)} className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-xl outline-none hover:scale-105 transition-transform">
-                      {playing ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current translate-x-0.5" />}
+                  <div className="flex items-center gap-1 md:gap-1.5 bg-white/5 p-1 rounded-full border border-white/5 shrink-0">
+                    <button onClick={() => handleSeek(currentTime - 10)} className="w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><Rewind className="w-3.5 h-3.5 md:w-4 md:h-4" /></button>
+                    <button onClick={prev} className="w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><SkipBack className="w-3.5 h-3.5 md:w-4 md:h-4 fill-current" /></button>
+                    <button onClick={() => setPlaying(!playing)} className="w-10 h-10 md:w-12 md:h-12 bg-white text-black rounded-full flex items-center justify-center shadow-xl outline-none hover:scale-105 transition-transform">
+                      {playing ? <Pause className="w-4 h-4 md:w-5 md:h-5 fill-current" /> : <Play className="w-4 h-4 md:w-5 md:h-5 fill-current translate-x-0.5" />}
                     </button>
-                    <button onClick={next} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><SkipForward className="w-4 h-4 fill-current" /></button>
-                    <button onClick={() => handleSeek(currentTime + 10)} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><FastForward className="w-4 h-4" /></button>
+                    <button onClick={next} className="w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><SkipForward className="w-3.5 h-3.5 md:w-4 md:h-4 fill-current" /></button>
+                    <button onClick={() => handleSeek(currentTime + 10)} className="w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><FastForward className="w-3.5 h-3.5 md:w-4 md:h-4" /></button>
                   </div>
 
                   {/* Progress */}
-                  <div className="flex-1 flex items-center gap-3 px-6 md:px-10 w-full min-w-0">
+                  <div className="flex-1 flex items-center gap-2 md:gap-3 px-3 md:px-10 w-full min-w-0">
                     <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-white/10">
                       <img src={currentSong?.thumbnail_url} className="w-full h-full object-cover" alt="" />
                     </div>
