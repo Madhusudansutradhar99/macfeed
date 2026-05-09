@@ -22,10 +22,10 @@ if (typeof window !== 'undefined') window.Buffer = window.Buffer || Buffer;
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const themes = [
-  { name: 'Teal', bg1: '#2B9EAD', bg2: '#0D6B7A', bg3: '#094F5C', bg4: '#0A5C6B', bg5: '#1A8A95', bg6: '#2BA8B5', bg7: '#0D6670', blur1: '#4AACB8', blur2: '#0A5C6B' },
-  { name: 'Purple', bg1: '#8B5CF6', bg2: '#6D28D9', bg3: '#4C1D95', bg4: '#5B21B6', bg5: '#7C3AED', bg6: '#8B5CF6', bg7: '#4C1D95', blur1: '#A78BFA', blur2: '#5B21B6' },
-  { name: 'Crimson', bg1: '#EF4444', bg2: '#B91C1C', bg3: '#7F1D1D', bg4: '#991B1B', bg5: '#DC2626', bg6: '#EF4444', bg7: '#7F1D1D', blur1: '#F87171', blur2: '#991B1B' },
-  { name: 'Dark', bg1: '#1F2937', bg2: '#111827', bg3: '#030712', bg4: '#1F2937', bg5: '#374151', bg6: '#4B5563', bg7: '#030712', blur1: '#374151', blur2: '#111827' },
+  { name: 'Teal', bg1: '#2B9EAD', bg2: '#0D6B7A', bg3: '#094F5C', bg4: '#0A5C6B', bg5: '#1A8A95', bg6: '#2BA8B5', bg7: '#0D6670', blur1: '#4AACB8', blur2: '#0A5C6B', border: 'border-teal-400/50', bgBorder: 'bg-teal-400/50' },
+  { name: 'Purple', bg1: '#8B5CF6', bg2: '#6D28D9', bg3: '#4C1D95', bg4: '#5B21B6', bg5: '#7C3AED', bg6: '#8B5CF6', bg7: '#4C1D95', blur1: '#A78BFA', blur2: '#5B21B6', border: 'border-purple-400/50', bgBorder: 'bg-purple-400/50' },
+  { name: 'Crimson', bg1: '#EF4444', bg2: '#B91C1C', bg3: '#7F1D1D', bg4: '#991B1B', bg5: '#DC2626', bg6: '#EF4444', bg7: '#7F1D1D', blur1: '#F87171', blur2: '#991B1B', border: 'border-red-400/50', bgBorder: 'bg-red-400/50' },
+  { name: 'Dark', bg1: '#1F2937', bg2: '#111827', bg3: '#030712', bg4: '#1F2937', bg5: '#374151', bg6: '#4B5563', bg7: '#030712', blur1: '#374151', blur2: '#111827', border: 'border-white/20', bgBorder: 'bg-white/20' },
 ];
 
 const MusicBackground = memo(({ themeIdx = 0 }) => {
@@ -64,6 +64,10 @@ export default function Music() {
 
   const [themeIdx, setThemeIdx] = useState(0);
   const [showCapsule, setShowCapsule] = useState(false);
+
+  const currentTheme = themes[themeIdx] || themes[0];
+  const activeBorder = currentTheme.border;
+  const activeBgBorder = currentTheme.bgBorder;
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -432,7 +436,7 @@ export default function Music() {
         {/* Floating Controls */}
         <motion.div
           drag dragMomentum={false}
-          className="fixed right-6 md:right-10 top-[60%] flex flex-col items-center bg-white/10 backdrop-blur-3xl border border-white/20 rounded-full shadow-2xl z-[100] cursor-grab active:cursor-grabbing p-2"
+          className={`fixed right-6 md:right-10 top-[60%] flex flex-col items-center bg-white/10 backdrop-blur-3xl border ${activeBorder} transition-colors duration-500 rounded-full shadow-2xl z-[100] cursor-grab active:cursor-grabbing p-2`}
         >
           <AnimatePresence>
             {showCapsule && (
@@ -470,7 +474,7 @@ export default function Music() {
           {/* Header Bar */}
           <div className="flex flex-col md:flex-row items-center justify-between px-6 md:px-12 py-4 gap-4">
             <div ref={dropdownRef} className="relative w-full max-w-md z-[5000]">
-              <form onSubmit={handleGlobalSearch} className="flex items-center gap-4 bg-transparent backdrop-blur-md px-6 py-2.5 rounded-full border-2 border-red-500 w-full group transition-all">
+              <form onSubmit={handleGlobalSearch} className={`flex items-center gap-4 bg-transparent backdrop-blur-md px-6 py-2.5 rounded-full border-2 ${activeBorder} transition-colors duration-500 w-full group`}>
                 <button type="submit" className="outline-none">
                   <Search className="w-5 h-5 text-red-500 group-focus-within:text-red-400 hover:text-red-300 transition-colors cursor-pointer" />
                 </button>
@@ -543,14 +547,14 @@ export default function Music() {
                   <h3 className="text-xl font-black uppercase tracking-[0.3em] text-white/80 italic">My Uploads ({displaySongs.length})</h3>
                   <Sparkles className="w-5 h-5 text-yellow-500" />
                 </div>
-                <div className="flex flex-col gap-4 bg-white/5 p-6 md:p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
+                <div className={`flex flex-col gap-4 bg-white/5 p-6 md:p-8 rounded-[2.5rem] border ${activeBorder} transition-colors duration-500 shadow-2xl`}>
                   {displaySongs.length === 0 ? (
                     <div className="text-center text-white/50 font-black uppercase tracking-widest text-xs py-10">No Uploads Yet.</div>
                   ) : displaySongs.map((song, i) => (
-                    <div key={song.id} onClick={() => handleSongClick(song)} className="flex items-center justify-between group cursor-pointer transition-transform active:scale-95 bg-white/5 p-4 rounded-2xl border border-white/5 hover:border-purple-500/50">
+                    <div key={song.id} onClick={() => handleSongClick(song)} className={`flex items-center justify-between group cursor-pointer active:scale-95 bg-white/5 p-4 rounded-2xl border ${activeBorder} transition-colors duration-500 hover:border-purple-500/50`}>
                       <div className="flex items-center gap-5 min-w-0">
                         <div className="text-[10px] font-black uppercase text-white/30 w-6">{(i + 1).toString().padStart(2, '0')}</div>
-                        <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/10 shrink-0 border border-white/5">
+                        <div className={`w-14 h-14 rounded-xl overflow-hidden bg-white/10 shrink-0 border ${activeBorder} transition-colors duration-500`}>
                           <img src={song.thumbnail_url} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all" alt="" />
                         </div>
                         <div className="flex flex-col">
@@ -564,7 +568,7 @@ export default function Music() {
                             <Trash className="w-4 h-4" />
                           </button>
                         )}
-                        <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-all"><Play className="w-4 h-4 fill-current translate-x-0.5" /></div>
+                        <div className={`w-10 h-10 rounded-full border ${activeBorder} transition-colors duration-500 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white`}><Play className="w-4 h-4 fill-current translate-x-0.5" /></div>
                       </div>
                     </div>
                   ))}
@@ -580,7 +584,7 @@ export default function Music() {
                     {sideSongs.map((song, i) => (
                       <div key={song.id} onClick={() => handleSongClick(song)} className="flex items-center gap-6 group cursor-pointer transition-transform active:scale-95">
                         <div className="text-[9px] font-black uppercase text-white/30 w-4">0{i+2}</div>
-                        <div className="w-16 h-16 rounded-3xl overflow-hidden shrink-0 border border-white/5"><img src={song.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt="" /></div>
+                        <div className={`w-16 h-16 rounded-3xl overflow-hidden shrink-0 border ${activeBorder} transition-colors duration-500`}><img src={song.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt="" /></div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-xs font-black uppercase italic tracking-wider truncate mb-1">{song.title}</h4>
                           <span className="text-[8px] font-black uppercase tracking-widest text-white/50">{song.source === 'local' ? 'Local' : 'YouTube'}</span>
@@ -591,7 +595,7 @@ export default function Music() {
                               <Trash className="w-3.5 h-3.5" />
                             </button>
                           )}
-                          <div className="w-10 h-10 rounded-full border-2 border-white/10 flex items-center justify-center group-hover:border-purple-500 group-hover:bg-purple-500 transition-all"><Play className="w-4 h-4 fill-white" /></div>
+                          <div className={`w-10 h-10 rounded-full border-2 ${activeBorder} transition-colors duration-500 flex items-center justify-center group-hover:border-purple-500 group-hover:bg-purple-500`}><Play className="w-4 h-4 fill-white" /></div>
                         </div>
                       </div>
                     ))}
@@ -600,11 +604,11 @@ export default function Music() {
 
                 <div className="space-y-8">
                   <div className="flex items-center justify-between"><h3 className="text-base font-black uppercase tracking-[0.3em] text-white/80 italic">Recent</h3></div>
-                  <div className="space-y-5 bg-white/5 p-6 md:p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
+                  <div className={`space-y-5 bg-white/5 p-6 md:p-8 rounded-[2.5rem] border ${activeBorder} transition-colors duration-500 shadow-2xl`}>
                     {recentlyPlayed.map(song => (
                       <div key={song.id} onClick={() => handleSongClick(song)} className="flex items-center justify-between group cursor-pointer transition-transform active:scale-95">
                         <div className="flex items-center gap-5 min-w-0">
-                          <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white/10 shrink-0 border border-white/5"><img src={song.thumbnail_url} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all" alt="" /></div>
+                          <div className={`w-12 h-12 rounded-2xl overflow-hidden bg-white/10 shrink-0 border ${activeBorder} transition-colors duration-500`}><img src={song.thumbnail_url} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all" alt="" /></div>
                           <span className="text-[11px] font-black uppercase tracking-tighter truncate text-white/60 group-hover:text-white">{song.title}</span>
                         </div>
                         <div className="flex items-center gap-3">
@@ -613,7 +617,7 @@ export default function Music() {
                               <Trash className="w-3 h-3" />
                             </button>
                           )}
-                          <div className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-all"><Play className="w-3.5 h-3.5 fill-current" /></div>
+                          <div className={`w-9 h-9 rounded-full border ${activeBorder} transition-colors duration-500 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white`}><Play className="w-3.5 h-3.5 fill-current" /></div>
                         </div>
                       </div>
                     ))}
@@ -624,7 +628,7 @@ export default function Music() {
               {/* Right Side */}
               <div className="col-span-12 lg:col-span-7 space-y-12">
                 {heroSong && (
-                  <div onClick={() => handleSongClick(heroSong)} className="relative w-full h-[220px] md:h-[280px] rounded-[3.5rem] overflow-hidden cursor-pointer group border border-white/10 shadow-2xl transition-transform active:scale-[0.98]">
+                  <div onClick={() => handleSongClick(heroSong)} className={`relative w-full h-[220px] md:h-[280px] rounded-[3.5rem] overflow-hidden cursor-pointer group border ${activeBorder} transition-all duration-500 shadow-2xl active:scale-[0.98]`}>
                     <img src={heroSong.thumbnail_url} className="w-full h-full object-cover object-center transition-transform duration-[3s] group-hover:scale-105" alt="" />
                     <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent flex flex-col justify-end p-8">
                       <div className="flex items-center gap-2 mb-2"><span className="bg-yellow-500 text-black px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest italic">Featured</span></div>
@@ -651,7 +655,7 @@ export default function Music() {
                           {songs.slice(0, 10).map((song, i) => (
                             <SwiperSlide key={`${song.id}-${i}`} className="!w-auto py-20">
                               <div onClick={() => handleSongClick(song)} className="relative w-36 h-44 md:w-56 md:h-64 cursor-pointer group transition-transform hover:scale-110 active:scale-95" style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}>
-                                <div className="absolute inset-0 bg-white/10 group-hover:bg-purple-500 p-[2px]" style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}>
+                                <div className={`absolute inset-0 ${activeBgBorder} transition-colors duration-500 group-hover:bg-purple-500 p-[2px]`} style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}>
                                   <div className="w-full h-full bg-[#0F1115] overflow-hidden relative" style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}>
                                     <img src={song.thumbnail_url} className="absolute inset-0 w-full h-full object-cover brightness-[0.4] group-hover:brightness-110 transition-all duration-1000" alt="" />
                                     <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-30 px-4 text-center bg-black/40 backdrop-blur-[2px]">
@@ -670,12 +674,12 @@ export default function Music() {
                   <div className="flex gap-6 overflow-x-auto no-scrollbar pb-6">
                     {bottomSongs.map((song) => (
                       <div key={song.id} onClick={() => handleSongClick(song)} className="w-[180px] md:w-[240px] shrink-0 group cursor-pointer transition-transform active:scale-95">
-                        <div className="aspect-[2/3] rounded-[2.5rem] overflow-hidden mb-4 relative border border-white/5 shadow-2xl">
+                        <div className={`aspect-[2/3] rounded-[2.5rem] overflow-hidden mb-4 relative border ${activeBorder} transition-colors duration-500 shadow-2xl`}>
                           <img src={song.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent flex flex-col justify-end p-6">
                             <h5 className="text-[10px] font-black uppercase italic line-clamp-2 leading-tight mb-2">{song.title}</h5>
                             <div className="flex items-center justify-between">
-                              <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 group-hover:bg-purple-600 transition-all"><Play className="w-3.5 h-3.5 fill-white" /></div>
+                              <div className={`w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border ${activeBorder} transition-colors duration-500 group-hover:bg-purple-600`}><Play className="w-3.5 h-3.5 fill-white" /></div>
                               {user && song.source === 'local' && (
                                 <button onClick={(e) => handleDeleteLocalSong(song, e)} className="w-8 h-8 rounded-full bg-red-500/20 backdrop-blur-md flex items-center justify-center border border-red-500/50 hover:bg-red-500 transition-all opacity-0 group-hover:opacity-100">
                                   <Trash className="w-3.5 h-3.5 fill-white" />
