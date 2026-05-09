@@ -507,11 +507,7 @@ export default function LocalPlayerOverlay() {
         };
 
         const onOrientation = () => {
-            try {
-                if (document.fullscreenElement && window.innerHeight > window.innerWidth) {
-                    document.exitFullscreen().catch(() => { });
-                }
-            } catch (e) { }
+            // Keep landscape permanent
         };
 
         document.addEventListener('fullscreenchange', onFsChange);
@@ -562,12 +558,15 @@ export default function LocalPlayerOverlay() {
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                onClick={() => {
+                onClick={(e) => {
+                    // Prevent double-toggle with touch
+                    if (Date.now() - touchStart.current.time < 500) return;
                     if (!isLocked) {
                         if (showExtraPanel) {
                             setShowExtraPanel(false);
                         } else {
                             setShowControls(!showControls);
+                            resetControlsTimeout();
                         }
                     }
                 }}

@@ -205,9 +205,7 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
     };
 
     const onOrientation = () => {
-      if (document.fullscreenElement && window.innerHeight > window.innerWidth && !forceLandscape) {
-        document.exitFullscreen().catch(() => { });
-      }
+      // Removed auto-exit logic to keep landscape permanent
     };
 
     document.addEventListener('fullscreenchange', onFsChange);
@@ -471,14 +469,23 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
           handleTouchEnd(e);
           // If it's a simple tap (short duration, small delta)
           const start = touchStartRef.current;
+          if (!start.time) return;
           const deltaX = Math.abs(e.changedTouches[0].clientX - start.x);
           const deltaY = Math.abs(e.changedTouches[0].clientY - start.y);
           const duration = Date.now() - start.time;
-          if (duration < 300 && deltaX < 10 && deltaY < 10) {
+          
+          if (duration < 300 && deltaX < 15 && deltaY < 15) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleControls();
+          }
+        }}
+        onClick={(e) => {
+          // Only handle click if not handled by touch
+          if (Date.now() - touchStartRef.current.time > 500) {
             toggleControls(e);
           }
         }}
-        onClick={toggleControls}
       >
         {isYouTube ? (
           <div className="relative h-full w-full bg-black flex items-center justify-center">
@@ -495,7 +502,11 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
             {/* FIX 1: Transparent overlay to capture taps for controls toggle */}
             <div 
               className="absolute inset-0 z-30 w-full h-full cursor-pointer" 
-              onClick={toggleControls}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleControls();
+              }}
             />
           </div>
         ) : (
