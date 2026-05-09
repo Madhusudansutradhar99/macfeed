@@ -129,8 +129,34 @@ export default function AuthModal() {
                   </div>
                   <h2 className="text-4xl font-black uppercase text-primary mb-2 italic tracking-tighter">Verified</h2>
                   <p className="text-secondary text-lg font-black uppercase tracking-tighter mb-1">{user.name}</p>
-                  <p className="text-secondary text-[10px] uppercase tracking-[0.4em] mb-12 opacity-40">{user.email}</p>
+                  <p className="text-secondary text-[10px] uppercase tracking-[0.4em] mb-8 opacity-40">{user.email}</p>
                   
+                  <button 
+                    onClick={async () => {
+                      try {
+                        if ('Notification' in window) {
+                          const perm = await Notification.requestPermission();
+                          if (perm === 'granted') {
+                             // Initialize empty audio to trigger background audio session permission context
+                             const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+                             audio.play().catch(()=>{});
+                             alert("Background Audio & Notifications Enabled!");
+                          } else {
+                             alert("Permission denied. Background audio may be restricted.");
+                          }
+                        } else {
+                          alert("Notifications not supported on this browser.");
+                        }
+                      } catch (e) {
+                        console.error(e);
+                      }
+                    }}
+                    className="w-full h-16 mb-4 bg-green-500/10 text-green-500 border border-green-500/30 hover:bg-green-500 hover:text-white rounded-3xl font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    Enable Background Audio
+                  </button>
+
                   <button 
                     onClick={() => { logout(); onClose(); }} 
                     className="w-full h-20 border-2 border-primary text-primary hover:bg-red-500 hover:text-white hover:border-red-500 rounded-3xl font-black uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4"

@@ -521,6 +521,32 @@ export default function LocalPlayerOverlay() {
         };
     }, []);
 
+    // Force absolute black background on the entire document to prevent notch/safe-area white bleed on mobile
+    useEffect(() => {
+        if (!isLocalPlayerOpen) return;
+        const origBodyBg = document.body.style.backgroundColor;
+        const origHtmlBg = document.documentElement.style.backgroundColor;
+        
+        document.body.style.backgroundColor = '#000000';
+        document.documentElement.style.backgroundColor = '#000000';
+        
+        let metaTheme = document.querySelector('meta[name="theme-color"]');
+        let origTheme = metaTheme ? metaTheme.getAttribute('content') : null;
+        if (!metaTheme) {
+            metaTheme = document.createElement('meta');
+            metaTheme.name = 'theme-color';
+            document.head.appendChild(metaTheme);
+        }
+        metaTheme.setAttribute('content', '#000000');
+
+        return () => {
+            document.body.style.backgroundColor = origBodyBg;
+            document.documentElement.style.backgroundColor = origHtmlBg;
+            if (origTheme) metaTheme.setAttribute('content', origTheme);
+            else metaTheme.remove();
+        };
+    }, [isLocalPlayerOpen]);
+
     useEffect(() => {
         const handleKey = (e) => {
             if (!isLocalPlayerOpen) return;
