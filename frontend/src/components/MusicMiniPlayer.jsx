@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Maximize2, X, Rewind, FastForward, ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Play, Pause, SkipBack, SkipForward, Maximize2, X, Rewind, FastForward, ChevronLeft, ChevronRight, Settings2, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useMusicPlayer } from '../context/MusicContext';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectCoverflow, Mousewheel } from 'swiper/modules';
@@ -45,6 +45,8 @@ export default function MusicMiniPlayer() {
   const swiperRef = useRef(null);
   const cardTargetRef = useRef(null);
   const offscreenRef = useRef(null);
+  const [showTopBar, setShowTopBar] = useState(false);
+  const [showBottomBar, setShowBottomBar] = useState(false);
 
   const {
     playlist = [], currentSong = null, currentIdx = 0, isOpen = false,
@@ -203,20 +205,43 @@ export default function MusicMiniPlayer() {
             <div className="absolute inset-0 bg-[#041D24]/40" />
           </div>
 
+          {/* TOP BAR TOGGLE ICON */}
+          <AnimatePresence>
+            {!showTopBar && (
+              <motion.button 
+                initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
+                onClick={() => setShowTopBar(true)} 
+                className="absolute top-4 left-4 md:left-8 z-[60] w-10 h-10 bg-white/5 backdrop-blur-2xl rounded-full flex items-center justify-center text-white/50 hover:text-white border border-white/10 shadow-2xl"
+              >
+                <Settings2 className="w-5 h-5" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+
           {/* TOP BAR */}
-          <div className="absolute top-2 md:top-4 w-full flex justify-center z-50 px-2 md:px-10">
-            <div className="w-full max-w-[320px] h-12 bg-white/5 backdrop-blur-[30px] border border-white/10 rounded-full flex items-center justify-between px-4 shadow-2xl">
-              <div className="hidden md:flex gap-1">
-                <button className="p-2 hover:bg-white/10 rounded-full text-white cursor-pointer outline-none" onClick={prev}><ChevronLeft className="w-5 h-5" /></button>
-                <button className="p-2 hover:bg-white/10 rounded-full text-white cursor-pointer outline-none" onClick={next}><ChevronRight className="w-5 h-5" /></button>
-              </div>
-              <span className="text-[11px] font-black uppercase text-white/60 truncate max-w-[200px] mx-auto">{currentSong.title}</span>
-              <div className="flex items-center gap-2">
-                <button onClick={handleMinimize} className="p-2 hover:bg-white/10 rounded-full text-white/50 outline-none"><Maximize2 className="w-4 h-4 rotate-180" /></button>
-                <button onClick={handleClose} className="p-2 hover:bg-white/10 rounded-full text-white/50 hover:text-white outline-none"><X className="w-4 h-4" /></button>
-              </div>
-            </div>
-          </div>
+          <AnimatePresence>
+            {showTopBar && (
+              <motion.div 
+                initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -50, opacity: 0 }}
+                className="absolute top-2 md:top-4 w-full flex justify-center z-50 px-2 md:px-10"
+              >
+                <div className="w-full max-w-[320px] h-12 bg-white/5 backdrop-blur-[30px] border border-white/10 rounded-full flex items-center justify-between px-3 shadow-2xl relative">
+                  <button onClick={() => setShowTopBar(false)} className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white/50 hover:text-white backdrop-blur-xl border border-white/10 shadow-lg">
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  <div className="hidden md:flex gap-1">
+                    <button className="p-1.5 hover:bg-white/10 rounded-full text-white cursor-pointer outline-none" onClick={prev}><ChevronLeft className="w-4 h-4" /></button>
+                    <button className="p-1.5 hover:bg-white/10 rounded-full text-white cursor-pointer outline-none" onClick={next}><ChevronRight className="w-4 h-4" /></button>
+                  </div>
+                  <span className="text-[11px] font-black uppercase text-white/60 truncate max-w-[120px] mx-auto">{currentSong.title}</span>
+                  <div className="flex items-center gap-1">
+                    <button onClick={handleMinimize} className="p-1.5 hover:bg-white/10 rounded-full text-white/50 hover:text-white outline-none"><Maximize2 className="w-3.5 h-3.5 rotate-180" /></button>
+                    <button onClick={handleClose} className="p-1.5 hover:bg-red-500/20 rounded-full text-red-500/50 hover:text-red-500 outline-none"><X className="w-4 h-4" /></button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* SWIPER CAROUSEL */}
           <div className="relative z-10 w-full">
@@ -236,7 +261,7 @@ export default function MusicMiniPlayer() {
             >
               {playlist.map((song, i) => (
                 <SwiperSlide key={song.id} className="w-[94vw] md:w-[320px] outline-none select-none">
-                  <div className={`relative w-full aspect-[4/5] md:aspect-[9/16] rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 transition-all duration-1000 bg-black
+                  <div className={`relative w-full aspect-[4/5] md:aspect-[4/5] rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 transition-all duration-1000 bg-black
                     ${currentIdx === i ? 'scale-100 border-white/20' : 'scale-[0.8] opacity-30 grayscale border-white/5'}`}>
 
                     {/* Thumbnail always visible as fallback — prevents black flash during swipe */}
@@ -261,51 +286,71 @@ export default function MusicMiniPlayer() {
             </Swiper>
           </div>
 
-          {/* BOTTOM CONTROLS */}
-          <div className="absolute bottom-2 md:bottom-6 w-full flex justify-center z-50 px-2 md:px-10">
-            <div className="w-full max-w-[700px] bg-white/10 backdrop-blur-[50px] border border-white/10 rounded-[2.5rem] md:rounded-full flex flex-col md:flex-row items-center justify-between p-3 md:px-6 shadow-2xl gap-4 md:gap-0">
-              {/* Buttons */}
-              <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-full border border-white/5 shrink-0">
-                <button onClick={() => handleSeek(currentTime - 10)} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><Rewind className="w-4 h-4" /></button>
-                <button onClick={prev} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><SkipBack className="w-4 h-4 fill-current" /></button>
-                <button onClick={() => setPlaying(!playing)} className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-xl outline-none hover:scale-105 transition-transform">
-                  {playing ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current translate-x-0.5" />}
-                </button>
-                <button onClick={next} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><SkipForward className="w-4 h-4 fill-current" /></button>
-                <button onClick={() => handleSeek(currentTime + 10)} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><FastForward className="w-4 h-4" /></button>
-              </div>
+          {/* BOTTOM BAR TOGGLE ICON */}
+          <AnimatePresence>
+            {!showBottomBar && (
+              <motion.button 
+                initial={{ opacity: 0, scale: 0.8, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                onClick={() => setShowBottomBar(true)} 
+                className="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 z-[60] w-14 h-14 bg-white/10 hover:bg-white/20 backdrop-blur-3xl rounded-full flex items-center justify-center text-white border border-white/20 shadow-[0_0_40px_rgba(255,255,255,0.1)] transition-colors"
+              >
+                <SlidersHorizontal className="w-6 h-6" />
+              </motion.button>
+            )}
+          </AnimatePresence>
 
-              {/* Progress */}
-              <div className="flex-1 flex items-center gap-3 px-6 md:px-10 w-full min-w-0">
-                <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-white/10">
-                  <img src={currentSong?.thumbnail_url} className="w-full h-full object-cover" alt="" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-[10px] font-black uppercase text-white truncate max-w-[150px] italic">{currentSong?.title}</span>
-                    <span className="text-[9px] font-bold text-white/40">{formatTime(currentTime)} / {formatTime(duration)}</span>
+          {/* BOTTOM CONTROLS */}
+          <AnimatePresence>
+            {showBottomBar && (
+              <motion.div 
+                initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
+                className="absolute bottom-2 md:bottom-6 w-full flex justify-center z-50 px-2 md:px-10"
+              >
+                <div className="w-full max-w-[700px] bg-white/10 backdrop-blur-[50px] border border-white/10 rounded-[2.5rem] md:rounded-full flex flex-col md:flex-row items-center justify-between p-3 md:px-6 shadow-2xl gap-4 md:gap-0 relative">
+                  <button onClick={() => setShowBottomBar(false)} className="absolute -top-3 right-4 md:-top-3 md:right-10 w-8 h-8 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white rounded-full flex items-center justify-center border border-red-500/50 backdrop-blur-md transition-all z-[60]">
+                    <X className="w-4 h-4" />
+                  </button>
+                  {/* Buttons */}
+                  <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-full border border-white/5 shrink-0">
+                    <button onClick={() => handleSeek(currentTime - 10)} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><Rewind className="w-4 h-4" /></button>
+                    <button onClick={prev} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><SkipBack className="w-4 h-4 fill-current" /></button>
+                    <button onClick={() => setPlaying(!playing)} className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-xl outline-none hover:scale-105 transition-transform">
+                      {playing ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current translate-x-0.5" />}
+                    </button>
+                    <button onClick={next} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><SkipForward className="w-4 h-4 fill-current" /></button>
+                    <button onClick={() => handleSeek(currentTime + 10)} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><FastForward className="w-4 h-4" /></button>
                   </div>
-                  <div className="relative h-3 flex items-center cursor-pointer" onClick={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    handleSeek(((e.clientX - rect.left) / rect.width) * duration);
-                  }}>
-                    <div className="w-full h-[3px] bg-white/10 rounded-full overflow-hidden">
-                      {/* Direct DOM ref — no re-render on progress tick */}
-                      <div ref={progressBarRef}
-                        className="h-full rounded-full"
-                        style={{ width: `${progress}%`, backgroundColor: '#ef4444', boxShadow: '0 0 15px #ef4444', transition: 'width 0.8s linear' }} />
+
+                  {/* Progress */}
+                  <div className="flex-1 flex items-center gap-3 px-6 md:px-10 w-full min-w-0">
+                    <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-white/10">
+                      <img src={currentSong?.thumbnail_url} className="w-full h-full object-cover" alt="" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[10px] font-black uppercase text-white truncate max-w-[150px] italic">{currentSong?.title}</span>
+                        <span className="text-[9px] font-bold text-white/40">{formatTime(currentTime)} / {formatTime(duration)}</span>
+                      </div>
+                      <div className="relative h-3 flex items-center cursor-pointer" onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        handleSeek(((e.clientX - rect.left) / rect.width) * duration);
+                      }}>
+                        <div className="w-full h-[3px] bg-white/10 rounded-full overflow-hidden">
+                          {/* Direct DOM ref — no re-render on progress tick */}
+                          <div ref={progressBarRef}
+                            className="h-full rounded-full"
+                            style={{ width: `${progress}%`, backgroundColor: '#ef4444', boxShadow: '0 0 15px #ef4444', transition: 'width 0.8s linear' }} />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Minimize + close */}
-              <div className="hidden md:flex items-center gap-1.5 bg-white/5 p-1 rounded-full border border-white/5 shrink-0">
-                <button onClick={handleMinimize} className="w-9 h-9 rounded-full flex items-center justify-center text-white/40 hover:text-white outline-none"><Maximize2 className="w-3.5 h-3.5 rotate-180" /></button>
-                <button onClick={handleClose} className="w-9 h-9 rounded-full flex items-center justify-center text-white/40 hover:text-red-500 outline-none"><X className="w-3.5 h-3.5" /></button>
-              </div>
-            </div>
-          </div>
+                  {/* Minimize + close handled in Top Bar now, just keeping structure if needed, or removed to save space */}
+                  <div className="hidden md:flex w-16" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
 
