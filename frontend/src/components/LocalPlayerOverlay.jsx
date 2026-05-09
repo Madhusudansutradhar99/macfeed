@@ -552,7 +552,7 @@ export default function LocalPlayerOverlay() {
         <motion.div
             ref={containerRef}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className={`fixed inset-0 z-[9999] bg-[#000] flex flex-col items-center justify-center overflow-hidden font-sans select-none touch-none px-2 sm:px-0 ${forceLandscape ? 'rotate-90 origin-center' : ''}`}
+            className={`fixed -inset-[2px] z-[9999] bg-[#000] flex flex-col items-center justify-center overflow-hidden font-sans select-none touch-none px-2 sm:px-0 ${forceLandscape ? 'rotate-90 origin-center' : ''}`}
             style={forceLandscape ? { width: '100vh', height: '100vw', position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(90deg)' } : {}}
             onMouseMove={resetControlsTimeout}
                 onTouchStart={handleTouchStart}

@@ -173,7 +173,7 @@ export default function MusicMiniPlayer() {
 
       {/* Local audio */}
       {currentSong?.source !== 'youtube' && (
-        <video
+        <audio
           ref={audioRef}
           autoPlay={playing}
           style={{ display: 'none' }}
@@ -187,8 +187,7 @@ export default function MusicMiniPlayer() {
           <source src={currentSong?.video_url} type="audio/aac" />
           <source src={currentSong?.video_url} type="audio/ogg" />
           <source src={currentSong?.video_url} type="audio/mp4" />
-          <source src={currentSong?.video_url} type="video/mp4" />
-        </video>
+        </audio>
       )}
 
       {/* ══ EXPANDED PLAYER — individually fixed, no full-screen wrapper ══ */}
