@@ -67,8 +67,19 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
     clearTimeout(controlsTimeout.current);
     controlsTimeout.current = setTimeout(() => {
       if (playing) setShowControls(false);
-    }, 2500);
+    }, 3000); // 3 seconds as requested
   }, [playing]);
+
+  const toggleControls = useCallback((e) => {
+    if (e) e.stopPropagation();
+    setShowControls(prev => {
+      const next = !prev;
+      if (next) showControlsTemporarily();
+      else clearTimeout(controlsTimeout.current);
+      return next;
+    });
+    setShowQualityMenu(false);
+  }, [showControlsTemporarily]);
 
   const skip = useCallback(
     (seconds) => {
@@ -442,7 +453,7 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
 
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [handleMiniPlayer, skip, toggleFullscreen]);
+  }, [handleMiniPlayer, skip, toggleFullscreen, setPlaying, setMuted, setVolume]); // Added missing deps
 
   if (!video) return null;
 
@@ -456,11 +467,18 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
         className={`${isFullscreen ? 'h-full w-full' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video'} overflow-hidden select-none bg-black flex items-center justify-center`}
         onMouseMove={showControlsTemporarily}
         onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onClick={() => {
-          setShowControls((prev) => !prev);
-          setShowQualityMenu(false);
+        onTouchEnd={(e) => {
+          handleTouchEnd(e);
+          // If it's a simple tap (short duration, small delta)
+          const start = touchStartRef.current;
+          const deltaX = Math.abs(e.changedTouches[0].clientX - start.x);
+          const deltaY = Math.abs(e.changedTouches[0].clientY - start.y);
+          const duration = Date.now() - start.time;
+          if (duration < 300 && deltaX < 10 && deltaY < 10) {
+            toggleControls(e);
+          }
         }}
+        onClick={toggleControls}
       >
         {isYouTube ? (
           <div className="relative h-full w-full bg-black flex items-center justify-center">
@@ -474,14 +492,10 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
             ) : null}
 
             <div ref={ytDomContainer} className="absolute inset-0 h-full w-full pointer-events-auto" />
-            {/* FIX 1: Transparent overlay to capture taps for controls toggle in fullscreen */}
+            {/* FIX 1: Transparent overlay to capture taps for controls toggle */}
             <div 
               className="absolute inset-0 z-30 w-full h-full cursor-pointer" 
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowControls(prev => !prev);
-                setShowQualityMenu(false);
-              }}
+              onClick={toggleControls}
             />
           </div>
         ) : (
@@ -504,8 +518,11 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
         {showControls && (
           <>
             <div
-              className="absolute left-0 top-0 z-20 flex w-full items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 pb-8 pt-3"
-              onClick={(event) => event.stopPropagation()}
+              className="absolute left-0 top-0 z-40 flex w-full items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 pb-8 pt-3"
+              onClick={(event) => {
+                event.stopPropagation();
+                showControlsTemporarily(); // Reset timer on interaction
+              }}
             >
               <div className="min-w-0 flex-1 pr-3">
                 <p className="truncate text-sm font-medium text-white/90">{video.title}</p>
@@ -562,8 +579,11 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
             </AnimatePresence>
 
             <div
-              className="absolute bottom-0 left-0 z-20 w-full bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pb-3 pt-8 sm:px-4"
-              onClick={(event) => event.stopPropagation()}
+              className="absolute bottom-0 left-0 z-40 w-full bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pb-3 pt-8 sm:px-4"
+              onClick={(event) => {
+                event.stopPropagation();
+                showControlsTemporarily(); // Reset timer on interaction
+              }}
             >
               <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-white/15">
                 <div className="h-full rounded-full bg-white/25" style={{ width: `${(current / (duration || 1)) * 100 || 0}%` }} />
