@@ -210,7 +210,7 @@ export default function MusicMiniPlayer() {
           </div>
 
           {/* TOP BAR */}
-          <div className="absolute top-4 md:top-10 w-full flex justify-center z-50 px-2 md:px-10">
+          <div className="absolute top-2 md:top-4 w-full flex justify-center z-50 px-2 md:px-10">
             <div className="w-full max-w-4xl h-12 bg-white/5 backdrop-blur-[30px] border border-white/10 rounded-full flex items-center justify-between px-6 shadow-2xl">
               <div className="hidden md:flex gap-1">
                 <button className="p-2 hover:bg-white/10 rounded-full text-white cursor-pointer outline-none" onClick={prev}><ChevronLeft className="w-5 h-5" /></button>
@@ -241,7 +241,7 @@ export default function MusicMiniPlayer() {
               className="w-full !py-2 md:!py-20"
             >
               {playlist.map((song, i) => (
-                <SwiperSlide key={song.id} className="w-[94vw] md:w-[500px] outline-none select-none">
+                <SwiperSlide key={song.id} className="w-[94vw] md:w-[420px] outline-none select-none">
                   <div className={`relative w-full aspect-[1/1.0] md:aspect-[1/0.8] rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 transition-all duration-1000 bg-black
                     ${currentIdx === i ? 'scale-100 border-white/20' : 'scale-[0.8] opacity-30 grayscale border-white/5'}`}>
 
@@ -268,7 +268,7 @@ export default function MusicMiniPlayer() {
           </div>
 
           {/* BOTTOM CONTROLS */}
-          <div className="absolute bottom-4 md:bottom-12 w-full flex justify-center z-50 px-2 md:px-10">
+          <div className="absolute bottom-2 md:bottom-6 w-full flex justify-center z-50 px-2 md:px-10">
             <div className="w-full max-w-[700px] bg-white/10 backdrop-blur-[50px] border border-white/10 rounded-[2.5rem] md:rounded-full flex flex-col md:flex-row items-center justify-between p-3 md:px-6 shadow-2xl gap-4 md:gap-0">
               {/* Buttons */}
               <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-full border border-white/5 shrink-0">
