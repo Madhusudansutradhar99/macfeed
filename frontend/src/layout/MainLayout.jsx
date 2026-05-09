@@ -13,7 +13,7 @@ const MainLayout = () => {
   const touchStart = React.useRef(0);
 
   const allowedRoutes = ['/', '/music', '/sports', '/search'];
-  const isAllowed = allowedRoutes.includes(location.pathname) || location.pathname.startsWith('/search');
+  const isAllowed = (allowedRoutes.includes(location.pathname) || location.pathname.startsWith('/search')) && !location.pathname.startsWith('/watch');
 
   React.useEffect(() => {
     // Ensure body can always scroll

@@ -481,7 +481,10 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
           }
         }}
         onClick={(e) => {
-          toggleControls(e);
+          // If clicking the container itself (not buttons), toggle controls
+          if (e.target === e.currentTarget) {
+            toggleControls(e);
+          }
         }}
       >
         {isYouTube ? (
@@ -496,15 +499,18 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
             ) : null}
 
             <div ref={ytDomContainer} className="absolute inset-0 h-full w-full pointer-events-auto" />
-            {/* FIX 1: Transparent overlay to capture taps for controls toggle */}
-            <div 
-              className="absolute inset-0 z-30 w-full h-full cursor-pointer" 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleControls();
-              }}
-            />
+            
+            {/* FIX: Transparent overlay to capture taps ONLY when controls are hidden or when clicking background */}
+            {!controlsVisible && (
+              <div 
+                className="absolute inset-0 z-30 w-full h-full cursor-pointer" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleControls();
+                }}
+              />
+            )}
           </div>
         ) : (
           <video
