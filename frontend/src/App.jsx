@@ -59,9 +59,11 @@ const preloadComponents = () => {
 export default function App() {
   return (
     <ThemeProvider>
-      <HashRouter>
-        <AppContent />
-      </HashRouter>
+      <AuthProvider>
+        <HashRouter>
+          <AppContent />
+        </HashRouter>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
@@ -86,6 +88,19 @@ function AppContent() {
     }
   }, [shouldRedirectToIntro]);
 
+  const { user, setAuthModalOpen } = useAuth();
+
+  // Strict Auth Guard: If no user and not on intro page, force open auth modal
+  useEffect(() => {
+    // Give auth a tiny delay to initialize from localStorage to avoid flashing modal
+    const timer = setTimeout(() => {
+      if (!user && window.location.hash !== '#/intro') {
+        setAuthModalOpen(true);
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [user, setAuthModalOpen, window.location.hash]);
+
   useEffect(() => {
     CapacitorUpdater.notifyAppReady();
     // Preload chunks after a short delay to not block initial load
@@ -94,8 +109,8 @@ function AppContent() {
   }, []);
 
   return (
-    <AuthProvider>
-      {/* {showSplash && <StartupAnimation onComplete={() => setShowSplash(false)} />} */}
+    <>
+      {showSplash && <StartupAnimation onComplete={() => setShowSplash(false)} />}
       <MusicProvider>
         <VideoPlayerProvider>
           <Suspense fallback={<Loader />}>
@@ -135,7 +150,7 @@ function AppContent() {
           <OfflineStatus />
         </VideoPlayerProvider>
       </MusicProvider>
-    </AuthProvider>
+    </>
   );
 }
 

@@ -29,7 +29,8 @@ textarea,
   --text-secondary: rgba(255, 255, 255, 0.5);
   --border-color: rgba(255, 255, 255, 0.08);
   --accent-color: #ffffff;
-  --accent-hover: #ffffff;
+  --text-on-accent: #000000;
+  --accent-hover: #e5e5e5;
   --sidebar-bg: #000000;
   --header-bg: rgba(0, 0, 0, 0.8);
 }
@@ -42,7 +43,7 @@ textarea,
   --border-color: #ef4444;
   /* Restored Red Border */
   --accent-color: #ef4444;
-  /* Restored Red Accent */
+  --text-on-accent: #ffffff;
   --accent-hover: #dc2626;
 }
 
@@ -61,6 +62,7 @@ textarea,
   --text-secondary: #075985;
   --border-color: #facc15;
   --accent-color: #0284C7;
+  --text-on-accent: #ffffff;
   --accent-hover: #0369A1;
   --glass-bg: rgba(224, 242, 254, 0.7);
   --card-bg: #F0F9FF;

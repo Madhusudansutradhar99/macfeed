@@ -60,7 +60,7 @@ export default function AuthModal() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="absolute inset-0 bg-primary/20 backdrop-blur-xl"
-          onClick={onClose}
+          onClick={user ? onClose : undefined}
         >
           <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 via-transparent to-blue-500/10 animate-pulse" />
         </motion.div>
@@ -112,12 +112,14 @@ export default function AuthModal() {
 
           {/* Right Section (Status) */}
           <div className="col-span-1 lg:col-span-6 p-8 lg:p-14 flex flex-col relative items-center justify-center">
-            <button
-              onClick={onClose}
-              className="absolute top-8 right-8 p-3 text-secondary hover:text-primary bg-primary/5 hover:bg-primary/10 rounded-full transition-all active:scale-90 z-20"
-            >
-              <X className="w-6 h-6" />
-            </button>
+            {user && (
+              <button
+                onClick={onClose}
+                className="absolute top-8 right-8 p-3 text-secondary hover:text-primary bg-primary/5 hover:bg-primary/10 rounded-full transition-all active:scale-90 z-20"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            )}
 
             {user ? (
                <div className="flex flex-col items-center py-10 w-full">
@@ -171,7 +173,7 @@ export default function AuthModal() {
                    <User className="w-10 h-10 text-secondary" />
                 </div>
                 <h2 className="text-4xl font-black italic tracking-tighter text-primary uppercase leading-none mb-4">
-                  Welcome Back
+                  Authentication Required
                 </h2>
                 <p className="text-secondary text-[10px] font-black uppercase tracking-[0.4em] opacity-60 mb-12 max-w-xs mx-auto">
                   Use the secure Google portal on the left to authorize your access.

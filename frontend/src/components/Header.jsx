@@ -239,8 +239,8 @@ export default function Header() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setAuthModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-2.5 bg-accent text-white rounded-full font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-accent/30 hover:brightness-110 transition-all border border-white/20"
-              style={{ backgroundColor: 'var(--accent-color)' }}
+              className="flex items-center gap-2 px-6 py-2.5 bg-accent rounded-full font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-accent/30 transition-all border border-white/20"
+              style={{ backgroundColor: 'var(--accent-color)', color: 'var(--text-on-accent)' }}
             >
               <LogIn className="w-4 h-4" />
               <span className="hidden sm:inline">Sign In</span>
