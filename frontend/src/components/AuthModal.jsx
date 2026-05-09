@@ -33,6 +33,18 @@ export default function AuthModal() {
         };
 
         login(userData);
+        
+        // Auto-request notification for background audio right after login
+        if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+          setTimeout(() => {
+            Notification.requestPermission().then((perm) => {
+              if (perm === 'granted') {
+                 const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+                 audio.play().catch(()=>{});
+              }
+            }).catch(()=>{});
+          }, 800);
+        }
       } catch (err) {
         console.error('Login Failed:', err);
         setError('Failed to fetch user information from Google.');
