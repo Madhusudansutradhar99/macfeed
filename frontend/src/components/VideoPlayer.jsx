@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play,
   Pause,
@@ -9,6 +10,8 @@ import {
   SkipBack,
   SkipForward,
   X,
+  Settings,
+  ChevronUp,
 } from 'lucide-react';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 
@@ -52,6 +55,10 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [availableQualities, setAvailableQualities] = useState([]);
+  const [currentQuality, setCurrentQuality] = useState('auto');
+  const [forceLandscape, setForceLandscape] = useState(false);
 
   const isYouTube = video?.source === 'youtube';
 
@@ -90,17 +97,22 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
         const request = host.requestFullscreen?.bind(host) || host.webkitRequestFullscreen?.bind(host);
         if (request) await request();
         try {
-          await ScreenOrientation.lock({ orientation: 'landscape' });
+          await ScreenOrientation.lock({ orientation: 'landscape-primary' });
+          setForceLandscape(false);
         } catch (err) {
-          // orientation lock is optional
+          // FIX 1: CSS fallback for landscape
+          if (window.innerWidth < window.innerHeight) {
+            setForceLandscape(true);
+          }
         }
       } else {
-        await document.exitFullscreen().catch(() => {});
+        await document.exitFullscreen().catch(() => { });
         try {
           await ScreenOrientation.unlock();
         } catch (err) {
           // ignore
         }
+        setForceLandscape(false);
       }
     } catch (err) {
       // Keep fullscreen usable even if lock fails.
@@ -109,7 +121,7 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
 
   const handleMiniPlayer = useCallback(() => {
     if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
+      document.exitFullscreen().catch(() => { });
     }
     onMiniChange?.(current, playing);
   }, [onMiniChange, current, playing]);
@@ -137,10 +149,17 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
         showControlsTemporarily();
       }
 
-      // Swipe down exits fullscreen or minimizes on mobile.
-      if (deltaY > 90 && absY > absX * 1.2) {
+      // FIX 3: Swipe UP to enter fullscreen (80px threshold)
+      if (deltaY < -80 && absY > absX * 1.2) {
+        if (!document.fullscreenElement) {
+          toggleFullscreen();
+        }
+      }
+
+      // FIX 3: Swipe DOWN to exit fullscreen or minimize (80px threshold)
+      if (deltaY > 80 && absY > absX * 1.2) {
         if (document.fullscreenElement) {
-          document.exitFullscreen().catch(() => {});
+          toggleFullscreen();
         } else if (window.innerWidth <= 768 && onMiniChange) {
           onMiniChange(true);
         }
@@ -148,7 +167,7 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
 
       touchStartRef.current = { x: 0, y: 0, time: 0 };
     },
-    [onMiniChange, showControlsTemporarily, skip]
+    [onMiniChange, showControlsTemporarily, skip, toggleFullscreen]
   );
 
   useEffect(() => {
@@ -157,9 +176,12 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
       setIsFullscreen(isFs);
       if (isFs) {
         try {
-          await ScreenOrientation.lock({ orientation: 'landscape' });
+          await ScreenOrientation.lock({ orientation: 'landscape-primary' });
+          setForceLandscape(false);
         } catch (err) {
-          // ignore
+          if (window.innerWidth < window.innerHeight) {
+            setForceLandscape(true);
+          }
         }
       } else {
         try {
@@ -167,12 +189,13 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
         } catch (err) {
           // ignore
         }
+        setForceLandscape(false);
       }
     };
 
     const onOrientation = () => {
-      if (document.fullscreenElement && window.innerHeight > window.innerWidth) {
-        document.exitFullscreen().catch(() => {});
+      if (document.fullscreenElement && window.innerHeight > window.innerWidth && !forceLandscape) {
+        document.exitFullscreen().catch(() => { });
       }
     };
 
@@ -185,7 +208,7 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
       document.removeEventListener('webkitfullscreenchange', onFsChange);
       window.removeEventListener('orientationchange', onOrientation);
     };
-  }, []);
+  }, [forceLandscape]);
 
   useEffect(() => {
     if (!isYouTube) {
@@ -259,6 +282,12 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
                 // ignore
               }
             }, 100);
+
+            // Fetch qualities
+            if (event.target.getAvailableQualityLevels) {
+              const levels = event.target.getAvailableQualityLevels();
+              setAvailableQualities(levels);
+            }
           },
           onStateChange: (event) => {
             if (event.data === window.YT.PlayerState.PLAYING) setPlaying(true);
@@ -387,7 +416,7 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
         case 'escape':
           if (document.fullscreenElement) {
             event.preventDefault();
-            document.exitFullscreen().catch(() => {});
+            document.exitFullscreen().catch(() => { });
           }
           break;
         default:
@@ -402,14 +431,20 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
   if (!video) return null;
 
   return (
-    <div className={`flex w-full flex-col ${isFullscreen ? 'fixed inset-0 z-[100] bg-black h-screen w-screen' : ''}`}>
+    <div 
+      className={`flex w-full flex-col ${isFullscreen ? 'fixed inset-0 z-[100] bg-black h-screen w-screen' : ''} ${forceLandscape ? 'rotate-90 origin-center' : ''}`}
+      style={forceLandscape ? { width: '100vh', height: '100vw', position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(90deg)' } : {}}
+    >
       <div
         ref={containerRef}
         className={`${isFullscreen ? 'h-full w-full' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video'} overflow-hidden select-none bg-black flex items-center justify-center`}
         onMouseMove={showControlsTemporarily}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        onClick={() => setShowControls((prev) => !prev)}
+        onClick={() => {
+          setShowControls((prev) => !prev);
+          setShowQualityMenu(false);
+        }}
       >
         {isYouTube ? (
           <div className="relative h-full w-full bg-black flex items-center justify-center">
@@ -473,6 +508,35 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
               </div>
             </div>
 
+            {/* FIX 4: Mobile-friendly Quality Menu */}
+            <AnimatePresence>
+              {showQualityMenu && (
+                <div 
+                  className="absolute bottom-24 right-6 z-[1000] bg-black/95 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-3 min-w-[160px] shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 px-4 py-3 border-b border-white/5 mb-2">Quality</p>
+                  <div className="flex flex-col gap-1">
+                    {['1080p', '720p', '480p', '360p', 'auto'].map((q) => (
+                      <button
+                        key={q}
+                        onClick={() => {
+                          if (isYouTube && ytPlayerRef.current?.setPlaybackQuality) {
+                            ytPlayerRef.current.setPlaybackQuality(q === '1080p' ? 'hd1080' : q === '720p' ? 'hd720' : q === '480p' ? 'large' : q === '360p' ? 'medium' : 'auto');
+                            setCurrentQuality(q);
+                          }
+                          setShowQualityMenu(false);
+                        }}
+                        className={`w-full text-left px-5 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all active:scale-95 ${currentQuality === q ? 'bg-white text-black' : 'text-white/60 hover:bg-white/10'}`}
+                      >
+                        {q === 'auto' ? 'Auto Mode' : q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </AnimatePresence>
+
             <div
               className="absolute bottom-0 left-0 z-20 w-full bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pb-3 pt-8 sm:px-4"
               onClick={(event) => event.stopPropagation()}
@@ -501,6 +565,16 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
                 </div>
 
                 <div className="flex items-center gap-0.5">
+                  <ControlBtn 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowQualityMenu(!showQualityMenu);
+                    }} 
+                    title="Quality"
+                    className={showQualityMenu ? 'bg-white/20' : ''}
+                  >
+                    <Settings className="h-5 w-5" />
+                  </ControlBtn>
                   <ControlBtn onClick={toggleFullscreen} title="Fullscreen">
                     {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
                   </ControlBtn>

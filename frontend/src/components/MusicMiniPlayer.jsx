@@ -173,10 +173,10 @@ export default function MusicMiniPlayer() {
 
       {/* Local audio */}
       {currentSong?.source !== 'youtube' && (
-        <video 
-          ref={audioRef} 
+        <video
+          ref={audioRef}
           autoPlay={playing}
-          style={{ display: 'none' }} 
+          style={{ display: 'none' }}
           onLoadedMetadata={(e) => ctx.setDuration?.(e.target.duration)}
           onTimeUpdate={(e) => ctx.setCurrentTime?.(e.target.currentTime)}
           onEnded={next}
@@ -233,7 +233,7 @@ export default function MusicMiniPlayer() {
             >
               {playlist.map((song, i) => (
                 <SwiperSlide key={song.id} className="w-[94vw] md:w-[380px] outline-none select-none">
-                  <div className={`relative w-full aspect-[1/1.6] md:aspect-[1/1.2] rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 transition-all duration-1000 bg-black
+                  <div className={`relative w-full aspect-[1/1.36] md:aspect-[1/1.02] rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 transition-all duration-1000 bg-black
                     ${currentIdx === i ? 'scale-100 border-white/20' : 'scale-[0.8] opacity-30 grayscale border-white/5'}`}>
 
                     {/* Thumbnail always visible as fallback — prevents black flash during swipe */}
@@ -286,7 +286,7 @@ export default function MusicMiniPlayer() {
                     const rect = e.currentTarget.getBoundingClientRect();
                     handleSeek(((e.clientX - rect.left) / rect.width) * duration);
                   }}>
-                    <div className="w-full h-[5px] bg-white/10 rounded-full overflow-hidden">
+                    <div className="w-full h-[3px] bg-white/10 rounded-full overflow-hidden">
                       {/* Direct DOM ref — no re-render on progress tick */}
                       <div ref={progressBarRef}
                         className="h-full rounded-full"

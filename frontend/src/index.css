@@ -11,11 +11,14 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
+html,
+body {
   caret-color: transparent;
 }
 
-input, textarea, [contenteditable="true"] {
+input,
+textarea,
+[contenteditable="true"] {
   caret-color: auto !important;
 }
 
@@ -36,14 +39,16 @@ input, textarea, [contenteditable="true"] {
   --bg-secondary: #ffffff;
   --text-primary: #0f172a;
   --text-secondary: #64748b;
-  --border-color: #ef4444; /* Restored Red Border */
-  --accent-color: #ef4444; /* Restored Red Accent */
+  --border-color: #ef4444;
+  /* Restored Red Border */
+  --accent-color: #ef4444;
+  /* Restored Red Accent */
   --accent-hover: #dc2626;
 }
 
-.light .video-card > div:first-child, 
-.light .poster-card > div:first-child,
-.light .hero-card > div:first-child,
+.light .video-card>div:first-child,
+.light .poster-card>div:first-child,
+.light .hero-card>div:first-child,
 .light .search-container {
   border: 1px solid var(--border-color) !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05) !important;
@@ -75,12 +80,15 @@ body {
   width: 100%;
   height: 100%;
   overflow-x: hidden;
-  scrollbar-width: none !important; /* Hide scrollbar Firefox */
-  -ms-overflow-style: none !important;  /* Hide scrollbar IE/Edge */
+  scrollbar-width: none !important;
+  /* Hide scrollbar Firefox */
+  -ms-overflow-style: none !important;
+  /* Hide scrollbar IE/Edge */
 }
 
 ::-webkit-scrollbar {
-  display: none !important; /* Hide scrollbar Chrome/Safari */
+  display: none !important;
+  /* Hide scrollbar Chrome/Safari */
 }
 
 * {
@@ -91,7 +99,9 @@ body {
   touch-action: manipulation;
 }
 
-input, textarea, [contenteditable="true"] {
+input,
+textarea,
+[contenteditable="true"] {
   caret-color: auto !important;
 }
 
@@ -134,6 +144,7 @@ input, textarea, [contenteditable="true"] {
 }
 
 @media (max-width: 640px) {
+
   .container,
   .max-w-7xl {
     padding-left: 10px !important;
