@@ -99,6 +99,21 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
     [duration, isYouTube]
   );
 
+  const handleSeek = useCallback((e) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = x / rect.width;
+    
+    if (isYouTube && ytPlayerRef.current?.seekTo) {
+      const videoDuration = ytPlayerRef.current.getDuration?.() || duration || 0;
+      ytPlayerRef.current.seekTo(percentage * videoDuration, true);
+    } else if (nativeVideoRef.current) {
+      const videoDuration = nativeVideoRef.current.duration || duration || 0;
+      nativeVideoRef.current.currentTime = percentage * videoDuration;
+    }
+  }, [duration, isYouTube]);
+
   const toggleFullscreen = useCallback(async () => {
     const host = containerRef.current;
     if (!host) return;
