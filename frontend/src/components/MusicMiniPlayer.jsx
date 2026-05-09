@@ -122,11 +122,21 @@ export default function MusicMiniPlayer() {
     }
   }, [isOpen, videoId]);
 
-  // Play/Pause via postMessage
+  // Play/Pause via postMessage for YouTube
   useEffect(() => {
     if (currentSong?.source !== 'youtube') return;
     ytCmd(playing ? 'playVideo' : 'pauseVideo');
   }, [playing, videoId]);
+
+  // Play/Pause via native API for Local Audio
+  useEffect(() => {
+    if (currentSong?.source === 'youtube' || !audioRef.current) return;
+    if (playing) {
+      audioRef.current.play().catch(e => console.warn('Audio play blocked:', e));
+    } else {
+      audioRef.current.pause();
+    }
+  }, [playing, currentSong]);
 
   // Swiper sync
   useEffect(() => {
@@ -289,7 +299,7 @@ export default function MusicMiniPlayer() {
                       {/* Direct DOM ref — no re-render on progress tick */}
                       <div ref={progressBarRef}
                         className="h-full rounded-full"
-                        style={{ width: `${progress}%`, backgroundColor: 'var(--accent-color)', boxShadow: '0 0 15px var(--accent-color)', transition: 'width 0.8s linear' }} />
+                        style={{ width: `${progress}%`, backgroundColor: '#ef4444', boxShadow: '0 0 15px #ef4444', transition: 'width 0.8s linear' }} />
                     </div>
                   </div>
                 </div>

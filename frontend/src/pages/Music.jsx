@@ -276,21 +276,31 @@ export default function Music() {
     if (!window.confirm(`Are you sure you want to delete "${song.title}"? This cannot be undone.`)) return;
 
     try {
-      const audioUrl = new URL(song.video_url);
-      const audioPath = audioUrl.pathname.split('/thumbnails/')[1];
+      let audioPath = null;
+      let thumbPath = null;
       
-      const thumbUrl = new URL(song.thumbnail_url);
-      const thumbPath = thumbUrl.pathname.split('/thumbnails/')[1];
+      try {
+        if (song.video_url.startsWith('http')) {
+          audioPath = new URL(song.video_url).pathname.split('/thumbnails/')[1];
+        }
+        if (song.thumbnail_url.startsWith('http')) {
+          thumbPath = new URL(song.thumbnail_url).pathname.split('/thumbnails/')[1];
+        }
+      } catch (e) {
+        console.warn("Could not parse URLs", e);
+      }
 
       if (audioPath) await supabase.storage.from('thumbnails').remove([decodeURIComponent(audioPath)]);
       if (thumbPath && !thumbPath.includes('default_music_cover')) {
         await supabase.storage.from('thumbnails').remove([decodeURIComponent(thumbPath)]);
       }
 
-      await supabase.from('videos').delete().match({ id: song.id });
+      const { error: deleteErr } = await supabase.from('videos').delete().match({ id: song.id });
+      if (deleteErr) throw deleteErr;
 
       setSongs(prev => prev.filter(s => s.id !== song.id));
       setFilteredSongs(prev => prev.filter(s => s.id !== song.id));
+      alert("Deleted successfully!");
     } catch (err) {
       console.error("Delete failed:", err);
       alert("Failed to delete song: " + err.message);
