@@ -579,8 +579,8 @@ export default function LocalPlayerOverlay() {
                     className="w-full max-w-full relative z-[10]"
                     style={{
                         width: '100%',
-                        height: 'auto',
-                        maxHeight: '60vh',
+                        height: '100%',
+                        maxHeight: '100%',
                         objectFit: aspectRatio === 'Fit' ? 'contain' : aspectRatio === 'Fill' ? 'cover' : aspectRatio === 'Stretch' ? 'fill' : 'contain',
                         aspectRatio: (aspectRatio === '16:9' || aspectRatio === '4:3') ? aspectRatio.replace(':', '/') : 'auto',
                         /* REMOVED EXPENSIVE FILTERS FOR BATTERY SAVING */
