@@ -559,8 +559,8 @@ export default function LocalPlayerOverlay() {
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
                 onClick={(e) => {
-                    // Prevent double-toggle with touch
-                    if (Date.now() - touchStart.current.time < 500) return;
+                    // Only toggle if we click the container or an empty space, not if an event bubbled up from a button.
+                    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
                     if (!isLocked) {
                         if (showExtraPanel) {
                             setShowExtraPanel(false);

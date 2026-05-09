@@ -491,9 +491,13 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
           const duration = Date.now() - start.time;
           
           if (duration < 300 && deltaX < 15 && deltaY < 15) {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleControls();
+            // Do not call preventDefault here, otherwise it swallows button clicks!
+            // Wait for the synthesized click to handle toggleControls, OR only toggle if the target is the container itself.
+            if (e.target === containerRef.current || e.target === ytDomContainer.current || e.target.classList.contains('cursor-pointer')) {
+              // It's a background tap
+              e.preventDefault();
+              toggleControls();
+            }
           }
         }}
         onClick={(e) => {
@@ -512,12 +516,13 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
               </div>
             ) : null}
 
-            <div ref={ytDomContainer} className="absolute inset-0 h-full w-full pointer-events-none" />
+            <div ref={ytDomContainer} className="absolute inset-0 h-full w-full" />
             
-            {/* FIX: Transparent overlay to capture taps ONLY when controls are hidden or when clicking background */}
-            {!showControls && (
+            {/* FIX: Transparent overlay captures taps so the iframe doesn't swallow them. 
+                Only active when playing so the user can click the native YouTube play button initially if needed by mobile browsers. */}
+            {(playing || !showControls) && (
               <div 
-                className="absolute inset-0 z-30 w-full h-full cursor-pointer" 
+                className="absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent" 
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
