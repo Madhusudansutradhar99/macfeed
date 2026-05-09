@@ -300,6 +300,14 @@ export default function Music() {
 
       setSongs(prev => prev.filter(s => s.id !== song.id));
       setFilteredSongs(prev => prev.filter(s => s.id !== song.id));
+      
+      // Clean up local storage so it disappears from Recent/Liked tabs immediately
+      const history = JSON.parse(localStorage.getItem('macfeed_history') || '[]');
+      localStorage.setItem('macfeed_history', JSON.stringify(history.filter(h => h.id !== song.id)));
+      
+      const liked = JSON.parse(localStorage.getItem('macfeed_liked') || '[]');
+      localStorage.setItem('macfeed_liked', JSON.stringify(liked.filter(l => l.id !== song.id)));
+
       alert("Deleted successfully!");
     } catch (err) {
       console.error("Delete failed:", err);
