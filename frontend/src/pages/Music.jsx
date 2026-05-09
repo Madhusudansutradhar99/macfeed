@@ -199,19 +199,40 @@ export default function Music() {
         console.warn("Metadata extraction failed, proceeding with defaults:", metaErr);
       }
 
-      setUploadStatus("Uploading audio...");
-      setUploadProgress(70);
+      setUploadStatus("Uploading audio... 0%");
+      setUploadProgress(40);
       
       const audioFileName = `music/${user?.id || 'anon'}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       
-      const { error: audioErr } = await supabase.storage.from('thumbnails').upload(audioFileName, arrayBuffer, {
-        contentType: file.type || 'audio/mpeg',
-        upsert: true
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${supabaseUrl}/storage/v1/object/thumbnails/${audioFileName}`);
+        xhr.setRequestHeader('Authorization', `Bearer ${anonKey}`);
+        xhr.setRequestHeader('apikey', anonKey);
+        xhr.setRequestHeader('Content-Type', file.type || 'audio/mpeg');
+        xhr.setRequestHeader('x-upsert', 'true');
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = 40 + Math.round((e.loaded / e.total) * 50);
+            setUploadProgress(percent);
+            setUploadStatus(`Uploading audio... ${Math.round((e.loaded / e.total) * 100)}%`);
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`Status ${xhr.status}: ${xhr.responseText}`));
+        };
+        xhr.onerror = () => reject(new Error('Network connection dropped. Please check your internet.'));
+        xhr.onabort = () => reject(new Error('Upload was aborted by the browser.'));
+        
+        // Sending the arrayBuffer directly to avoid File stream locks
+        xhr.send(arrayBuffer);
       });
-      
-      if (audioErr) {
-        throw new Error("Audio upload failed: " + audioErr.message);
-      }
 
       const { data: audioData } = supabase.storage.from('thumbnails').getPublicUrl(audioFileName);
       
