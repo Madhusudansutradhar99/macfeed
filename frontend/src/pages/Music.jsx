@@ -188,20 +188,19 @@ export default function Music() {
       setUploadProgress(70);
       
       const audioFileName = `music/${user?.id || 'anon'}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-      const { error: audioErr } = await supabase.storage.from('music').upload(audioFileName, file);
+      const { error: audioErr } = await supabase.storage.from('thumbnails').upload(audioFileName, file);
       
       if (audioErr) {
         throw new Error("Audio upload failed: " + audioErr.message);
       }
 
-      const { data: audioData } = supabase.storage.from('music').getPublicUrl(audioFileName);
+      const { data: audioData } = supabase.storage.from('thumbnails').getPublicUrl(audioFileName);
       
       setUploadStatus("Saving to database...");
       setUploadProgress(90);
 
       const newSong = {
-        title: title,
-        artist: artist,
+        title: `${artist} - ${title}`,
         video_url: audioData.publicUrl,
         thumbnail_url: thumbnailPublicUrl,
         source: 'local',
