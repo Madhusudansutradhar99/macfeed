@@ -581,7 +581,7 @@ export default function LocalPlayerOverlay() {
                     style={{
                         width: '100%',
                         height: 'auto',
-                        maxHeight: '100vh',
+                        maxHeight: '60vh',
                         objectFit: aspectRatio === 'Fit' ? 'contain' : aspectRatio === 'Fill' ? 'cover' : aspectRatio === 'Stretch' ? 'fill' : 'contain',
                         aspectRatio: (aspectRatio === '16:9' || aspectRatio === '4:3') ? aspectRatio.replace(':', '/') : 'auto',
                         /* REMOVED EXPENSIVE FILTERS FOR BATTERY SAVING */

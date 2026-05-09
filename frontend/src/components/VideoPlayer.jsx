@@ -291,8 +291,24 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
           },
           onStateChange: (event) => {
             if (event.data === window.YT.PlayerState.PLAYING) setPlaying(true);
-            if (event.data === window.YT.PlayerState.PAUSED || event.data === window.YT.PlayerState.ENDED) {
+            if (event.data === window.YT.PlayerState.PAUSED) setPlaying(false);
+            if (event.data === window.YT.PlayerState.ENDED) {
               setPlaying(false);
+              // FIX 3: Auto play next related video
+              fetch(`/api/related?videoId=${video.id || ''}`)
+                .then(res => res.json())
+                .then(data => {
+                  if (data.results && data.results.length > 0) {
+                    const nextVid = data.results[0];
+                    // Navigate or call onClose and then open new one?
+                    // The best way in this app structure is to trigger a custom event or use the context.
+                    // Since VideoPlayer is a component, we might need a way to tell the parent.
+                    // For now, let's try to find a global way or just reload with new video ID.
+                    window.location.href = `/#/watch/${nextVid.id}`;
+                    window.location.reload();
+                  }
+                })
+                .catch(() => {});
             }
           },
           onError: () => {
@@ -458,7 +474,15 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
             ) : null}
 
             <div ref={ytDomContainer} className="absolute inset-0 h-full w-full pointer-events-auto" />
-            <div className="absolute inset-0 z-10 w-full h-full cursor-pointer" />
+            {/* FIX 1: Transparent overlay to capture taps for controls toggle in fullscreen */}
+            <div 
+              className="absolute inset-0 z-30 w-full h-full cursor-pointer" 
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowControls(prev => !prev);
+                setShowQualityMenu(false);
+              }}
+            />
           </div>
         ) : (
           <video
