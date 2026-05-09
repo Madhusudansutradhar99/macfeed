@@ -6,8 +6,12 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useMusicPlayer } from '../context/MusicContext';
+import { useAuth } from '../context/AuthContext';
 import Loader from '../components/Loader';
 import { useNavigate } from 'react-router-dom';
+import * as musicMetadata from 'music-metadata-browser';
+import { Buffer } from 'buffer';
+if (typeof window !== 'undefined') window.Buffer = window.Buffer || Buffer;
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, FreeMode } from 'swiper/modules';
 import 'swiper/css';
@@ -51,7 +55,12 @@ export default function Music() {
   const dropdownRef = useRef(null);
 
   const { playVideo, setIsExpanded, playlist: contextPlaylist } = useMusicPlayer() || {};
+  const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // Upload States
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -140,6 +149,88 @@ export default function Music() {
     if (e) e.preventDefault();
     if (searchQuery.trim()) setIsSearchFocused(true);
   };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 100 * 1024 * 1024) {
+      alert("File size exceeds 100MB limit.");
+      return;
+    }
+
+    try {
+      setUploadStatus("Extracting metadata...");
+      setUploadProgress(10);
+      
+      const metadata = await musicMetadata.parseBlob(file);
+      const title = metadata.common.title || file.name.replace(/\.[^/.]+$/, "");
+      const artist = metadata.common.artist || "Unknown Artist";
+      let thumbnailPublicUrl = "/default_music_cover.jpg";
+
+      if (metadata.common.picture && metadata.common.picture.length > 0) {
+        setUploadStatus("Uploading cover...");
+        setUploadProgress(40);
+        const pic = metadata.common.picture[0];
+        const blob = new Blob([pic.data], { type: pic.format });
+        const ext = pic.format.split('/')[1] || 'jpg';
+        const coverFileName = `music-thumbnails/${user?.id || 'anon'}/${Date.now()}.${ext}`;
+        
+        const { error: coverErr } = await supabase.storage.from('thumbnails').upload(coverFileName, blob);
+        if (!coverErr) {
+          const { data } = supabase.storage.from('thumbnails').getPublicUrl(coverFileName);
+          if (data?.publicUrl) thumbnailPublicUrl = data.publicUrl;
+        }
+      }
+
+      setUploadStatus("Uploading audio...");
+      setUploadProgress(70);
+      
+      const audioFileName = `music/${user?.id || 'anon'}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const { error: audioErr } = await supabase.storage.from('music').upload(audioFileName, file);
+      
+      if (audioErr) {
+        throw new Error("Audio upload failed: " + audioErr.message);
+      }
+
+      const { data: audioData } = supabase.storage.from('music').getPublicUrl(audioFileName);
+      
+      setUploadStatus("Saving to database...");
+      setUploadProgress(90);
+
+      const newSong = {
+        title: title,
+        artist: artist,
+        video_url: audioData.publicUrl,
+        thumbnail_url: thumbnailPublicUrl,
+        source: 'local',
+        category: 'Music'
+      };
+
+      const { data: insertedData, error: dbErr } = await supabase.from('videos').insert([newSong]).select().single();
+      
+      if (dbErr) throw dbErr;
+
+      setSongs(prev => [insertedData, ...prev]);
+      setFilteredSongs(prev => [insertedData, ...prev]);
+      
+      setUploadStatus("Done!");
+      setUploadProgress(100);
+      setTimeout(() => {
+        setUploadStatus("");
+        setUploadProgress(0);
+      }, 3000);
+      
+    } catch (err) {
+      console.error(err);
+      setUploadStatus("Error: " + err.message);
+      setTimeout(() => setUploadStatus(""), 5000);
+    }
+    
+    // Reset file input
+    e.target.value = '';
+  };
+
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -258,6 +349,23 @@ export default function Music() {
           <button onClick={() => navigate('/')} className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"><ArrowLeft className="w-5 h-5 rotate-180" /></button>
           <button onClick={() => { setActiveTab('Liked'); setSearchQuery(''); }} className={`p-2.5 rounded-full transition-all ${activeTab === 'Liked' && !searchQuery ? 'bg-purple-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}><Heart className={`w-5 h-5 ${activeTab === 'Liked' && !searchQuery ? 'fill-white' : ''}`} /></button>
           <button className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"><Download className="w-5 h-5" /></button>
+          
+          {user && (
+            <div className="relative group">
+              <label className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer flex">
+                <Upload className="w-5 h-5" />
+                <input type="file" accept="audio/*" className="hidden" onChange={handleFileUpload} />
+              </label>
+              {uploadStatus && (
+                <div className="absolute top-1/2 -translate-y-1/2 right-14 w-48 bg-[#0F1115] border border-white/10 rounded-xl p-3 shadow-2xl pointer-events-none">
+                  <div className="text-[9px] text-white/70 font-black uppercase tracking-widest mb-2">{uploadStatus}</div>
+                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-purple-500 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </motion.div>
 
         <div className="w-full h-full bg-transparent flex flex-col overflow-hidden pt-8 md:pt-12">
