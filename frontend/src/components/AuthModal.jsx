@@ -96,7 +96,7 @@ export default function AuthModal() {
                    <span className="text-xl font-black italic tracking-tighter text-primary">MACFEED ID</span>
                 </div>
                 
-                <h3 className="text-4xl font-black italic uppercase tracking-tighter text-primary mb-6 leading-[0.9]">
+                <h3 className="text-3xl md:text-4xl font-black italic uppercase tracking-tighter text-primary mb-6 leading-[0.9]">
                    ONE ACCOUNT<br />
                    <span className="text-accent" style={{ color: 'var(--accent-color)' }}>ALL ACCESS</span>
                 </h3>
@@ -141,8 +141,8 @@ export default function AuthModal() {
                         <Sparkles className="w-4 h-4 text-white" />
                      </div>
                   </div>
-                  <h2 className="text-4xl font-black uppercase text-primary mb-2 italic tracking-tighter">Verified</h2>
-                  <p className="text-secondary text-lg font-black uppercase tracking-tighter mb-1">{user.name}</p>
+                  <h2 className="text-3xl md:text-4xl font-black uppercase text-primary mb-2 italic tracking-tighter">Verified</h2>
+                  <p className="text-secondary text-base md:text-lg font-black uppercase tracking-tighter mb-1">{user.name}</p>
                   <p className="text-secondary text-[10px] uppercase tracking-[0.4em] mb-8 opacity-40">{user.email}</p>
                   
                   <button 
@@ -184,7 +184,7 @@ export default function AuthModal() {
                 <div className="w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 border border-primary/20">
                    <User className="w-10 h-10 text-secondary" />
                 </div>
-                <h2 className="text-4xl font-black italic tracking-tighter text-primary uppercase leading-none mb-4">
+                <h2 className="text-2xl md:text-3xl lg:text-4xl font-black italic tracking-tighter text-primary uppercase leading-none mb-4">
                   Authentication Required
                 </h2>
                 <p className="text-secondary text-[10px] font-black uppercase tracking-[0.4em] opacity-60 mb-12 max-w-xs mx-auto">
@@ -205,8 +205,8 @@ export default function AuthModal() {
                 ) : (
                    <button
                     onClick={() => googleLogin()}
-                    className="w-full h-20 bg-accent text-white font-black uppercase text-xs tracking-[0.4em] rounded-[2rem] shadow-2xl transition-all flex items-center justify-center gap-4 hover:brightness-110 active:scale-95"
-                    style={{ backgroundColor: 'var(--accent-color)' }}
+                    className="w-full h-16 md:h-20 font-black uppercase text-[10px] md:text-xs tracking-[0.4em] rounded-[2rem] shadow-2xl transition-all flex items-center justify-center gap-4 hover:brightness-110 active:scale-95"
+                    style={{ backgroundColor: 'var(--accent-color)', color: 'var(--text-on-accent)' }}
                    >
                      Initiate Google Auth <ArrowRight className="w-5 h-5" />
                    </button>
