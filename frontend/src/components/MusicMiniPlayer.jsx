@@ -241,7 +241,7 @@ export default function MusicMiniPlayer() {
               className="w-full !py-2 md:!py-20"
             >
               {playlist.map((song, i) => (
-                <SwiperSlide key={song.id} className="w-[65vw] md:w-[260px] outline-none select-none">
+                <SwiperSlide key={song.id} className="w-[94vw] md:w-[500px] outline-none select-none">
                   <div className={`relative w-full aspect-[1/1.0] md:aspect-[1/0.8] rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 transition-all duration-1000 bg-black
                     ${currentIdx === i ? 'scale-100 border-white/20' : 'scale-[0.8] opacity-30 grayscale border-white/5'}`}>
 
@@ -269,21 +269,21 @@ export default function MusicMiniPlayer() {
 
           {/* BOTTOM CONTROLS */}
           <div className="absolute bottom-4 md:bottom-12 w-full flex justify-center z-50 px-2 md:px-10">
-            <div className="w-full max-w-4xl bg-white/10 backdrop-blur-[50px] border border-white/10 rounded-[2.5rem] md:rounded-full flex flex-col md:flex-row items-center justify-between p-5 md:px-8 shadow-2xl gap-5 md:gap-0">
+            <div className="w-full max-w-[700px] bg-white/10 backdrop-blur-[50px] border border-white/10 rounded-[2.5rem] md:rounded-full flex flex-col md:flex-row items-center justify-between p-3 md:px-6 shadow-2xl gap-4 md:gap-0">
               {/* Buttons */}
-              <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-full border border-white/5">
-                <button onClick={() => handleSeek(currentTime - 10)} className="w-11 h-11 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><Rewind className="w-5 h-5" /></button>
-                <button onClick={prev} className="w-11 h-11 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><SkipBack className="w-5 h-5 fill-current" /></button>
-                <button onClick={() => setPlaying(!playing)} className="w-14 h-14 bg-white text-black rounded-full flex items-center justify-center shadow-xl outline-none hover:scale-105 transition-transform">
-                  {playing ? <Pause className="w-7 h-7 fill-current" /> : <Play className="w-7 h-7 fill-current translate-x-1" />}
+              <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-full border border-white/5 shrink-0">
+                <button onClick={() => handleSeek(currentTime - 10)} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><Rewind className="w-4 h-4" /></button>
+                <button onClick={prev} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><SkipBack className="w-4 h-4 fill-current" /></button>
+                <button onClick={() => setPlaying(!playing)} className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-xl outline-none hover:scale-105 transition-transform">
+                  {playing ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current translate-x-0.5" />}
                 </button>
-                <button onClick={next} className="w-11 h-11 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><SkipForward className="w-5 h-5 fill-current" /></button>
-                <button onClick={() => handleSeek(currentTime + 10)} className="w-11 h-11 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><FastForward className="w-5 h-5" /></button>
+                <button onClick={next} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><SkipForward className="w-4 h-4 fill-current" /></button>
+                <button onClick={() => handleSeek(currentTime + 10)} className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white outline-none"><FastForward className="w-4 h-4" /></button>
               </div>
 
               {/* Progress */}
-              <div className="flex-1 flex items-center gap-4 px-8 md:px-16 w-full">
-                <div className="w-11 h-11 rounded-2xl overflow-hidden shrink-0 border border-white/10">
+              <div className="flex-1 flex items-center gap-3 px-6 md:px-10 w-full min-w-0">
+                <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-white/10">
                   <img src={currentSong?.thumbnail_url} className="w-full h-full object-cover" alt="" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -306,9 +306,9 @@ export default function MusicMiniPlayer() {
               </div>
 
               {/* Minimize + close */}
-              <div className="hidden md:flex items-center gap-2 bg-white/5 p-1.5 rounded-full border border-white/5">
-                <button onClick={handleMinimize} className="w-10 h-10 rounded-full flex items-center justify-center text-white/40 hover:text-white outline-none"><Maximize2 className="w-4 h-4 rotate-180" /></button>
-                <button onClick={handleClose} className="w-10 h-10 rounded-full flex items-center justify-center text-white/40 hover:text-red-500 outline-none"><X className="w-4 h-4" /></button>
+              <div className="hidden md:flex items-center gap-1.5 bg-white/5 p-1 rounded-full border border-white/5 shrink-0">
+                <button onClick={handleMinimize} className="w-9 h-9 rounded-full flex items-center justify-center text-white/40 hover:text-white outline-none"><Maximize2 className="w-3.5 h-3.5 rotate-180" /></button>
+                <button onClick={handleClose} className="w-9 h-9 rounded-full flex items-center justify-center text-white/40 hover:text-red-500 outline-none"><X className="w-3.5 h-3.5" /></button>
               </div>
             </div>
           </div>
