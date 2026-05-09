@@ -481,10 +481,7 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
           }
         }}
         onClick={(e) => {
-          // Only handle click if not handled by touch
-          if (Date.now() - touchStartRef.current.time > 500) {
-            toggleControls(e);
-          }
+          toggleControls(e);
         }}
       >
         {isYouTube ? (

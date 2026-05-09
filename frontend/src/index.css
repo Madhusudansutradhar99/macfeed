@@ -78,8 +78,9 @@ body {
   scroll-behavior: smooth;
   font-size: 13px;
   width: 100%;
-  height: 100%;
+  min-height: 100vh;
   overflow-x: hidden;
+  overflow-y: auto;
   scrollbar-width: none !important;
   /* Hide scrollbar Firefox */
   -ms-overflow-style: none !important;
