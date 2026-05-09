@@ -481,9 +481,10 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
         onMouseMove={showControlsTemporarily}
         onTouchStart={handleTouchStart}
         onTouchEnd={(e) => {
+          // Save start before handleTouchEnd clears it
+          const start = { ...touchStartRef.current };
           handleTouchEnd(e);
-          // If it's a simple tap (short duration, small delta)
-          const start = touchStartRef.current;
+          
           if (!start.time) return;
           const deltaX = Math.abs(e.changedTouches[0].clientX - start.x);
           const deltaY = Math.abs(e.changedTouches[0].clientY - start.y);
@@ -496,8 +497,8 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
           }
         }}
         onClick={(e) => {
-          // Buttons use stopPropagation, so clicks reaching here are background clicks
-          toggleControls(e);
+          e.stopPropagation();
+          toggleControls();
         }}
       >
         {isYouTube ? (
