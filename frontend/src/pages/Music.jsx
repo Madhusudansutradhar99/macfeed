@@ -11,12 +11,13 @@ import Loader from '../components/Loader';
 import { useNavigate } from 'react-router-dom';
 import * as musicMetadata from 'music-metadata-browser';
 import { Buffer } from 'buffer';
-if (typeof window !== 'undefined') window.Buffer = window.Buffer || Buffer;
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, FreeMode } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/free-mode';
 import { fetchJson } from '../utils/request';
+
+if (typeof window !== 'undefined') window.Buffer = window.Buffer || Buffer;
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
