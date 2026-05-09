@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
+process.env.CI = '';
+
 export default defineConfig({
   plugins: [
     react(),
@@ -51,6 +53,10 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 5000,
     rollupOptions: {
+      onwarn(warning, warn) {
+        if (warning.code === 'EVAL') return;
+        warn(warning);
+      },
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
