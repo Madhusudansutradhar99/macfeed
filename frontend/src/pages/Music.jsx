@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, ArrowLeft, Music as MusicIcon, Search, Flame, Clock, Sparkles,
-  Download, Heart, ChevronLeft, ChevronRight, AlertTriangle, Folder, Upload, Settings
+  Download, Heart, ChevronLeft, ChevronRight, AlertTriangle, Folder, Upload, Settings, Trash, Maximize2, X
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useMusicPlayer } from '../context/MusicContext';
@@ -271,6 +271,32 @@ export default function Music() {
     e.target.value = '';
   };
 
+  const handleDeleteLocalSong = async (song, e) => {
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to delete "${song.title}"? This cannot be undone.`)) return;
+
+    try {
+      const audioUrl = new URL(song.video_url);
+      const audioPath = audioUrl.pathname.split('/thumbnails/')[1];
+      
+      const thumbUrl = new URL(song.thumbnail_url);
+      const thumbPath = thumbUrl.pathname.split('/thumbnails/')[1];
+
+      if (audioPath) await supabase.storage.from('thumbnails').remove([decodeURIComponent(audioPath)]);
+      if (thumbPath && !thumbPath.includes('default_music_cover')) {
+        await supabase.storage.from('thumbnails').remove([decodeURIComponent(thumbPath)]);
+      }
+
+      await supabase.from('videos').delete().match({ id: song.id });
+
+      setSongs(prev => prev.filter(s => s.id !== song.id));
+      setFilteredSongs(prev => prev.filter(s => s.id !== song.id));
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Failed to delete song: " + err.message);
+    }
+  };
+
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -441,6 +467,11 @@ export default function Music() {
                             <p className="text-white text-xs font-black truncate group-hover:text-red-400 transition-colors uppercase italic">{r.title}</p>
                             <span className="text-[8px] text-purple-400 font-black uppercase mt-0.5 inline-block bg-purple-500/10 px-1 rounded">MacFeed</span>
                           </div>
+                          {user && r.source === 'local' && (
+                            <button onClick={(e) => handleDeleteLocalSong(r, e)} className="p-2 bg-red-500/10 hover:bg-red-500/30 rounded text-red-500 transition-colors">
+                              <Trash className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                       ))}
                       
@@ -481,15 +512,21 @@ export default function Music() {
                 <div className="space-y-8">
                   <div className="flex items-center justify-between"><h3 className="text-base font-black uppercase tracking-[0.3em] text-white/80 italic">{searchQuery ? 'Results' : activeTab}</h3><Sparkles className="w-5 h-5 text-yellow-500" /></div>
                   <div className="space-y-6">
-                    {displaySongs.slice(0, 5).map(song => (
+                    {sideSongs.map((song, i) => (
                       <div key={song.id} onClick={() => handleSongClick(song)} className="flex items-center gap-6 group cursor-pointer transition-transform active:scale-95">
-                        <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-3xl overflow-hidden shrink-0 border border-white/10 shadow-xl bg-black">
-                          <img src={song.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Play className="w-8 h-8 text-white fill-white" /></div>
+                        <div className="text-[9px] font-black uppercase text-white/30 w-4">0{i+2}</div>
+                        <div className="w-16 h-16 rounded-3xl overflow-hidden shrink-0 border border-white/5"><img src={song.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt="" /></div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-xs font-black uppercase italic tracking-wider truncate mb-1">{song.title}</h4>
+                          <span className="text-[8px] font-black uppercase tracking-widest text-white/50">{song.source === 'local' ? 'Local' : 'YouTube'}</span>
                         </div>
-                        <div className="min-w-0">
-                          <h4 className="text-sm font-black uppercase tracking-tight truncate group-hover:text-purple-400 transition-colors mb-2">{song.title}</h4>
-                          <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em]">{song.source === 'youtube' ? 'YouTube' : 'MacFeed'}</p>
+                        <div className="flex items-center gap-3">
+                          {user && song.source === 'local' && (
+                            <button onClick={(e) => handleDeleteLocalSong(song, e)} className="p-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-full transition-colors opacity-0 group-hover:opacity-100">
+                              <Trash className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <div className="w-10 h-10 rounded-full border-2 border-white/10 flex items-center justify-center group-hover:border-purple-500 group-hover:bg-purple-500 transition-all"><Play className="w-4 h-4 fill-white" /></div>
                         </div>
                       </div>
                     ))}
@@ -505,7 +542,14 @@ export default function Music() {
                           <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white/10 shrink-0 border border-white/5"><img src={song.thumbnail_url} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all" alt="" /></div>
                           <span className="text-[11px] font-black uppercase tracking-tighter truncate text-white/60 group-hover:text-white">{song.title}</span>
                         </div>
-                        <div className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-all"><Play className="w-3.5 h-3.5 fill-current" /></div>
+                        <div className="flex items-center gap-3">
+                          {user && song.source === 'local' && (
+                            <button onClick={(e) => handleDeleteLocalSong(song, e)} className="p-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-full transition-colors opacity-0 group-hover:opacity-100">
+                              <Trash className="w-3 h-3" />
+                            </button>
+                          )}
+                          <div className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-all"><Play className="w-3.5 h-3.5 fill-current" /></div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -565,7 +609,14 @@ export default function Music() {
                           <img src={song.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent flex flex-col justify-end p-6">
                             <h5 className="text-[10px] font-black uppercase italic line-clamp-2 leading-tight mb-2">{song.title}</h5>
-                            <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 group-hover:bg-purple-600 transition-all"><Play className="w-3.5 h-3.5 fill-white" /></div>
+                            <div className="flex items-center justify-between">
+                              <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 group-hover:bg-purple-600 transition-all"><Play className="w-3.5 h-3.5 fill-white" /></div>
+                              {user && song.source === 'local' && (
+                                <button onClick={(e) => handleDeleteLocalSong(song, e)} className="w-8 h-8 rounded-full bg-red-500/20 backdrop-blur-md flex items-center justify-center border border-red-500/50 hover:bg-red-500 transition-all opacity-0 group-hover:opacity-100">
+                                  <Trash className="w-3.5 h-3.5 fill-white" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
