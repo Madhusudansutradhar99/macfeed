@@ -94,19 +94,9 @@ const MainLayout = () => {
       <Header />
       <div className="flex flex-1 relative min-w-0">
         <Sidebar />
-        <main className="flex-1 p-2 sm:p-4 pt-4 sm:pt-4 md:p-6 md:pt-6 overflow-visible">
+        <main className="flex-1 p-2 sm:p-4 pt-4 sm:pt-4 md:p-6 md:pt-6">
           <ErrorBoundary resetKey={location.pathname}>
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={location.pathname}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.15, ease: 'circOut' }}
-              >
-                <Outlet />
-              </motion.div>
-            </AnimatePresence>
+            <Outlet />
           </ErrorBoundary>
         </main>
       </div>

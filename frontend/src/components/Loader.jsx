@@ -1,5 +1,4 @@
 import React from 'react';
-import { createPortal } from 'react-dom';
 
 export default function Loader({ subtle }) {
   const content = (
@@ -13,9 +12,5 @@ export default function Loader({ subtle }) {
     </div>
   );
 
-  if (subtle) {
-    return content;
-  }
-
-  return createPortal(content, document.body);
+  return content;
 }
