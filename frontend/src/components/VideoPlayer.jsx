@@ -501,7 +501,7 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
             <div ref={ytDomContainer} className="absolute inset-0 h-full w-full pointer-events-auto" />
             
             {/* FIX: Transparent overlay to capture taps ONLY when controls are hidden or when clicking background */}
-            {!controlsVisible && (
+            {!showControls && (
               <div 
                 className="absolute inset-0 z-30 w-full h-full cursor-pointer" 
                 onClick={(e) => {
@@ -599,8 +599,12 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
                 showControlsTemporarily(); // Reset timer on interaction
               }}
             >
-              <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-white/15">
-                <div className="h-full rounded-full bg-white/25" style={{ width: `${(current / (duration || 1)) * 100 || 0}%` }} />
+              <div 
+                className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-white/15 cursor-pointer relative group/seek"
+                onClick={handleSeek}
+              >
+                <div className="absolute inset-0 h-full rounded-full bg-white/10 opacity-0 group-hover/seek:opacity-100 transition-opacity" />
+                <div className="h-full rounded-full bg-white/40" style={{ width: `${(current / (duration || 1)) * 100 || 0}%` }} />
               </div>
 
               <div className="flex items-center justify-between gap-1 text-white">
