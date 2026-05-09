@@ -95,7 +95,7 @@ function AppContent() {
 
   return (
     <AuthProvider>
-      {showSplash && <StartupAnimation onComplete={() => setShowSplash(false)} />}
+      {/* {showSplash && <StartupAnimation onComplete={() => setShowSplash(false)} />} */}
       <MusicProvider>
         <VideoPlayerProvider>
           <Suspense fallback={<Loader />}>
