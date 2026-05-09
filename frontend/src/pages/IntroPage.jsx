@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, useAnimation } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   TrendingUp, PlayCircle, Music, Search, Layers, ChevronRight, Zap, Shield, Smartphone, Globe, Sparkles
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const FeatureCard = ({ feature, index }) => (
   <motion.div
@@ -32,17 +33,16 @@ const FeatureCard = ({ feature, index }) => (
 
 export default function IntroPage() {
   const navigate = useNavigate();
+  const { user, setAuthModalOpen } = useAuth();
 
   useEffect(() => {
-    const visited = localStorage.getItem('macfeed_visited');
-    if (visited) {
+    if (user) {
       navigate('/', { replace: true });
     }
-  }, [navigate]);
+  }, [user, navigate]);
 
   const handleGetStarted = () => {
-    localStorage.setItem('macfeed_visited', 'true');
-    navigate('/', { replace: true });
+    setAuthModalOpen(true);
   };
 
   const features = [
