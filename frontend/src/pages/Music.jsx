@@ -155,8 +155,10 @@ export default function Music() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 100 * 1024 * 1024) {
-      alert("File size exceeds 100MB limit.");
+    // Supabase free tier typically has a 50MB limit. 
+    if (file.size > 45 * 1024 * 1024) {
+      setUploadStatus("Error: File exceeds 45MB limit.");
+      setTimeout(() => setUploadStatus(""), 5000);
       return;
     }
 
@@ -188,7 +190,13 @@ export default function Music() {
       setUploadProgress(70);
       
       const audioFileName = `music/${user?.id || 'anon'}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-      const { error: audioErr } = await supabase.storage.from('thumbnails').upload(audioFileName, file);
+      // Create a fresh Blob to avoid stream lock issues from metadata parsing
+      const audioBlob = new Blob([file], { type: file.type || 'audio/mpeg' });
+      
+      const { error: audioErr } = await supabase.storage.from('thumbnails').upload(audioFileName, audioBlob, {
+        contentType: file.type || 'audio/mpeg',
+        upsert: true
+      });
       
       if (audioErr) {
         throw new Error("Audio upload failed: " + audioErr.message);
