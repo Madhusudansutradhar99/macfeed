@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, ArrowLeft, Music as MusicIcon, Search, Flame, Clock, Sparkles,
-  Download, Heart, ChevronLeft, ChevronRight, AlertTriangle, Folder, Upload, Settings, Trash, Maximize2, X
+  Download, Heart, ChevronLeft, ChevronRight, AlertTriangle, Folder, Upload, Settings, Trash, Maximize2, X, Palette, Plus
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useMusicPlayer } from '../context/MusicContext';
@@ -21,27 +21,26 @@ if (typeof window !== 'undefined') window.Buffer = window.Buffer || Buffer;
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
-// Memoized Background to prevent flickering on every click
-const MusicBackground = memo(() => (
-  <div className="fixed inset-0 z-0 pointer-events-none">
-    <div
-      className="absolute inset-0"
-      style={{
-        background: 'radial-gradient(ellipse at center, #2B9EAD 0%, #0D6B7A 50%, #094F5C 100%)'
-      }}
-    >
-      <div
-        className="absolute inset-0 opacity-60 mix-blend-overlay"
-        style={{
-          background: 'linear-gradient(135deg, #0A5C6B 0%, #1A8A95 40%, #2BA8B5 70%, #0D6670 100%)'
-        }}
-      />
-      <div className="absolute inset-0 bg-[#041D24]/30" />
-      <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#4AACB8]/10 blur-[130px] rounded-full" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#0A5C6B]/15 blur-[130px] rounded-full" />
+const themes = [
+  { name: 'Teal', bg1: '#2B9EAD', bg2: '#0D6B7A', bg3: '#094F5C', bg4: '#0A5C6B', bg5: '#1A8A95', bg6: '#2BA8B5', bg7: '#0D6670', blur1: '#4AACB8', blur2: '#0A5C6B' },
+  { name: 'Purple', bg1: '#8B5CF6', bg2: '#6D28D9', bg3: '#4C1D95', bg4: '#5B21B6', bg5: '#7C3AED', bg6: '#8B5CF6', bg7: '#4C1D95', blur1: '#A78BFA', blur2: '#5B21B6' },
+  { name: 'Crimson', bg1: '#EF4444', bg2: '#B91C1C', bg3: '#7F1D1D', bg4: '#991B1B', bg5: '#DC2626', bg6: '#EF4444', bg7: '#7F1D1D', blur1: '#F87171', blur2: '#991B1B' },
+  { name: 'Dark', bg1: '#1F2937', bg2: '#111827', bg3: '#030712', bg4: '#1F2937', bg5: '#374151', bg6: '#4B5563', bg7: '#030712', blur1: '#374151', blur2: '#111827' },
+];
+
+const MusicBackground = memo(({ themeIdx = 0 }) => {
+  const t = themes[themeIdx] || themes[0];
+  return (
+    <div className="fixed inset-0 z-0 pointer-events-none transition-colors duration-1000">
+      <div className="absolute inset-0 transition-all duration-1000" style={{ background: `radial-gradient(ellipse at center, ${t.bg1} 0%, ${t.bg2} 50%, ${t.bg3} 100%)` }}>
+        <div className="absolute inset-0 opacity-60 mix-blend-overlay transition-all duration-1000" style={{ background: `linear-gradient(135deg, ${t.bg4} 0%, ${t.bg5} 40%, ${t.bg6} 70%, ${t.bg7} 100%)` }} />
+        <div className="absolute inset-0 bg-[#041D24]/30" />
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] blur-[130px] rounded-full transition-colors duration-1000" style={{ backgroundColor: t.blur1, opacity: 0.1 }} />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] blur-[130px] rounded-full transition-colors duration-1000" style={{ backgroundColor: t.blur2, opacity: 0.15 }} />
+      </div>
     </div>
-  </div>
-));
+  );
+});
 
 export default function Music() {
   const [songs, setSongs] = useState([]);
@@ -62,6 +61,9 @@ export default function Music() {
   // Upload States
   const [uploadStatus, setUploadStatus] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  const [themeIdx, setThemeIdx] = useState(0);
+  const [showCapsule, setShowCapsule] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -424,34 +426,44 @@ export default function Music() {
 
   return (
     <div className="min-h-screen bg-[#0F1115] text-white overflow-hidden relative font-sans selection:bg-purple-500/30">
-      <MusicBackground />
+      <MusicBackground themeIdx={themeIdx} />
 
       <div className="relative z-10 w-full h-full">
         {/* Floating Controls */}
         <motion.div
           drag dragMomentum={false}
-          className="fixed right-6 md:right-10 top-[70%] flex flex-col gap-6 md:gap-8 items-center bg-white/10 backdrop-blur-3xl border border-white/20 py-5 md:py-6 px-3 rounded-full shadow-2xl z-[100] cursor-grab active:cursor-grabbing"
+          className="fixed right-6 md:right-10 top-[60%] flex flex-col items-center bg-white/10 backdrop-blur-3xl border border-white/20 rounded-full shadow-2xl z-[100] cursor-grab active:cursor-grabbing p-2"
         >
-          <button onClick={() => navigate('/')} className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"><ArrowLeft className="w-5 h-5 rotate-180" /></button>
-          <button onClick={() => { setActiveTab('Liked'); setSearchQuery(''); }} className={`p-2.5 rounded-full transition-all ${activeTab === 'Liked' && !searchQuery ? 'bg-purple-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}><Heart className={`w-5 h-5 ${activeTab === 'Liked' && !searchQuery ? 'fill-white' : ''}`} /></button>
-          <button className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"><Download className="w-5 h-5" /></button>
-          
-          {user && (
-            <div className="relative group">
-              <label className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer flex">
-                <Upload className="w-5 h-5" />
-                <input type="file" accept="audio/*" className="hidden" onChange={handleFileUpload} />
-              </label>
-              {uploadStatus && (
-                <div className="absolute top-1/2 -translate-y-1/2 right-14 w-48 bg-[#0F1115] border border-white/10 rounded-xl p-3 shadow-2xl pointer-events-none">
-                  <div className="text-[9px] text-white/70 font-black uppercase tracking-widest mb-2">{uploadStatus}</div>
-                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-purple-500 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+          <AnimatePresence>
+            {showCapsule && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="flex flex-col gap-4 overflow-hidden items-center pb-4">
+                <button onClick={() => navigate('/')} className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"><ArrowLeft className="w-5 h-5 rotate-180" /></button>
+                <button onClick={() => { setActiveTab('Liked'); setSearchQuery(''); }} className={`p-2.5 rounded-full transition-all ${activeTab === 'Liked' && !searchQuery ? 'bg-purple-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}><Heart className={`w-5 h-5 ${activeTab === 'Liked' && !searchQuery ? 'fill-white' : ''}`} /></button>
+                <button className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"><Download className="w-5 h-5" /></button>
+                <button onClick={() => setThemeIdx(p => (p + 1) % themes.length)} className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"><Palette className="w-5 h-5" /></button>
+                
+                {user && (
+                  <div className="relative group">
+                    <label className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer flex">
+                      <Upload className="w-5 h-5" />
+                      <input type="file" accept="audio/*" className="hidden" onChange={handleFileUpload} />
+                    </label>
+                    {uploadStatus && (
+                      <div className="absolute top-1/2 -translate-y-1/2 right-14 w-48 bg-[#0F1115] border border-white/10 rounded-xl p-3 shadow-2xl pointer-events-none">
+                        <div className="text-[9px] text-white/70 font-black uppercase tracking-widest mb-2">{uploadStatus}</div>
+                        <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-full bg-purple-500 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <button onClick={() => setShowCapsule(!showCapsule)} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all">
+             <Settings className={`w-5 h-5 transition-transform duration-500 ${showCapsule ? 'rotate-90' : ''}`} />
+          </button>
         </motion.div>
 
         <div className="w-full h-full bg-transparent flex flex-col overflow-hidden pt-8 md:pt-12">
@@ -525,6 +537,40 @@ export default function Music() {
           </div>
 
           <main className="flex-1 overflow-y-auto px-6 md:px-12 pb-12 no-scrollbar">
+            {activeTab === 'My Uploads' && !searchQuery ? (
+              <div className="w-full flex flex-col gap-8 pt-4 max-w-4xl mx-auto">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-black uppercase tracking-[0.3em] text-white/80 italic">My Uploads ({displaySongs.length})</h3>
+                  <Sparkles className="w-5 h-5 text-yellow-500" />
+                </div>
+                <div className="flex flex-col gap-4 bg-white/5 p-6 md:p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
+                  {displaySongs.length === 0 ? (
+                    <div className="text-center text-white/50 font-black uppercase tracking-widest text-xs py-10">No Uploads Yet.</div>
+                  ) : displaySongs.map((song, i) => (
+                    <div key={song.id} onClick={() => handleSongClick(song)} className="flex items-center justify-between group cursor-pointer transition-transform active:scale-95 bg-white/5 p-4 rounded-2xl border border-white/5 hover:border-purple-500/50">
+                      <div className="flex items-center gap-5 min-w-0">
+                        <div className="text-[10px] font-black uppercase text-white/30 w-6">{(i + 1).toString().padStart(2, '0')}</div>
+                        <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/10 shrink-0 border border-white/5">
+                          <img src={song.thumbnail_url} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all" alt="" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[13px] font-black uppercase tracking-tighter truncate text-white/80 group-hover:text-white max-w-[200px] md:max-w-md">{song.title}</span>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-white/40 mt-1">Local Audio</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {user && (
+                          <button onClick={(e) => handleDeleteLocalSong(song, e)} className="p-3 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-full transition-colors opacity-0 group-hover:opacity-100">
+                            <Trash className="w-4 h-4" />
+                          </button>
+                        )}
+                        <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-all"><Play className="w-4 h-4 fill-current translate-x-0.5" /></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
             <div className="grid grid-cols-12 gap-6 lg:gap-10">
               {/* Left Side */}
               <div className="col-span-12 lg:col-span-5 flex flex-col gap-12 pt-4">
@@ -644,6 +690,7 @@ export default function Music() {
                 </div>
               </div>
             </div>
+            )}
           </main>
         </div>
       </div>
