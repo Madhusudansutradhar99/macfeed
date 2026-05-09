@@ -59,9 +59,14 @@ export const useVideoPlayer = (videoRef, options = {}) => {
               hlsRef.current.destroy();
               hlsRef.current = null;
             }
+            const bufferConfig = options?.bufferSize === 'Large' 
+              ? { maxBufferLength: 60, maxMaxBufferLength: 120 }
+              : options?.bufferSize === 'Small'
+              ? { maxBufferLength: 10, maxMaxBufferLength: 20 }
+              : { maxBufferLength: 30, maxMaxBufferLength: 60 };
+
             const hls = new Hls({
-              maxBufferLength: 30,
-              maxMaxBufferLength: 60,
+              ...bufferConfig,
               ...getHlsConfig()
             });
             hlsRef.current = hls;

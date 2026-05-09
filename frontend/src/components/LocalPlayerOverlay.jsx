@@ -105,8 +105,18 @@ export default function LocalPlayerOverlay() {
     const [forceLandscape, setForceLandscape] = useState(false);
     const [wheelRotation, setWheelRotation] = useState(0);
 
-    // Initialize native/HLS player hook (probes capabilities and attaches hls.js when needed)
-    const { hls, error: playerError, maxHeight: playerMaxHeight, smooth: playerSmooth } = useVideoPlayer(videoRef, { currentSong, preloadMode });
+    // Web Audio API Refs for Boost & EQ
+    const audioCtxRef = useRef(null);
+    const sourceNodeRef = useRef(null);
+    const gainNodeRef = useRef(null);
+    const eqNodesRef = useRef({});
+
+    // Initialize native/HLS player hook
+    const { hls, error: playerError, maxHeight: playerMaxHeight, smooth: playerSmooth } = useVideoPlayer(videoRef, { 
+        currentSong, 
+        preloadMode,
+        bufferSize 
+    });
 
     useEffect(() => {
         const checkOrientation = () => {
@@ -318,13 +328,126 @@ export default function LocalPlayerOverlay() {
     }, [isLocalPlayerOpen, currentSong, isLocked]);
 
     useEffect(() => {
-        if (videoRef.current) {
-            videoRef.current.volume = (volume * (volumeBoost / 100));
-            videoRef.current.muted = isMuted;
-            videoRef.current.playbackRate = playbackRate;
-            videoRef.current.loop = loopVideo;
+        const video = videoRef.current;
+        if (!video || !isLocalPlayerOpen) return;
+
+        // Initialize Web Audio Context on first play/interaction
+        if (!audioCtxRef.current && playing) {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    const ctx = new AudioContext();
+                    audioCtxRef.current = ctx;
+
+                    const source = ctx.createMediaElementSource(video);
+                    sourceNodeRef.current = source;
+
+                    const gainNode = ctx.createGain();
+                    gainNodeRef.current = gainNode;
+
+                    const low = ctx.createBiquadFilter();
+                    low.type = 'lowshelf';
+                    low.frequency.value = 320;
+
+                    const mid = ctx.createBiquadFilter();
+                    mid.type = 'peaking';
+                    mid.frequency.value = 1000;
+                    mid.Q.value = 1;
+
+                    const high = ctx.createBiquadFilter();
+                    high.type = 'highshelf';
+                    high.frequency.value = 3200;
+
+                    eqNodesRef.current = { low, mid, high };
+
+                    // Connect chain: Source -> EQ -> Gain -> Destination
+                    source.connect(low);
+                    low.connect(mid);
+                    mid.connect(high);
+                    high.connect(gainNode);
+                    gainNode.connect(ctx.destination);
+                }
+            } catch (e) {
+                console.warn("Web Audio init failed:", e);
+            }
         }
-    }, [volume, isMuted, playbackRate, volumeBoost, loopVideo]);
+
+        // Apply Volume & Boost
+        // video.volume is kept for base volume (0-1)
+        // gainNode handles the "Boost" multiplier (1.0 to 2.0)
+        video.volume = isMuted ? 0 : volume;
+        if (gainNodeRef.current) {
+            gainNodeRef.current.gain.setTargetAtTime(volumeBoost / 100, audioCtxRef.current.currentTime, 0.1);
+        }
+
+        // Apply EQ Presets
+        if (eqNodesRef.current.low) {
+            const { low, mid, high } = eqNodesRef.current;
+            const now = audioCtxRef.current.currentTime;
+            switch (eqPreset) {
+                case 'Bass Boost':
+                    low.gain.setTargetAtTime(12, now, 0.1);
+                    mid.gain.setTargetAtTime(0, now, 0.1);
+                    high.gain.setTargetAtTime(-2, now, 0.1);
+                    break;
+                case 'Voice':
+                    low.gain.setTargetAtTime(-5, now, 0.1);
+                    mid.gain.setTargetAtTime(8, now, 0.1);
+                    high.gain.setTargetAtTime(2, now, 0.1);
+                    break;
+                case 'Movie':
+                    low.gain.setTargetAtTime(5, now, 0.1);
+                    mid.gain.setTargetAtTime(-2, now, 0.1);
+                    high.gain.setTargetAtTime(5, now, 0.1);
+                    break;
+                default: // Normal
+                    low.gain.setTargetAtTime(0, now, 0.1);
+                    mid.gain.setTargetAtTime(0, now, 0.1);
+                    high.gain.setTargetAtTime(0, now, 0.1);
+            }
+        }
+
+        video.playbackRate = playbackRate;
+        video.loop = loopVideo;
+
+    }, [volume, isMuted, playbackRate, volumeBoost, loopVideo, eqPreset, playing, isLocalPlayerOpen]);
+
+    // Audio Track Detection
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const updateTracks = () => {
+            if (video.audioTracks) {
+                const tracks = Array.from(video.audioTracks).map((t, i) => ({
+                    id: i,
+                    label: t.label || t.language || `Track ${i + 1}`,
+                    enabled: t.enabled
+                }));
+                setAudioTracks(tracks);
+            }
+        };
+
+        video.addEventListener('loadedmetadata', updateTracks);
+        return () => video.removeEventListener('loadedmetadata', updateTracks);
+    }, []);
+
+    const handleAudioTrackChange = (index) => {
+        const video = videoRef.current;
+        if (video && video.audioTracks) {
+            Array.from(video.audioTracks).forEach((t, i) => {
+                t.enabled = (i === index);
+            });
+            showMXToast(`Audio: ${video.audioTracks[index].label || 'Track ' + (index + 1)}`, <Headphones size={16} />, "#22d3ee");
+            // Refresh state
+            const tracks = Array.from(video.audioTracks).map((t, i) => ({
+                id: i,
+                label: t.label || t.language || `Track ${i + 1}`,
+                enabled: t.enabled
+            }));
+            setAudioTracks(tracks);
+        }
+    };
 
     useEffect(() => {
         const video = videoRef.current;
@@ -834,7 +957,7 @@ export default function LocalPlayerOverlay() {
                     */}
                             <div
                                 onWheel={(e) => {
-                                    const sensitivity = 0.8;
+                                    const sensitivity = 1.5; // Increased from 0.8
                                     const maxRot = (14 - 1) * 18;
                                     setWheelRotation(prev => Math.max(0, Math.min(prev - (e.deltaY * sensitivity), maxRot)));
                                 }}
@@ -846,7 +969,7 @@ export default function LocalPlayerOverlay() {
                                     drag="y"
                                     dragConstraints={{ top: -2000, bottom: 2000 }}
                                     onDrag={(e, info) => {
-                                        const sensitivity = 1.2;
+                                        const sensitivity = 2.5; // Increased from 1.2
                                         const maxRot = (14 - 1) * 18;
                                         setWheelRotation(prev => Math.max(0, Math.min(prev - (info.delta.y * sensitivity), maxRot)));
                                     }}
@@ -1101,10 +1224,22 @@ export default function LocalPlayerOverlay() {
 
                                     {settingsTab === 'AUDIO' && (
                                         <>
-                                            <SettingRow label="Audio Track">
-                                                <button className="flex items-center gap-2 px-4 py-3 bg-white/5 rounded-xl text-white/60 text-xs font-bold hover:bg-white/10 transition-colors">
-                                                    <Headphones size={14} /> Default Track (English)
-                                                </button>
+                                             <SettingRow label="Audio Track">
+                                                <div className="flex flex-col gap-2">
+                                                    {audioTracks.length > 0 ? audioTracks.map((track, i) => (
+                                                        <button
+                                                            key={i}
+                                                            onClick={() => handleAudioTrackChange(i)}
+                                                            className={`flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-all ${track.enabled ? 'bg-white text-black' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                                                        >
+                                                            <Headphones size={14} /> {track.label}
+                                                        </button>
+                                                    )) : (
+                                                        <button className="flex items-center gap-2 px-4 py-3 bg-white/5 rounded-xl text-white/40 text-xs font-bold cursor-not-allowed">
+                                                            <Headphones size={14} /> Default Track (English)
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </SettingRow>
                                             <SettingRow label="Volume Boost">
                                                 <div className="flex gap-2">
