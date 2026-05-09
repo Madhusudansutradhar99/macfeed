@@ -4,7 +4,7 @@ import { HashRouter, Routes, Route } from 'react-router-dom';
 
 import { MusicProvider } from './context/MusicContext';
 import { VideoPlayerProvider } from './context/VideoPlayerContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import MainLayout from './layout/MainLayout';
