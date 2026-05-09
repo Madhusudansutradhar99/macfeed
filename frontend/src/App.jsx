@@ -1,6 +1,6 @@
 import React, { useState, Suspense, lazy, useEffect } from 'react';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 
 import { MusicProvider } from './context/MusicContext';
 import { VideoPlayerProvider } from './context/VideoPlayerContext';
@@ -70,36 +70,29 @@ export default function App() {
 
 function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, setAuthModalOpen } = useAuth();
   
   // Only redirect to intro if there's NO hash at all (root) and not visited
-  const shouldRedirectToIntro = React.useMemo(() => {
+  useEffect(() => {
     const visited = localStorage.getItem('macfeed_visited');
-    const currentHash = window.location.hash;
-    // If we have a meaningful route already, DON'T redirect to intro on refresh
-    if (!visited && (currentHash === '' || currentHash === '#/')) {
-      return true;
+    if (!visited && location.pathname === '/') {
+      navigate('/intro', { replace: true });
     }
-    return false;
-  }, []);
-
-  React.useEffect(() => {
-    if (shouldRedirectToIntro) {
-      window.location.hash = '#/intro';
-    }
-  }, [shouldRedirectToIntro]);
-
-  const { user, setAuthModalOpen } = useAuth();
+  }, [location.pathname, navigate]);
 
   // Strict Auth Guard: If no user and not on intro page, force open auth modal
   useEffect(() => {
     // Give auth a tiny delay to initialize from localStorage to avoid flashing modal
     const timer = setTimeout(() => {
-      if (!user && window.location.hash !== '#/intro') {
+      // Allow both /intro and exact match
+      if (!user && location.pathname !== '/intro') {
         setAuthModalOpen(true);
       }
     }, 100);
     return () => clearTimeout(timer);
-  }, [user, setAuthModalOpen, window.location.hash]);
+  }, [user, setAuthModalOpen, location.pathname]);
 
   useEffect(() => {
     CapacitorUpdater.notifyAppReady();
