@@ -81,10 +81,10 @@ export default function AuthModal() {
           initial={{ scale: 0.8, opacity: 0, rotateX: 15 }}
           animate={{ scale: 1, opacity: 1, rotateX: 0 }}
           exit={{ scale: 0.8, opacity: 0, rotateX: -15 }}
-          className="relative w-full max-w-4xl grid grid-cols-1 lg:grid-cols-10 bg-secondary border border-primary rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden"
+          className="relative w-full max-h-[90vh] overflow-y-auto custom-scrollbar max-w-4xl grid grid-cols-1 lg:grid-cols-10 bg-secondary border border-primary rounded-[2rem] md:rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]"
         >
           {/* Left Decorative Section */}
-          <div className="hidden lg:flex lg:col-span-4 bg-primary/5 border-r border-primary p-10 flex-col justify-between relative overflow-hidden">
+          <div className="flex flex-col lg:col-span-4 bg-primary/5 border-b lg:border-b-0 lg:border-r border-primary p-8 lg:p-10 justify-between relative overflow-hidden">
              <div className="absolute top-[-20%] left-[-20%] w-64 h-64 bg-purple-600/10 rounded-full blur-[80px]" />
              <div className="absolute bottom-[-20%] right-[-20%] w-64 h-64 bg-blue-600/10 rounded-full blur-[80px]" />
              
@@ -100,7 +100,7 @@ export default function AuthModal() {
                    ONE ACCOUNT<br />
                    <span className="text-accent" style={{ color: 'var(--accent-color)' }}>ALL ACCESS</span>
                 </h3>
-                <p className="text-secondary text-[11px] font-bold leading-relaxed uppercase tracking-widest opacity-60">
+                <p className="text-secondary text-[11px] font-bold leading-relaxed uppercase tracking-widest opacity-60 mb-8 lg:mb-0">
                    Sign in with Google to sync your core data across all dimensions.
                 </p>
              </div>
@@ -123,7 +123,7 @@ export default function AuthModal() {
           </div>
 
           {/* Right Section (Status) */}
-          <div className="col-span-1 lg:col-span-6 p-8 lg:p-14 flex flex-col relative items-center justify-center">
+          <div className="col-span-1 lg:col-span-6 p-6 lg:p-14 flex flex-col relative items-center justify-center">
             {user && (
               <button
                 onClick={onClose}
@@ -184,11 +184,11 @@ export default function AuthModal() {
                 <div className="w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 border border-primary/20">
                    <User className="w-10 h-10 text-secondary" />
                 </div>
-                <h2 className="text-2xl md:text-3xl lg:text-4xl font-black italic tracking-tighter text-primary uppercase leading-none mb-4">
+                <h2 className="text-2xl md:text-3xl lg:text-4xl font-black italic tracking-tighter text-primary uppercase leading-none mb-4 mt-6 lg:mt-0">
                   Authentication Required
                 </h2>
                 <p className="text-secondary text-[10px] font-black uppercase tracking-[0.4em] opacity-60 mb-12 max-w-xs mx-auto">
-                  Use the secure Google portal on the left to authorize your access.
+                  Use the secure Google portal to authorize your access.
                 </p>
 
                 {error && (
