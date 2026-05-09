@@ -163,37 +163,48 @@ export default function Music() {
     }
 
     try {
+      setUploadStatus("Reading file...");
+      setUploadProgress(5);
+      
+      // Read file into memory first to prevent any stream locks in the browser
+      const arrayBuffer = await file.arrayBuffer();
+
       setUploadStatus("Extracting metadata...");
       setUploadProgress(10);
       
-      const metadata = await musicMetadata.parseBlob(file);
-      const title = metadata.common.title || file.name.replace(/\.[^/.]+$/, "");
-      const artist = metadata.common.artist || "Unknown Artist";
+      let title = file.name.replace(/\.[^/.]+$/, "");
+      let artist = "Unknown Artist";
       let thumbnailPublicUrl = "/default_music_cover.jpg";
 
-      if (metadata.common.picture && metadata.common.picture.length > 0) {
-        setUploadStatus("Uploading cover...");
-        setUploadProgress(40);
-        const pic = metadata.common.picture[0];
-        const blob = new Blob([pic.data], { type: pic.format });
-        const ext = pic.format.split('/')[1] || 'jpg';
-        const coverFileName = `music-thumbnails/${user?.id || 'anon'}/${Date.now()}.${ext}`;
-        
-        const { error: coverErr } = await supabase.storage.from('thumbnails').upload(coverFileName, blob);
-        if (!coverErr) {
-          const { data } = supabase.storage.from('thumbnails').getPublicUrl(coverFileName);
-          if (data?.publicUrl) thumbnailPublicUrl = data.publicUrl;
+      try {
+        const metadata = await musicMetadata.parseBlob(file);
+        if (metadata.common.title) title = metadata.common.title;
+        if (metadata.common.artist) artist = metadata.common.artist;
+
+        if (metadata.common.picture && metadata.common.picture.length > 0) {
+          setUploadStatus("Uploading cover...");
+          setUploadProgress(40);
+          const pic = metadata.common.picture[0];
+          const picBlob = new Blob([pic.data], { type: pic.format });
+          const ext = pic.format.split('/')[1] || 'jpg';
+          const coverFileName = `music-thumbnails/${user?.id || 'anon'}/${Date.now()}.${ext}`;
+          
+          const { error: coverErr } = await supabase.storage.from('thumbnails').upload(coverFileName, picBlob, { upsert: true, contentType: pic.format });
+          if (!coverErr) {
+            const { data } = supabase.storage.from('thumbnails').getPublicUrl(coverFileName);
+            if (data?.publicUrl) thumbnailPublicUrl = data.publicUrl;
+          }
         }
+      } catch (metaErr) {
+        console.warn("Metadata extraction failed, proceeding with defaults:", metaErr);
       }
 
       setUploadStatus("Uploading audio...");
       setUploadProgress(70);
       
       const audioFileName = `music/${user?.id || 'anon'}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-      // Create a fresh Blob to avoid stream lock issues from metadata parsing
-      const audioBlob = new Blob([file], { type: file.type || 'audio/mpeg' });
       
-      const { error: audioErr } = await supabase.storage.from('thumbnails').upload(audioFileName, audioBlob, {
+      const { error: audioErr } = await supabase.storage.from('thumbnails').upload(audioFileName, arrayBuffer, {
         contentType: file.type || 'audio/mpeg',
         upsert: true
       });
