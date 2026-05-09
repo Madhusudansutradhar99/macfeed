@@ -1,23 +1,39 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useAnimation } from 'framer-motion';
 import { 
-  TrendingUp, 
-  PlayCircle, 
-  Music, 
-  Search, 
-  Layers, 
-  ChevronRight,
-  Zap,
-  Shield,
-  Smartphone
+  TrendingUp, PlayCircle, Music, Search, Layers, ChevronRight, Zap, Shield, Smartphone, Globe, Sparkles
 } from 'lucide-react';
+
+const FeatureCard = ({ feature, index }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 50 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.2 + index * 0.1, duration: 0.8, type: "spring" }}
+    whileHover={{ y: -10, scale: 1.02 }}
+    className="relative group p-px rounded-[2.5rem] overflow-hidden bg-gradient-to-b from-white/10 to-transparent"
+  >
+    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    <div className="relative h-full bg-[#0a0a0f]/90 backdrop-blur-3xl p-8 rounded-[2.5rem] border border-white/5 flex flex-col justify-between">
+      <div>
+        <div className="mb-8 w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center shadow-lg border border-white/10 group-hover:border-purple-500/50 group-hover:scale-110 transition-all duration-500">
+          {feature.icon}
+        </div>
+        <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-4 text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-blue-400 transition-all">
+          {feature.title}
+        </h3>
+        <p className="text-white/40 text-sm font-medium leading-relaxed">
+          {feature.desc}
+        </p>
+      </div>
+    </div>
+  </motion.div>
+);
 
 export default function IntroPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if already visited
     const visited = localStorage.getItem('macfeed_visited');
     if (visited) {
       navigate('/', { replace: true });
@@ -31,104 +47,131 @@ export default function IntroPage() {
 
   const features = [
     {
-      icon: <TrendingUp className="w-8 h-8 text-purple-500" />,
-      title: "Trending Content",
-      desc: "Stay updated with the latest from YouTube, ETV, and more in real-time."
+      icon: <Globe className="w-7 h-7 text-blue-400" />,
+      title: "Limitless Media",
+      desc: "Tap into an infinite universe of content. YouTube, movies, live sports, and beyond, completely unchained."
     },
     {
-      icon: <PlayCircle className="w-8 h-8 text-blue-500" />,
-      title: "Local Media Player",
-      desc: "Play your local video and audio files with a premium, high-performance player."
+      icon: <Music className="w-7 h-7 text-pink-400" />,
+      title: "Persistent Audio",
+      desc: "Your soundtrack never stops. Minimize the app or lock your screen, the music flows seamlessly in the background."
     },
     {
-      icon: <Music className="w-8 h-8 text-pink-500" />,
-      title: "Background Music",
-      desc: "Listen to your favorite tracks even when the app is minimized or closed."
-    },
-    {
-      icon: <Search className="w-8 h-8 text-green-500" />,
-      title: "Cross-Platform Search",
-      desc: "Find anything you want across multiple platforms with a single search."
-    },
-    {
-      icon: <Layers className="w-8 h-8 text-orange-500" />,
-      title: "Mini Floating Player",
-      desc: "Multitask with ease using our smooth, draggable floating mini player."
+      icon: <Layers className="w-7 h-7 text-purple-400" />,
+      title: "Floating Engine",
+      desc: "Multitask like a pro with our picture-in-picture floating player. Drag it, resize it, own your screen space."
     }
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      {/* Background Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-600/10 blur-[120px] rounded-full" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[120px] rounded-full" />
-
-      <div className="max-w-4xl w-full z-10">
+    <div className="min-h-screen bg-[#030305] text-white flex flex-col items-center justify-start relative overflow-x-hidden selection:bg-purple-500/30">
+      
+      {/* Dynamic Background Elements */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+          animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] rounded-full bg-purple-900/20 blur-[120px] mix-blend-screen"
+        />
+        <motion.div 
+          animate={{ scale: [1, 1.5, 1], rotate: [0, -90, 0] }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute top-[20%] -right-[20%] w-[60vw] h-[60vw] rounded-full bg-blue-900/20 blur-[120px] mix-blend-screen"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#030305]/80 to-[#030305] z-10" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 pt-20 pb-32 flex flex-col items-center">
+        
+        {/* Header Badge */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-16"
+          transition={{ duration: 1, delay: 0.2 }}
+          className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-2.5 rounded-full mb-12 backdrop-blur-md shadow-2xl"
         >
-          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full mb-6">
-            <Zap className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">Welcome to MacFeed</span>
-          </div>
-          <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter uppercase mb-4 leading-none">
-            Stream <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-blue-500">Everything</span>
-          </h1>
-          <p className="text-white/50 text-base md:text-lg max-w-xl mx-auto font-medium">
-            The ultimate all-in-one entertainment hub for YouTube, Movies, Music, and your local media.
-          </p>
+          <Sparkles className="w-4 h-4 text-purple-400" />
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400">
+            Welcome to the Future
+          </span>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-          {features.map((f, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] backdrop-blur-xl hover:bg-white/10 transition-all group"
-            >
-              <div className="mb-6 transform group-hover:scale-110 group-hover:rotate-6 transition-transform">
-                {f.icon}
-              </div>
-              <h3 className="text-lg font-black uppercase italic tracking-tighter mb-2">{f.title}</h3>
-              <p className="text-white/40 text-sm leading-relaxed">{f.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-
+        {/* Massive Hero Text */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.6 }}
-          className="flex flex-col items-center"
+          transition={{ duration: 1.2, type: "spring", bounce: 0.4 }}
+          className="text-center w-full max-w-5xl mb-12"
         >
+          <h1 className="text-6xl md:text-8xl lg:text-9xl font-black italic tracking-tighter uppercase leading-[0.85]">
+            <span className="block text-white drop-shadow-2xl">BEYOND</span>
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 drop-shadow-[0_0_40px_rgba(168,85,247,0.4)]">
+              STREAMING
+            </span>
+          </h1>
+        </motion.div>
+
+        {/* Subtitle */}
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.4 }}
+          className="text-center text-white/50 text-lg md:text-xl max-w-2xl font-medium leading-relaxed mb-20"
+        >
+          Step into a revolutionary entertainment ecosystem. Zero boundaries. Infinite content. Crafted for the absolute elite.
+        </motion.p>
+
+        {/* CTA Button */}
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.6 }}
+          className="relative group mb-32"
+        >
+          <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse" />
           <button 
             onClick={handleGetStarted}
-            className="group relative bg-white text-black px-12 py-5 rounded-full font-black uppercase tracking-widest text-sm flex items-center gap-3 hover:bg-purple-600 hover:text-white transition-all active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+            className="relative flex items-center gap-4 bg-white px-14 py-6 rounded-full leading-none overflow-hidden"
           >
-            Get Started
-            <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <span className="text-black font-black uppercase tracking-[0.2em] text-sm md:text-base z-10">
+              Unlock MacFeed
+            </span>
+            <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center z-10 group-hover:translate-x-2 transition-transform duration-300">
+              <ChevronRight className="w-5 h-5 text-white" />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-blue-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </button>
-          
-          <div className="mt-10 flex items-center gap-8 opacity-30 grayscale hover:grayscale-0 transition-all duration-700">
-             <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Secure</span>
-             </div>
-             <div className="flex items-center gap-2">
-                <Smartphone className="w-4 h-4" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Mobile Optimized</span>
-             </div>
+        </motion.div>
+
+        {/* Bento Grid Features */}
+        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+          {features.map((f, i) => (
+            <FeatureCard key={i} feature={f} index={i} />
+          ))}
+        </div>
+
+        {/* Trust Badges */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2, duration: 1 }}
+          className="mt-32 flex flex-wrap items-center justify-center gap-12 opacity-40 grayscale"
+        >
+          <div className="flex items-center gap-3">
+            <Shield className="w-6 h-6" />
+            <span className="text-xs font-black uppercase tracking-[0.3em]">Military Grade Security</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Zap className="w-6 h-6" />
+            <span className="text-xs font-black uppercase tracking-[0.3em]">Zero Latency Engine</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Smartphone className="w-6 h-6" />
+            <span className="text-xs font-black uppercase tracking-[0.3em]">Cross-Platform Sync</span>
           </div>
         </motion.div>
-      </div>
 
-      {/* Decorative logo */}
-      <div className="absolute bottom-10 left-10 opacity-10 pointer-events-none">
-        <img src="/macfeed-logo.png" alt="MacFeed" className="w-12 h-12 grayscale" />
       </div>
     </div>
   );

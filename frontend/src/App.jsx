@@ -74,13 +74,12 @@ function AppContent() {
   const navigate = useNavigate();
   const { user, setAuthModalOpen } = useAuth();
   
-  // Only redirect to intro if there's NO hash at all (root) and not visited
+  // Redirect to intro if not logged in and trying to access the root
   useEffect(() => {
-    const visited = localStorage.getItem('macfeed_visited');
-    if (!visited && location.pathname === '/') {
+    if (!user && location.pathname === '/') {
       navigate('/intro', { replace: true });
     }
-  }, [location.pathname, navigate]);
+  }, [user, location.pathname, navigate]);
 
   // Strict Auth Guard: If no user and not on intro page, force open auth modal
   useEffect(() => {
