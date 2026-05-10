@@ -1317,7 +1317,7 @@ function LocalPlayerOverlay() {
                                                         <div className="mx-panel-line h-[1.5px] w-8 mt-1" style={{ backgroundColor: action.color, display: isFocused ? 'block' : 'none' }} />
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </motion.div>
                                         );
                                     })}
                                 </div>

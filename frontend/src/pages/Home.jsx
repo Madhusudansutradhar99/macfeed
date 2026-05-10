@@ -367,7 +367,6 @@ export default function Home() {
     if (heroBannerVideos.length === 0) {
       heroBannerVideos = videos.slice(0, 4);
     }
-  }
   
   heroBannerVideos = heroBannerVideos.slice(0, 4);
 
