@@ -84,6 +84,11 @@ export function MusicProvider({ children }) {
 
   const loadStoredDeviceMusic = async () => {
     try {
+      const iosFiles = await getHandle('ios_files');
+      if (iosFiles && iosFiles.length > 0) {
+        handleDeviceFiles(iosFiles, true); // true to skip re-saving to IDB
+      }
+
       const handle = await getHandle('musicFolder');
       if (handle) {
         // Use queryPermission to check silently without prompting
@@ -157,10 +162,18 @@ export function MusicProvider({ children }) {
     }
   };
 
-  const handleDeviceFiles = async (files) => {
+  const handleDeviceFiles = async (files, isRestore = false) => {
     setIsScanning(true);
     const songs = [];
     const fileList = Array.from(files);
+
+    if (!isRestore) {
+      try {
+        await setHandle('ios_files', fileList);
+      } catch (e) {
+        console.error('Failed to save iOS files to IDB:', e);
+      }
+    }
 
     try {
       for (const file of fileList) {

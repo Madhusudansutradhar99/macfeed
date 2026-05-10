@@ -603,9 +603,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         className={`${isFullscreen ? 'h-full w-full' : (viewMode === 'mini' ? 'w-[120px] h-[70px]' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video')} overflow-hidden select-none bg-black flex items-center justify-center transition-all duration-300 ease-in-out flex-shrink-0`}
         style={{ touchAction: 'none' }}
         onMouseMove={showControlsTemporarily}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
         onClick={(e) => {
           if (viewMode === 'mini') {
             e.stopPropagation();
@@ -630,11 +627,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             {/* Fullscreen Swipe Overlay - FIX 1 & 3 */}
             {isFullscreen && (
               <div 
-                className="fixed top-0 left-0 z-[99999] w-screen h-screen bg-transparent"
-                style={{ touchAction: 'none', position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'auto' }}
-                onTouchStart={handleTouchStart}
-                onTouchMove={(e) => { e.preventDefault(); handleTouchMove(e); }}
-                onTouchEnd={(e) => { e.preventDefault(); handleTouchEnd(e); }}
+                className="fixed top-0 left-0 z-[99999] w-screen h-screen bg-transparent pointer-events-none"
               />
             )}
 
@@ -644,9 +637,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             <div 
               className={`absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent transition-opacity duration-300 ${isFullscreen || viewMode === 'mini' ? 'pointer-events-none opacity-0' : 'opacity-100'}`} 
               onClick={() => viewMode === 'mini' ? maximize() : toggleControls()}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
             />
           </div>
         ) : (
@@ -679,10 +669,18 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  const next = !playing;
-                  setPlaying(next);
-                  if (next) ytPlayerRef.current?.playVideo?.();
-                  else ytPlayerRef.current?.pauseVideo?.();
+                  if (isYouTube && ytPlayerRef.current) {
+                    if (!playing) ytPlayerRef.current.playVideo?.();
+                    else ytPlayerRef.current.pauseVideo?.();
+                  } else if (nativeVideoRef.current) {
+                    if (!playing) {
+                      nativeVideoRef.current.play();
+                      setPlaying(true);
+                    } else {
+                      nativeVideoRef.current.pause();
+                      setPlaying(false);
+                    }
+                  }
                 }}
                 className="p-2 text-white hover:bg-white/10 rounded-full transition-colors"
               >
@@ -823,14 +821,17 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                   {/* FIX 4: playBtnRef tracks state for icon swap without extra re-render */}
                   <ControlBtn onClick={(e) => {
                     e.stopPropagation();
-                    const next = !playing;
-                    setPlaying(next);
                     if (isYouTube && ytPlayerRef.current) {
-                      if (next) ytPlayerRef.current.playVideo?.();
+                      if (!playing) ytPlayerRef.current.playVideo?.();
                       else ytPlayerRef.current.pauseVideo?.();
                     } else if (nativeVideoRef.current) {
-                      if (next) nativeVideoRef.current.play();
-                      else nativeVideoRef.current.pause();
+                      if (!playing) {
+                        nativeVideoRef.current.play();
+                        setPlaying(true);
+                      } else {
+                        nativeVideoRef.current.pause();
+                        setPlaying(false);
+                      }
                     }
                   }} title={playing ? 'Pause' : 'Play'}>
                     <span ref={playBtnRef} data-playing={playing ? '1' : '0'}>

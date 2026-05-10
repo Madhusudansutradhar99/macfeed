@@ -76,6 +76,8 @@ function LocalPlayerOverlay() {
     const wheelPendingRef = useRef(0);
     const wheelContainerRef = useRef(null);
     const wheelRotationRef = useRef(0);
+    const wheelDragRef = useRef(null);
+    const wheelTouchStartYRef = useRef(0);
     const [showExtraPanel, setShowExtraPanel] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [showQualityMenu, setShowQualityMenu] = useState(false);
@@ -452,10 +454,32 @@ function LocalPlayerOverlay() {
     }, []);
 
     useEffect(() => {
+        const el = wheelDragRef.current;
+        if (!el) return;
+
+        const handleTouchStart = (e) => {
+            e.preventDefault(); // Prevent default scroll
+            wheelTouchStartYRef.current = e.touches[0].clientY;
+        };
+
+        const handleTouchMove = (e) => {
+            e.preventDefault();
+            const currentY = e.touches[0].clientY;
+            const deltaY = currentY - wheelTouchStartYRef.current;
+            wheelTouchStartYRef.current = currentY;
+            const sensitivity = 4.5;
+            scheduleWheelRotation(deltaY * sensitivity);
+        };
+
+        el.addEventListener('touchstart', handleTouchStart, { passive: false });
+        el.addEventListener('touchmove', handleTouchMove, { passive: false });
+
         return () => {
             if (wheelRafRef.current) cancelAnimationFrame(wheelRafRef.current);
+            el.removeEventListener('touchstart', handleTouchStart);
+            el.removeEventListener('touchmove', handleTouchMove);
         };
-    }, []);
+    }, [scheduleWheelRotation]);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -1159,13 +1183,8 @@ function LocalPlayerOverlay() {
                                 }}
                             >
                                 {/* Drag Area (Full height & width of the interactive zone) */}
-                                <motion.div
-                                    drag="y"
-                                        dragConstraints={{ top: -500, bottom: 500 }}
-                                    onDrag={(e, info) => {
-                                            const sensitivity = 4.5;
-                                        scheduleWheelRotation(-(info.delta.y * sensitivity));
-                                    }}
+                                <div
+                                    ref={wheelDragRef}
                                     className="absolute inset-0 z-[200] cursor-grab active:cursor-grabbing"
                                     style={{
                                         transform: 'translateZ(0)',

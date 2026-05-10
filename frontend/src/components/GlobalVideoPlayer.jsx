@@ -101,10 +101,6 @@ export default function GlobalVideoPlayer() {
   return (
     <AnimatePresence>
       <motion.div
-        drag={viewMode === 'full' ? 'y' : false}
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={0.2}
-        onDragEnd={handleDragEnd}
         animate={controls}
         initial={{ opacity: 0, y: 100 }}
         exit={{ opacity: 0, y: 100 }}
