@@ -54,7 +54,7 @@ function ControlBtn({ onClick, title, children, className = '' }) {
     <button
       onClick={onClick}
       title={title}
-      className={`relative rounded-full p-2 text-white/90 transition-all duration-150 hover:bg-white/10 hover:text-white active:scale-90 ${className}`}
+      className={`relative rounded-full p-3 text-white/90 transition-all duration-150 hover:bg-white/10 hover:text-white active:scale-90 ${className}`}
     >
       {children}
     </button>
@@ -621,7 +621,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
   return (
     <div 
-      className={`flex w-full flex-col transition-all duration-500 ease-in-out ${isFullscreen ? 'fixed inset-0 z-[9999] bg-black h-screen w-screen' : ''} ${forceLandscape ? 'rotate-90 origin-center' : ''} ${viewMode === 'mini' ? 'h-full flex-row items-center pr-3 bg-black/95 backdrop-blur-md border-t border-white/10' : ''}`}
+      className={`flex w-full flex-col transition-all duration-500 ease-in-out ${isFullscreen ? 'fixed inset-0 z-[9999] bg-black h-screen w-screen' : ''} ${forceLandscape ? 'rotate-90 origin-center' : ''} ${viewMode === 'mini' ? 'h-full flex-row items-center bg-black overflow-hidden' : ''}`}
       style={forceLandscape ? { 
         width: '100vh', 
         height: '100vw', 
@@ -634,7 +634,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     >
       <div
         ref={containerRef}
-        className={`${isFullscreen ? 'h-full w-full' : (viewMode === 'mini' ? 'w-[120px] h-[70px]' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video')} overflow-hidden select-none bg-black flex items-center justify-center transition-all duration-300 ease-in-out flex-shrink-0`}
+        className={`${isFullscreen ? 'h-full w-full' : (viewMode === 'mini' ? 'w-full h-full' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video')} overflow-hidden select-none bg-black flex items-center justify-center transition-all duration-300 ease-in-out flex-shrink-0`}
         style={{ touchAction: 'none' }}
         onMouseMove={showControlsTemporarily}
         onClick={(e) => {
@@ -691,48 +691,30 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             onError={() => onError?.('This video could not be loaded.')}
           />
         )}
-
-        {/* Mini Player Bar Content */}
         {viewMode === 'mini' && (
-          <div className="flex-1 flex items-center justify-between min-w-0 pr-1">
-            <div className="flex-1 min-w-0 cursor-pointer" onClick={maximize}>
-              <h4 className="text-white text-[13px] font-bold truncate tracking-tight">{video.title}</h4>
-              <p className="text-white/50 text-[11px] font-medium truncate uppercase tracking-widest">{video.category || 'YouTube'}</p>
-            </div>
-            
-            <div className="flex items-center gap-1 ml-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (isYouTube && ytPlayerRef.current) {
-                    if (!playing) ytPlayerRef.current.playVideo?.();
-                    else ytPlayerRef.current.pauseVideo?.();
-                  } else if (nativeVideoRef.current) {
-                    if (!playing) {
-                      nativeVideoRef.current.play();
-                      setPlaying(true);
-                    } else {
-                      nativeVideoRef.current.pause();
-                      setPlaying(false);
-                    }
-                  }
-                }}
-                className="p-2 text-white hover:bg-white/10 rounded-full transition-colors"
-              >
-                {playing ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
-              </button>
-              
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closePlayer();
-                }}
-                className="p-2 text-white hover:bg-white/10 rounded-full transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-          </div>
+          <>
+            <button 
+              onClick={(e) => { e.stopPropagation(); closePlayer(); }}
+              className="absolute top-1 right-1 z-[100] p-1.5 bg-black/50 hover:bg-black/80 rounded-full text-white backdrop-blur-md"
+            >
+              <X size={14} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (isYouTube && ytPlayerRef.current) {
+                  if (!playing) { ytPlayerRef.current.playVideo?.(); setPlaying(true); }
+                  else { ytPlayerRef.current.pauseVideo?.(); setPlaying(false); }
+                } else if (nativeVideoRef.current) {
+                  if (!playing) { nativeVideoRef.current.play(); setPlaying(true); }
+                  else { nativeVideoRef.current.pause(); setPlaying(false); }
+                }
+              }}
+              className="absolute bottom-1 left-1 z-[100] p-1.5 bg-black/50 hover:bg-black/80 rounded-full text-white backdrop-blur-md"
+            >
+              {playing ? <Pause size={14} /> : <Play size={14} fill="white" />}
+            </button>
+          </>
         )}
 
         {showControls && viewMode === 'full' && (
@@ -823,15 +805,9 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               </div>
             ) : null}
 
-            <div
-              className="absolute bottom-0 left-0 z-40 w-full bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pb-3 pt-8 sm:px-4"
-              onClick={(event) => {
-                event.stopPropagation();
-                showControlsTemporarily();
-              }}
-              onTouchStart={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => e.stopPropagation()}
-              onMouseEnter={showControlsTemporarily}
+            <div 
+              className={`absolute bottom-0 left-0 right-0 p-4 pt-16 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-opacity duration-300 z-50`}
+              onClick={(e) => e.stopPropagation()}
             >
               {/* FIX 3: Progress bar — drag input seeks, fill div updated via DOM ref */}
               <div className="mb-3 w-full group relative flex items-center h-4">
