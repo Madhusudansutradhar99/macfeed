@@ -826,7 +826,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               </div>
             ) : null}
 
-          {viewMode === 'full' && showControls && (
           <div 
             className={`absolute bottom-0 left-0 right-0 p-4 pt-16 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 z-[100]`}
             onClick={(e) => e.stopPropagation()}
