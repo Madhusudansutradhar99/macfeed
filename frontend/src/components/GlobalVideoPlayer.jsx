@@ -38,7 +38,7 @@ export default function GlobalVideoPlayer() {
         height: '70px',
         width: '100vw',
         bottom: 80, // Above bottom navigation
-        borderRadius: '16px 16px 0 0',
+        borderRadius: 0,
         opacity: 1,
         transition: { type: 'spring', damping: 25, stiffness: 250 }
       });

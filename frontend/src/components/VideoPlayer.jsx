@@ -587,7 +587,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
   return (
     <div 
-      className={`flex w-full flex-col transition-all duration-500 ease-in-out ${isFullscreen ? 'fixed inset-0 z-[9999] bg-black h-screen w-screen' : ''} ${forceLandscape ? 'rotate-90 origin-center' : ''} ${viewMode === 'mini' ? 'h-full flex-row items-center px-3 gap-3' : ''}`}
+      className={`flex w-full flex-col transition-all duration-500 ease-in-out ${isFullscreen ? 'fixed inset-0 z-[9999] bg-black h-screen w-screen' : ''} ${forceLandscape ? 'rotate-90 origin-center' : ''} ${viewMode === 'mini' ? 'h-full flex-row items-center pr-3 bg-black/95 backdrop-blur-md border-t border-white/10' : ''}`}
       style={forceLandscape ? { 
         width: '100vh', 
         height: '100vw', 
@@ -600,7 +600,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     >
       <div
         ref={containerRef}
-        className={`${isFullscreen ? 'h-full w-full' : (viewMode === 'mini' ? 'w-[120px] h-[68px] rounded-lg' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video')} overflow-hidden select-none bg-black flex items-center justify-center transition-all duration-300 ease-in-out flex-shrink-0`}
+        className={`${isFullscreen ? 'h-full w-full' : (viewMode === 'mini' ? 'w-[120px] h-[70px]' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video')} overflow-hidden select-none bg-black flex items-center justify-center transition-all duration-300 ease-in-out flex-shrink-0`}
         style={{ touchAction: 'none' }}
         onMouseMove={showControlsTemporarily}
         onTouchStart={handleTouchStart}

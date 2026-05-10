@@ -86,10 +86,13 @@ export function MusicProvider({ children }) {
     try {
       const handle = await getHandle('musicFolder');
       if (handle) {
-        // Request permission for the handle
-        const status = await handle.requestPermission({ mode: 'read' });
+        // Use queryPermission to check silently without prompting
+        const status = await handle.queryPermission({ mode: 'read' });
         if (status === 'granted') {
           await scanDirectory(handle);
+        } else {
+          // Permission needed. We set permission state to false so the user can be prompted via a button click.
+          setDevicePermission(false);
         }
       }
     } catch (e) {
@@ -436,6 +439,18 @@ export function MusicProvider({ children }) {
     requestDevicePermission: async () => {
       localStorage.setItem('macfeed_device_permission', 'granted');
       setDevicePermission(true);
+      
+      try {
+        const existingHandle = await getHandle('musicFolder');
+        if (existingHandle) {
+           const status = await existingHandle.requestPermission({ mode: 'read' });
+           if (status === 'granted') {
+               await scanDirectory(existingHandle);
+               return;
+           }
+        }
+      } catch(e) {}
+
       if ('showDirectoryPicker' in window) {
         try {
           const handle = await window.showDirectoryPicker();
@@ -444,6 +459,8 @@ export function MusicProvider({ children }) {
         } catch (e) {
           console.error('Permission denied or picker closed', e);
         }
+      } else {
+        document.getElementById('device-music-input')?.click();
       }
     },
     handleDeviceFiles,

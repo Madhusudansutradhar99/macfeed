@@ -442,13 +442,12 @@ function LocalPlayerOverlay() {
             wheelPendingRef.current = 0;
             const maxRot = (14 - 1) * 18;
             
-            // Update ref with new rotation value
             const newRotation = Math.max(0, Math.min(wheelRotationRef.current + nextDelta, maxRot));
             wheelRotationRef.current = newRotation;
             
-                // Update state immediately for smooth real-time response (no batching delay)
-                // Instant updates eliminate lagging while refs keep 14 items efficient
-                setWheelRotation(newRotation);
+            if (wheelContainerRef.current) {
+                wheelContainerRef.current.style.transform = `rotate(${newRotation}deg)`;
+            }
         });
     }, []);
 
@@ -875,14 +874,17 @@ function LocalPlayerOverlay() {
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
                 onClick={(e) => {
-                    // Only toggle if we click the container or an empty space, not if an event bubbled up from a button.
-                    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+                    if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('input')) return;
                     if (!isLocked) {
                         if (showExtraPanel) {
                             setShowExtraPanel(false);
                         } else {
-                            setShowControls(!showControls);
-                            resetControlsTimeout();
+                            if (showControls) {
+                                setShowControls(false);
+                                if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
+                            } else {
+                                resetControlsTimeout();
+                            }
                         }
                     }
                 }}
@@ -978,7 +980,7 @@ function LocalPlayerOverlay() {
                             initial={{ y: -100 }} animate={{ y: 0 }} exit={{ y: -100 }}
                             transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
                             className="absolute top-0 left-0 right-0 z-50 p-6 flex items-center justify-between bg-gradient-to-b from-black to-transparent"
-                            onClick={e => e.stopPropagation()}
+                            onClick={e => { e.stopPropagation(); resetControlsTimeout(); }}
                         >
                             <div className="flex items-center gap-6">
                                 <button onClick={() => { window.screen?.orientation?.unlock(); setIsLocalPlayerOpen(false); }} className="text-white p-2">
@@ -1042,7 +1044,7 @@ function LocalPlayerOverlay() {
                             initial={{ y: 150 }} animate={{ y: 0 }} exit={{ y: 150 }}
                             transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
                             className="absolute bottom-0 left-0 right-0 z-50 p-6 flex flex-col gap-6 bg-gradient-to-t from-black to-transparent"
-                            onClick={e => e.stopPropagation()}
+                            onClick={e => { e.stopPropagation(); resetControlsTimeout(); }}
                         >
                             <div className="flex items-center justify-between gap-6">
                                 <div

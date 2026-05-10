@@ -18,12 +18,6 @@ export default function OfflineStatus() {
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
 
     hideTimerRef.current = setTimeout(() => setShow(false), 2000);
-
-    if (!offline) {
-      refreshTimerRef.current = setTimeout(() => {
-        window.location.reload();
-      }, 2200);
-    }
   };
 
   useEffect(() => {
