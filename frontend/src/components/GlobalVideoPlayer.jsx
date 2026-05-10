@@ -52,15 +52,17 @@ export default function GlobalVideoPlayer() {
 
   if (viewMode === 'closed' || !activeVideo || isWatchPage) return null;
 
-  const handleDragEnd = (_, info) => {
-    if (viewMode === 'full') {
-      // Swipe down to minimize
-      if (info.offset.y > 100) {
-        minimize();
-        if (isWatchPage) navigate(-1); // Go back if we were on watch page
-      } else {
-        controls.start({ y: 0 });
-      }
+  const swipeStartRef = useRef(0);
+
+  const handleTouchStart = (e) => {
+    swipeStartRef.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e) => {
+    const endY = e.changedTouches[0].clientY;
+    if (viewMode === 'full' && endY - swipeStartRef.current > 80) {
+      minimize();
+      if (isWatchPage) navigate(-1); // Go back if we were on watch page
     }
   };
 
@@ -116,6 +118,8 @@ export default function GlobalVideoPlayer() {
         }}
         className="border-t border-white/5"
         onClick={() => viewMode === 'mini' && handleRestore()}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         <VideoPlayer 
           video={activeVideo} 
