@@ -405,14 +405,15 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         height: '100%',
         playerVars: {
           autoplay: connectionSpeed === 'slow' ? 0 : 1,
-          controls: 1,
+          controls: 0,
           rel: 0,
-          modestbranding: 0,
+          modestbranding: 1,
           enablejsapi: 1,
           playsinline: 1,
           fs: 1,
-          disablekb: 0,
+          disablekb: 1,
           origin: window.location.origin,
+          widget_referrer: window.location.origin,
         },
         events: {
           onReady: (event) => {
@@ -856,8 +857,13 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                   <ControlBtn onClick={(e) => {
                     e.stopPropagation();
                     if (isYouTube && ytPlayerRef.current) {
-                      if (!playing) ytPlayerRef.current.playVideo?.();
-                      else ytPlayerRef.current.pauseVideo?.();
+                      if (!playing) {
+                        ytPlayerRef.current.playVideo?.();
+                        setPlaying(true);
+                      } else {
+                        ytPlayerRef.current.pauseVideo?.();
+                        setPlaying(false);
+                      }
                     } else if (nativeVideoRef.current) {
                       if (!playing) {
                         nativeVideoRef.current.play();

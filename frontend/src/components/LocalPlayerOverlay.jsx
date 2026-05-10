@@ -1233,7 +1233,7 @@ function LocalPlayerOverlay() {
 
 
                                 {/* Panels with ZERO-GAP Connections (Aligned to Ring Center) */}
-                                <div className="absolute left-[-280px] w-[400px] h-full flex items-center justify-center pointer-events-none">
+                                <div className="absolute left-[-200px] sm:left-[-350px] w-[400px] sm:w-[700px] h-full flex items-center justify-center pointer-events-none">
                                     {[
                                         { icon: <RefreshCcw size={14} />, label: "Rotation", color: "#fbbf24", onClick: toggleROT },
                                         { icon: <Camera size={14} />, label: "Capture", color: "#fbbf24", onClick: handleCapture },
@@ -1259,8 +1259,9 @@ function LocalPlayerOverlay() {
                                         const angleStep = 18;
                                         const totalRotation = (i * angleStep) - wheelRotation;
                                         const rad = (totalRotation * Math.PI) / 180;
-                                        const panelRadius = window.innerWidth < 768 ? 200 : 350;
-                                        const xPos = Math.cos(rad) * panelRadius + 200;
+                                        const panelRadius = window.innerWidth < 768 ? 180 : 320;
+                                        const centerX = window.innerWidth < 768 ? 200 : 350;
+                                        const xPos = Math.cos(rad) * panelRadius + centerX;
                                         const yPos = Math.sin(rad) * panelRadius;
                                         const normalizedDist = Math.abs(yPos) / (panelRadius * 1.5);
                                         const scale = Math.max(0.7, 1.15 - normalizedDist);
