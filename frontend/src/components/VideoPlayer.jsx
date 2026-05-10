@@ -155,29 +155,36 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
     if (!host) return;
 
     try {
-      if (!document.fullscreenElement) {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
         const request = host.requestFullscreen?.bind(host) || host.webkitRequestFullscreen?.bind(host);
-        if (request) await request();
+        if (request) {
+          await request();
+        } else {
+          // Fallback: manually set fullscreen state if API is unavailable
+          setIsFullscreen(true);
+        }
+        
         try {
           await ScreenOrientation.lock({ orientation: 'landscape-primary' });
           setForceLandscape(false);
         } catch (err) {
-          // FIX 1: CSS fallback for landscape
           if (window.innerWidth < window.innerHeight) {
             setForceLandscape(true);
           }
         }
       } else {
-        await document.exitFullscreen().catch(() => { });
+        const exit = document.exitFullscreen?.bind(document) || document.webkitExitFullscreen?.bind(document);
+        if (exit) await exit();
+        else setIsFullscreen(false);
+
         try {
           await ScreenOrientation.unlock();
-        } catch (err) {
-          // ignore
-        }
+        } catch (err) { }
         setForceLandscape(false);
       }
     } catch (err) {
-      // Keep fullscreen usable even if lock fails.
+      // Manual fallback if API fails
+      setIsFullscreen(prev => !prev);
     }
   }, []);
 
@@ -271,42 +278,28 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
   );
 
   useEffect(() => {
-    const onFsChange = async () => {
-      const isFs = !!document.fullscreenElement;
+    const onFsChange = () => {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
       setIsFullscreen(isFs);
+      
       if (isFs) {
-        try {
-          await ScreenOrientation.lock({ orientation: 'landscape-primary' });
-          setForceLandscape(false);
-        } catch (err) {
-          if (window.innerWidth < window.innerHeight) {
-            setForceLandscape(true);
-          }
-        }
+        ScreenOrientation.lock({ orientation: 'landscape-primary' }).catch(() => {
+          if (window.innerWidth < window.innerHeight) setForceLandscape(true);
+        });
       } else {
-        try {
-          await ScreenOrientation.unlock();
-        } catch (err) {
-          // ignore
-        }
+        ScreenOrientation.unlock().catch(() => {});
         setForceLandscape(false);
       }
     };
 
-    const onOrientation = () => {
-      // Removed auto-exit logic to keep landscape permanent
-    };
-
     document.addEventListener('fullscreenchange', onFsChange);
     document.addEventListener('webkitfullscreenchange', onFsChange);
-    window.addEventListener('orientationchange', onOrientation);
-
+    
     return () => {
       document.removeEventListener('fullscreenchange', onFsChange);
       document.removeEventListener('webkitfullscreenchange', onFsChange);
-      window.removeEventListener('orientationchange', onOrientation);
     };
-  }, [forceLandscape]);
+  }, []);
 
   useEffect(() => {
     if (!isYouTube) {
@@ -573,8 +566,16 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
 
   return (
     <div 
-      className={`flex w-full flex-col ${isFullscreen ? 'fixed inset-0 z-[100] bg-black h-screen w-screen' : ''} ${forceLandscape ? 'rotate-90 origin-center' : ''}`}
-      style={forceLandscape ? { width: '100vh', height: '100vw', position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(90deg)' } : {}}
+      className={`flex w-full flex-col transition-all duration-500 ease-in-out ${isFullscreen ? 'fixed inset-0 z-[9999] bg-black h-screen w-screen' : ''} ${forceLandscape ? 'rotate-90 origin-center' : ''}`}
+      style={forceLandscape ? { 
+        width: '100vh', 
+        height: '100vw', 
+        position: 'fixed', 
+        top: '50%', 
+        left: '50%', 
+        transform: 'translate(-50%, -50%) rotate(90deg)',
+        zIndex: 9999
+      } : (isFullscreen ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999 } : {})}
     >
       <div
         ref={containerRef}
