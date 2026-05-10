@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
+import { useVideoMiniPlayer } from '../context/VideoPlayerContext';
 
 const formatTime = (seconds) => {
   if (!seconds || Number.isNaN(seconds)) return '0:00';
@@ -60,7 +61,7 @@ function ControlBtn({ onClick, title, children, className = '' }) {
   );
 }
 
-export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'full', onError }) {
+export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'full', onNext, onPrevious, onError }) {
   const { 
     playing, setPlaying, 
     muted, setMuted, 
@@ -387,12 +388,10 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             setDuration(initDur);
             setVolume((event.target.getVolume?.() || 100) / 100);
 
-            if (ytTimerRef.current) clearInterval(ytTimerRef.current);
-            // FIX 3: Update progress via DOM refs — zero re-renders
-            ytTimerRef.current = setInterval(() => {
-              try {
-                const cur = event.target.getCurrentTime?.() || 0;
-                const dur = event.target.getDuration?.() || durationStateRef.current || 0;
+            const syncProgress = () => {
+              if (ytPlayerRef.current) {
+                const cur = ytPlayerRef.current.getCurrentTime?.() || 0;
+                const dur = ytPlayerRef.current.getDuration?.() || durationStateRef.current || 0;
                 if (dur > 0) {
                   durationStateRef.current = dur;
                   const pct = (cur / dur) * 100;
@@ -400,20 +399,12 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                   if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(cur);
                   if (durationRef.current) durationRef.current.textContent = formatTime(dur);
                 }
-
-                const levels = event.target.getAvailableQualityLevels?.();
-                if (Array.isArray(levels) && levels.length > 0) {
-                  setAvailableQualities(levels);
-                }
-
-                const playbackQuality = event.target.getPlaybackQuality?.();
-                if (playbackQuality) {
-                  setCurrentQuality(playbackQuality);
-                }
-              } catch (err) {
-                // ignore
               }
-            }, 250);
+              ytTimerRef.current = requestAnimationFrame(syncProgress);
+            };
+            
+            if (ytTimerRef.current) cancelAnimationFrame(ytTimerRef.current);
+            ytTimerRef.current = requestAnimationFrame(syncProgress);
 
             setTimeout(() => {
               try {
@@ -445,10 +436,11 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             const isPlaying = state === window.YT.PlayerState.PLAYING;
             setPlaying(isPlaying);
             if (playBtnRef.current) {
-              playBtnRef.current.dataset.playing = isPlaying ? '1' : '0';
+              // Direct DOM icon swap
+              playBtnRef.current.innerHTML = isPlaying 
+                ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause h-5 w-5"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play h-5 w-5 fill-white"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
             }
-            
-            if (state === window.YT.PlayerState.ENDED) {
               setPlaying(false);
               // Auto play next related video
               fetch(`/api/related?videoId=${video.id || ''}`)
@@ -499,7 +491,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     }
 
     return () => {
-      if (ytTimerRef.current) clearInterval(ytTimerRef.current);
+      if (ytTimerRef.current) cancelAnimationFrame(ytTimerRef.current);
       if (ytFailSafeRef.current) clearTimeout(ytFailSafeRef.current);
       if (ytPlayerRef.current) {
         try {
@@ -864,9 +856,24 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                   <ControlBtn onClick={() => skip(10)} title="Forward 10s">
                     <SkipForward className="h-5 w-5" />
                   </ControlBtn>
-                  <ControlBtn onClick={() => setMuted((prev) => !prev)} title="Mute">
-                    {muted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-                  </ControlBtn>
+                  <div className="flex items-center gap-2 px-2 group/vol">
+                    <ControlBtn onClick={() => setMuted((prev) => !prev)} title="Mute" className="p-1">
+                      {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                    </ControlBtn>
+                    <input 
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={muted ? 0 : volume}
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value);
+                        setVolume(v);
+                        if (v > 0) setMuted(false);
+                      }}
+                      className="w-16 h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-white"
+                    />
+                  </div>
                   {/* FIX 3: Time display via DOM refs — zero re-render */}
                   <span className="ml-2 font-mono text-[11px] tabular-nums text-white/60">
                     <span ref={currentTimeRef}>0:00</span> / <span ref={durationRef}>0:00</span>
@@ -876,6 +883,9 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                 <div className="flex items-center gap-0.5">
                   <ControlBtn onClick={toggleFullscreen} title="Fullscreen">
                     {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+                  </ControlBtn>
+                  <ControlBtn onClick={onNext} title="Next Video">
+                    <SkipForward className="h-5 w-5 fill-white" />
                   </ControlBtn>
                 </div>
               </div>

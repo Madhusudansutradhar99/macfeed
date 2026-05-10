@@ -5,7 +5,7 @@ import { useVideoMiniPlayer } from '../context/VideoPlayerContext';
 import VideoPlayer from './VideoPlayer';
 
 export default function GlobalVideoPlayer() {
-  const { activeVideo, viewMode, minimize, maximize, closePlayer } = useVideoMiniPlayer();
+  const { activeVideo, viewMode, minimize, maximize, closePlayer, ytPlayerRef } = useVideoMiniPlayer();
   const navigate = useNavigate();
   const location = useLocation();
   const controls = useAnimation();
@@ -71,6 +71,33 @@ export default function GlobalVideoPlayer() {
     }
   };
 
+  const handleNext = async () => {
+    if (!activeVideo) return;
+    try {
+      // For YouTube videos, fetch related from our API
+      const vidId = activeVideo.youtube_id || activeVideo.id;
+      const resp = await fetch(`/api/search?q=${vidId}`);
+      const data = await resp.json();
+      if (data.results && data.results.length > 1) {
+        // Pick a random related or the next one
+        const nextVid = data.results[1]; // Index 1 is usually the first related
+        const targetId = nextVid.youtube_id ? `yt-${nextVid.youtube_id}` : nextVid.id;
+        navigate(`/watch/${targetId}`);
+      }
+    } catch (e) {
+      console.error('Failed to load next video', e);
+    }
+  };
+
+  const handlePrevious = () => {
+    // Zero reload: just seek to start
+    if (ytPlayerRef.current?.seekTo) {
+      ytPlayerRef.current.seekTo(0);
+    } else {
+      window.location.reload();
+    }
+  };
+
   return (
     <AnimatePresence>
       <motion.div
@@ -98,6 +125,8 @@ export default function GlobalVideoPlayer() {
           video={activeVideo} 
           viewMode={viewMode}
           onClose={closePlayer}
+          onNext={handleNext}
+          onPrevious={handlePrevious}
         />
       </motion.div>
     </AnimatePresence>
