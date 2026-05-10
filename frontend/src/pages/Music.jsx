@@ -13,6 +13,7 @@ import * as musicMetadata from 'music-metadata-browser';
 import { Buffer } from 'buffer';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, FreeMode } from 'swiper/modules';
+import { createClient } from '@supabase/supabase-js';
 import 'swiper/css';
 import 'swiper/css/free-mode';
 import { fetchJson } from '../utils/request';
@@ -63,6 +64,9 @@ export default function Music() {
   // Upload States
   const [uploadStatus, setUploadStatus] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState('');
+  const [pendingUploadFile, setPendingUploadFile] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '' });
 
   const [themeIdx, setThemeIdx] = useState(0);
   const [showCapsule, setShowCapsule] = useState(false);
@@ -70,6 +74,32 @@ export default function Music() {
   const currentTheme = themes[themeIdx] || themes[0];
   const activeBorder = currentTheme.border;
   const activeBgBorder = currentTheme.bgBorder;
+  const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || 'sutradharmadhusudan676@gmail.com').split(',').map((email) => email.trim().toLowerCase());
+  const isAdmin = !!(user?.email && adminEmails.includes(user.email.toLowerCase()));
+
+  const showToast = useCallback((message) => {
+    setToast({ show: true, message });
+    setTimeout(() => setToast({ show: false, message: '' }), 1800);
+  }, []);
+
+  const canDeleteSong = useCallback((song) => {
+    if (!user || !song) return false;
+    if (isAdmin) return true;
+    return song.source === 'local' && song.user_id === user.id;
+  }, [isAdmin, user]);
+
+  const parseBucketPathFromUrl = useCallback((publicUrl, bucketName) => {
+    if (!publicUrl || !publicUrl.startsWith('http')) return null;
+    try {
+      const marker = `/${bucketName}/`;
+      const parsed = new URL(publicUrl);
+      const idx = parsed.pathname.indexOf(marker);
+      if (idx === -1) return null;
+      return decodeURIComponent(parsed.pathname.slice(idx + marker.length));
+    } catch (err) {
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -167,171 +197,193 @@ export default function Music() {
     if (searchQuery.trim()) setIsSearchFocused(true);
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      console.error('No file selected in handleFileUpload');
-      return;
-    }
+  const uploadSongOnce = useCallback(async (file) => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const freshSupabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    console.log(`🎵 Upload started: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+    setUploadProgress(0);
+    setUploadStatus('Extracting metadata...');
+    setUploadProgress(15);
 
-    // Supabase free tier typically has a 50MB limit. 
-    if (file.size > 45 * 1024 * 1024) {
-      setUploadStatus("Error: File exceeds 45MB limit.");
-      setTimeout(() => setUploadStatus(""), 5000);
-      return;
-    }
+    const arrayBuffer = await file.arrayBuffer();
+    const fileClone = new Blob([arrayBuffer], { type: file.type || 'audio/mpeg' });
+
+    let title = file.name.replace(/\.[^/.]+$/, '');
+    let artist = 'Unknown Artist';
+    let thumbnailPublicUrl = '/default_music_cover.jpg';
+    let coverFile = null;
 
     try {
-      setUploadStatus("Reading file...");
-      setUploadProgress(5);
-      console.log('📖 Reading file...');
-      
-      const arrayBuffer = await file.arrayBuffer();
-      const fileClone = new Blob([arrayBuffer], { type: file.type || 'audio/mpeg' });
+      const metadata = await musicMetadata.parseBlob(fileClone);
+      if (metadata.common.title) title = metadata.common.title;
+      if (metadata.common.artist) artist = metadata.common.artist;
 
-      setUploadStatus("Extracting metadata...");
-      setUploadProgress(10);
-      
-      let title = file.name.replace(/\.[^/.]+$/, "");
-      let artist = "Unknown Artist";
-      let thumbnailPublicUrl = "/default_music_cover.jpg";
-
-      try {
-        const metadata = await musicMetadata.parseBlob(fileClone);
-        if (metadata.common.title) title = metadata.common.title;
-        if (metadata.common.artist) artist = metadata.common.artist;
-        console.log(`📝 Metadata: ${artist} - ${title}`);
-
-        if (metadata.common.picture && metadata.common.picture.length > 0) {
-          setUploadStatus("Uploading cover...");
-          setUploadProgress(40);
-          const pic = metadata.common.picture[0];
-          const picBlob = new Blob([pic.data], { type: pic.format });
-          const ext = pic.format.split('/')[1] || 'jpg';
-          const coverFileName = `music-thumbnails/${user?.id || 'anon'}/${Date.now()}.${ext}`;
-          
-          const { error: coverErr } = await supabase.storage.from('thumbnails').upload(coverFileName, picBlob, { upsert: true, contentType: pic.format });
-          if (!coverErr) {
-            const { data } = supabase.storage.from('thumbnails').getPublicUrl(coverFileName);
-            if (data?.publicUrl) thumbnailPublicUrl = data.publicUrl;
-            console.log(`🖼️ Cover uploaded: ${thumbnailPublicUrl}`);
-          } else {
-            console.warn("Cover upload error:", coverErr);
-          }
-        }
-      } catch (metaErr) {
-        console.warn("Metadata extraction failed, proceeding with defaults:", metaErr);
+      if (metadata.common.picture && metadata.common.picture.length > 0) {
+        const pic = metadata.common.picture[0];
+        const ext = pic.format.split('/')[1] || 'jpg';
+        coverFile = {
+          path: `${user?.id || 'anon'}/${Date.now()}.${ext}`,
+          blob: new Blob([pic.data], { type: pic.format }),
+          contentType: pic.format,
+        };
       }
-
-      setUploadStatus("Uploading audio...");
-      setUploadProgress(50);
-      console.log('⬆️ Starting audio upload to Supabase...');
-      
-      const audioFileName = `music/${user?.id || 'anon'}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-      
-      // Pass ArrayBuffer directly to bypass any locked stream issues in fetch
-      const { data: uploadData, error: uploadErr } = await supabase.storage
-        .from('thumbnails')
-        .upload(audioFileName, arrayBuffer, { 
-          upsert: true, 
-          contentType: file.type || 'audio/mpeg'
-        });
-      
-      if (uploadErr) {
-        console.error('❌ Audio upload error:', uploadErr);
-        throw uploadErr;
-      }
-      
-      console.log(`✅ Audio uploaded: ${uploadData.path}`);
-      setUploadProgress(85);
-
-      const { data: audioData } = supabase.storage.from('thumbnails').getPublicUrl(audioFileName);
-      
-      setUploadStatus("Saving to database...");
-      setUploadProgress(90);
-      console.log('💾 Saving to database...');
-
-      const newSong = {
-        title: `${artist} - ${title}`,
-        video_url: audioData.publicUrl,
-        thumbnail_url: thumbnailPublicUrl,
-        source: 'local',
-        category: 'Music',
-        user_id: user?.id
-      };
-
-      const { data: insertedData, error: dbErr } = await supabase.from('videos').insert([newSong]).select().single();
-      
-      if (dbErr) {
-        console.error('❌ Database error:', dbErr);
-        throw dbErr;
-      }
-
-      console.log(`✅ Song saved: ${insertedData.id}`);
-      setSongs(prev => [insertedData, ...prev]);
-      setFilteredSongs(prev => [insertedData, ...prev]);
-      
-      setUploadStatus("Done!");
-      setUploadProgress(100);
-      console.log('🎉 Upload complete!');
-      setTimeout(() => {
-        setUploadStatus("");
-        setUploadProgress(0);
-      }, 3000);
-      
-    } catch (err) {
-      console.error('❌ Upload failed:', err);
-      setUploadStatus("Error: " + err.message);
-      setTimeout(() => setUploadStatus(""), 5000);
+    } catch (metaErr) {
+      // Continue with defaults when metadata parsing fails.
     }
-    
-    // Reset file input
+
+    const audioFileName = `${user?.id || 'anon'}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+
+    setUploadStatus('Uploading audio file... 15%');
+    setUploadProgress(15);
+
+    let pseudo = 15;
+    const pseudoTimer = setInterval(() => {
+      pseudo = Math.min(pseudo + 4, 82);
+      setUploadProgress(pseudo);
+      setUploadStatus(`Uploading audio file... ${pseudo}%`);
+    }, 450);
+
+    const { error: uploadErr } = await freshSupabase.storage
+      .from('music')
+      .upload(audioFileName, arrayBuffer, { upsert: true, contentType: file.type || 'audio/mpeg' });
+
+    clearInterval(pseudoTimer);
+    if (uploadErr) throw uploadErr;
+
+    setUploadProgress(85);
+    setUploadStatus('Uploading audio file... 85%');
+
+    const { data: audioData } = freshSupabase.storage.from('music').getPublicUrl(audioFileName);
+
+    setUploadStatus('Saving thumbnail...');
+    setUploadProgress(90);
+    if (coverFile) {
+      const { error: coverErr } = await freshSupabase.storage
+        .from('thumbnails')
+        .upload(coverFile.path, coverFile.blob, { upsert: true, contentType: coverFile.contentType });
+      if (!coverErr) {
+        const { data } = freshSupabase.storage.from('thumbnails').getPublicUrl(coverFile.path);
+        if (data?.publicUrl) thumbnailPublicUrl = data.publicUrl;
+      }
+    }
+    setUploadProgress(95);
+
+    setUploadStatus('Saving to library...');
+    setUploadProgress(97);
+
+    const newSong = {
+      title: `${artist} - ${title}`,
+      video_url: audioData?.publicUrl,
+      thumbnail_url: thumbnailPublicUrl,
+      source: 'local',
+      category: 'Music',
+      user_id: user?.id
+    };
+
+    const { data: insertedData, error: dbErr } = await supabase.from('videos').insert([newSong]).select().single();
+    if (dbErr) throw dbErr;
+
+    setSongs(prev => {
+      const next = [insertedData, ...prev];
+      localStorage.setItem('macfeed_music_cache', JSON.stringify(next));
+      return next;
+    });
+    setFilteredSongs(prev => [insertedData, ...prev]);
+
+    setUploadStatus('✅ Upload successful!');
+    setUploadProgress(100);
+    setUploadError('');
+    setPendingUploadFile(null);
+    setTimeout(() => {
+      setUploadStatus('');
+      setUploadProgress(0);
+    }, 2500);
+  }, [user?.id]);
+
+  const runUploadWithRetry = useCallback(async (file) => {
+    setUploadError('');
+    setPendingUploadFile(file);
+
+    let lastError = null;
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        setUploadProgress(0);
+        await uploadSongOnce(file);
+        return;
+      } catch (err) {
+        lastError = err;
+        if (attempt < 3) {
+          setUploadStatus(`Retrying upload (${attempt}/2)...`);
+          setUploadProgress(0);
+        }
+      }
+    }
+
+    const message = lastError?.message || 'Upload failed. Please try again.';
+    setUploadError(`Could not upload song after 3 attempts. ${message}`);
+    setUploadStatus('Upload failed');
+    setUploadProgress(0);
+  }, [uploadSongOnce]);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 45 * 1024 * 1024) {
+      setUploadError('File exceeds 45MB limit. Please choose a smaller file.');
+      setUploadStatus('Upload failed');
+      setUploadProgress(0);
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    await runUploadWithRetry(file);
     if (e.target) e.target.value = '';
   };
 
   const handleDeleteLocalSong = async (song, e) => {
     e.stopPropagation();
-    if (!window.confirm(`Are you sure you want to delete "${song.title}"? This cannot be undone.`)) return;
+    if (!canDeleteSong(song)) {
+      showToast('Could not delete, try again');
+      return;
+    }
+    if (!window.confirm('Delete this song?')) return;
+
+    const prevSongs = songs;
+    const prevFiltered = filteredSongs;
+
+    setSongs((prev) => prev.filter((s) => s.id !== song.id));
+    setFilteredSongs((prev) => prev.filter((s) => s.id !== song.id));
 
     try {
-      let audioPath = null;
-      let thumbPath = null;
-      
-      try {
-        if (song.video_url.startsWith('http')) {
-          audioPath = new URL(song.video_url).pathname.split('/thumbnails/')[1];
-        }
-        if (song.thumbnail_url.startsWith('http')) {
-          thumbPath = new URL(song.thumbnail_url).pathname.split('/thumbnails/')[1];
-        }
-      } catch (e) {
-        console.warn("Could not parse URLs", e);
-      }
+      const audioPath = parseBucketPathFromUrl(song.video_url, 'music');
+      const thumbPath = parseBucketPathFromUrl(song.thumbnail_url, 'thumbnails');
 
-      if (audioPath) await supabase.storage.from('thumbnails').remove([decodeURIComponent(audioPath)]);
-      if (thumbPath && !thumbPath.includes('default_music_cover')) {
-        await supabase.storage.from('thumbnails').remove([decodeURIComponent(thumbPath)]);
-      }
-
-      const { error: deleteErr } = await supabase.from('videos').delete().match({ id: song.id });
+      const { error: deleteErr } = await supabase
+        .from('videos')
+        .delete()
+        .match({ id: song.id });
       if (deleteErr) throw deleteErr;
 
-      setSongs(prev => prev.filter(s => s.id !== song.id));
-      setFilteredSongs(prev => prev.filter(s => s.id !== song.id));
-      
-      // Clean up local storage so it disappears from Recent/Liked tabs immediately
-      const history = JSON.parse(localStorage.getItem('macfeed_history') || '[]');
-      localStorage.setItem('macfeed_history', JSON.stringify(history.filter(h => h.id !== song.id)));
-      
-      const liked = JSON.parse(localStorage.getItem('macfeed_liked') || '[]');
-      localStorage.setItem('macfeed_liked', JSON.stringify(liked.filter(l => l.id !== song.id)));
+      if (audioPath) {
+        await supabase.storage.from('music').remove([audioPath]);
+      }
+      if (thumbPath && !thumbPath.includes('default_music_cover')) {
+        await supabase.storage.from('thumbnails').remove([thumbPath]);
+      }
 
-      alert("Deleted successfully!");
+      const history = JSON.parse(localStorage.getItem('macfeed_history') || '[]');
+      localStorage.setItem('macfeed_history', JSON.stringify(history.filter((h) => h.id !== song.id)));
+
+      const liked = JSON.parse(localStorage.getItem('macfeed_liked') || '[]');
+      localStorage.setItem('macfeed_liked', JSON.stringify(liked.filter((l) => l.id !== song.id)));
+
+      showToast('Song deleted');
     } catch (err) {
-      console.error("Delete failed:", err);
-      alert("Failed to delete song: " + err.message);
+      setSongs(prevSongs);
+      setFilteredSongs(prevFiltered);
+      showToast('Could not delete, try again');
     }
   };
 
@@ -455,7 +507,7 @@ export default function Music() {
             <input 
               id="music-upload-input"
               type="file" 
-              accept="audio/*,video/*,.mp3,.wav,.m4a,.flac,.aac" 
+              accept="audio/*" 
               className="hidden" 
               onChange={(e) => {
                  console.log("File selected via input onChange:", e.target.files);
@@ -463,16 +515,39 @@ export default function Music() {
               }}
               aria-label="Upload audio file"
             />
-            {uploadStatus && (
-              <div className="fixed top-1/2 right-24 md:right-32 -translate-y-1/2 w-48 bg-[#0F1115] border border-white/10 rounded-xl p-3 shadow-2xl pointer-events-none z-[9999]">
-                <div className="text-[9px] text-white/70 font-black uppercase tracking-widest mb-2">{uploadStatus}</div>
-                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-purple-500 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+            {(uploadStatus || uploadError) && (
+              <div className="fixed bottom-6 left-1/2 z-[9999] w-[92vw] max-w-md -translate-x-1/2 rounded-2xl border border-white/10 bg-[#0F1115]/95 p-4 shadow-2xl backdrop-blur-xl">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-white/80">{uploadError ? 'Upload error' : uploadStatus}</div>
+                  <div className="text-xs font-black tabular-nums text-purple-300">{Math.round(uploadProgress)}%</div>
                 </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                  <div className="h-full rounded-full bg-purple-500 transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                </div>
+                {uploadError ? (
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <p className="text-xs text-red-300">{uploadError}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (pendingUploadFile) runUploadWithRetry(pendingUploadFile);
+                      }}
+                      className="rounded-lg border border-white/20 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : null}
               </div>
             )}
           </>
         )}
+
+        {toast.show ? (
+          <div className="fixed top-6 left-1/2 z-[9999] -translate-x-1/2 rounded-full bg-black/80 px-4 py-2 text-xs font-black uppercase tracking-wider text-white backdrop-blur-md">
+            {toast.message}
+          </div>
+        ) : null}
 
         <div className="w-full h-full bg-transparent flex flex-col overflow-hidden pt-8 md:pt-12">
           {/* Header Bar */}
@@ -506,7 +581,7 @@ export default function Music() {
                             <p className="text-white text-xs font-black truncate group-hover:text-red-400 transition-colors uppercase italic">{r.title}</p>
                             <span className="text-[8px] text-purple-400 font-black uppercase mt-0.5 inline-block bg-purple-500/10 px-1 rounded">MacFeed</span>
                           </div>
-                          {user && r.source === 'local' && (
+                          {canDeleteSong(r) && (
                             <button onClick={(e) => handleDeleteLocalSong(r, e)} className="p-2 bg-red-500/10 hover:bg-red-500/30 rounded text-red-500 transition-colors">
                               <Trash className="w-3 h-3" />
                             </button>
@@ -584,7 +659,12 @@ export default function Music() {
                   {displaySongs.length === 0 ? (
                     <div className="text-center text-white/50 font-black uppercase tracking-widest text-xs py-10">No Uploads Yet.</div>
                   ) : displaySongs.map((song, i) => (
-                    <div key={song.id} onClick={() => handleSongClick(song)} className={`flex items-center justify-between group cursor-pointer active:scale-95 bg-white/5 p-4 rounded-2xl border ${activeBorder} transition-colors duration-500 hover:border-purple-500/50`}>
+                    <div key={song.id} onClick={() => handleSongClick(song)} className={`relative flex items-center justify-between group cursor-pointer active:scale-95 bg-white/5 p-4 rounded-2xl border ${activeBorder} transition-colors duration-500 hover:border-purple-500/50`}>
+                      {canDeleteSong(song) && (
+                        <button onClick={(e) => handleDeleteLocalSong(song, e)} className="absolute right-2 top-2 z-20 rounded-full bg-red-500/15 p-2 text-red-400 transition-colors hover:bg-red-500 hover:text-white">
+                          <Trash className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       <div className="flex items-center gap-5 min-w-0">
                         <div className="text-[10px] font-black uppercase text-white/30 w-6">{(i + 1).toString().padStart(2, '0')}</div>
                         <div className={`w-14 h-14 rounded-xl overflow-hidden bg-white/10 shrink-0 border ${activeBorder} transition-colors duration-500`}>
@@ -596,11 +676,6 @@ export default function Music() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        {user && (
-                          <button onClick={(e) => handleDeleteLocalSong(song, e)} className="p-3 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-full transition-colors opacity-0 group-hover:opacity-100">
-                            <Trash className="w-4 h-4" />
-                          </button>
-                        )}
                         <div className={`w-10 h-10 rounded-full border ${activeBorder} transition-colors duration-500 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white`}><Play className="w-4 h-4 fill-current translate-x-0.5" /></div>
                       </div>
                     </div>
@@ -615,7 +690,12 @@ export default function Music() {
                   <div className="flex items-center justify-between"><h3 className="text-base font-black uppercase tracking-[0.3em] text-white/80 italic">{searchQuery ? 'Results' : activeTab}</h3><Sparkles className="w-5 h-5 text-yellow-500" /></div>
                   <div className="space-y-6">
                     {sideSongs.map((song, i) => (
-                      <div key={song.id} onClick={() => handleSongClick(song)} className="flex items-center gap-6 group cursor-pointer transition-transform active:scale-95">
+                      <div key={song.id} onClick={() => handleSongClick(song)} className="relative flex items-center gap-6 group cursor-pointer transition-transform active:scale-95">
+                        {canDeleteSong(song) && (
+                          <button onClick={(e) => handleDeleteLocalSong(song, e)} className="absolute right-0 top-0 z-20 rounded-full bg-red-500/15 p-2 text-red-400 transition-colors hover:bg-red-500 hover:text-white">
+                            <Trash className="w-3 h-3" />
+                          </button>
+                        )}
                         <div className="text-[9px] font-black uppercase text-white/30 w-4">0{i+2}</div>
                         <div className={`w-16 h-16 rounded-3xl overflow-hidden shrink-0 border ${activeBorder} transition-colors duration-500 bg-white/5`}><img src={song.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt="" /></div>
                         <div className="flex-1 min-w-0">
@@ -623,11 +703,6 @@ export default function Music() {
                           <span className="text-[8px] font-black uppercase tracking-widest text-white/50">{song.source === 'local' ? 'Local' : 'YouTube'}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          {user && song.source === 'local' && (
-                            <button onClick={(e) => handleDeleteLocalSong(song, e)} className="p-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-full transition-colors opacity-0 group-hover:opacity-100">
-                              <Trash className="w-3.5 h-3.5" />
-                            </button>
-                          )}
                           <div className={`w-10 h-10 rounded-full border-2 ${activeBorder} transition-colors duration-500 flex items-center justify-center group-hover:border-purple-500 group-hover:bg-purple-500`}><Play className="w-4 h-4 fill-white" /></div>
                         </div>
                       </div>
@@ -639,17 +714,17 @@ export default function Music() {
                   <div className="flex items-center justify-between"><h3 className="text-base font-black uppercase tracking-[0.3em] text-white/80 italic">Recent</h3></div>
                   <div className={`space-y-5 bg-white/5 p-6 md:p-8 rounded-[2.5rem] border ${activeBorder} transition-colors duration-500 shadow-2xl`}>
                     {recentlyPlayed.map(song => (
-                      <div key={song.id} onClick={() => handleSongClick(song)} className="flex items-center justify-between group cursor-pointer transition-transform active:scale-95">
+                      <div key={song.id} onClick={() => handleSongClick(song)} className="relative flex items-center justify-between group cursor-pointer transition-transform active:scale-95">
+                        {canDeleteSong(song) && (
+                          <button onClick={(e) => handleDeleteLocalSong(song, e)} className="absolute right-0 top-0 z-20 rounded-full bg-red-500/15 p-2 text-red-400 transition-colors hover:bg-red-500 hover:text-white">
+                            <Trash className="w-3 h-3" />
+                          </button>
+                        )}
                         <div className="flex items-center gap-5 min-w-0">
                           <div className={`w-12 h-12 rounded-2xl overflow-hidden bg-white/10 shrink-0 border ${activeBorder} transition-colors duration-500`}><img src={song.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all" alt="" /></div>
                           <span className="text-[11px] font-black uppercase tracking-tighter truncate text-white/60 group-hover:text-white">{song.title}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          {user && song.source === 'local' && (
-                            <button onClick={(e) => handleDeleteLocalSong(song, e)} className="p-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-full transition-colors opacity-0 group-hover:opacity-100">
-                              <Trash className="w-3 h-3" />
-                            </button>
-                          )}
                           <div className={`w-9 h-9 rounded-full border ${activeBorder} transition-colors duration-500 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white`}><Play className="w-3.5 h-3.5 fill-current" /></div>
                         </div>
                       </div>
@@ -709,15 +784,15 @@ export default function Music() {
                       <div key={song.id} onClick={() => handleSongClick(song)} className="w-[180px] md:w-[240px] shrink-0 group cursor-pointer transition-transform active:scale-95">
                         <div className={`aspect-[2/3] rounded-[2.5rem] overflow-hidden mb-4 relative border ${activeBorder} transition-colors duration-500 shadow-2xl bg-white/5`}>
                           <img src={song.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
+                          {canDeleteSong(song) && (
+                            <button onClick={(e) => handleDeleteLocalSong(song, e)} className="absolute right-3 top-3 z-20 rounded-full bg-red-500/20 p-2 text-red-300 transition-all hover:bg-red-500 hover:text-white">
+                              <Trash className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent flex flex-col justify-end p-6">
                             <h5 className="text-[10px] font-black uppercase italic line-clamp-2 leading-tight mb-2">{song.title}</h5>
                             <div className="flex items-center justify-between">
                               <div className={`w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border ${activeBorder} transition-colors duration-500 group-hover:bg-purple-600`}><Play className="w-3.5 h-3.5 fill-white" /></div>
-                              {user && song.source === 'local' && (
-                                <button onClick={(e) => handleDeleteLocalSong(song, e)} className="w-8 h-8 rounded-full bg-red-500/20 backdrop-blur-md flex items-center justify-center border border-red-500/50 hover:bg-red-500 transition-all opacity-0 group-hover:opacity-100">
-                                  <Trash className="w-3.5 h-3.5 fill-white" />
-                                </button>
-                              )}
                             </div>
                           </div>
                         </div>

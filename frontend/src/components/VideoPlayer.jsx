@@ -10,8 +10,6 @@ import {
   SkipBack,
   SkipForward,
   X,
-  Settings,
-  ChevronUp,
 } from 'lucide-react';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 
@@ -24,6 +22,31 @@ const formatTime = (seconds) => {
     ? `${hours}:${minutes.toString().padStart(2, '0')}:${secs}`
     : `${minutes}:${secs}`;
 };
+
+const YT_QUALITY_OPTIONS = [
+  { label: 'Auto', value: 'auto', apiValue: 'auto' },
+  { label: '1080p', value: 'hd1080', apiValue: 'hd1080' },
+  { label: '720p', value: 'hd720', apiValue: 'hd720' },
+  { label: '480p', value: 'large', apiValue: 'large' },
+  { label: '360p', value: 'medium', apiValue: 'medium' },
+  { label: '240p', value: 'small', apiValue: 'small' },
+  { label: '144p', value: 'tiny', apiValue: 'tiny' },
+];
+
+const YT_QUALITY_LABELS = {
+  auto: 'Auto',
+  highres: '1080p',
+  hd2160: '2160p',
+  hd1440: '1440p',
+  hd1080: '1080p',
+  hd720: '720p',
+  large: '480p',
+  medium: '360p',
+  small: '240p',
+  tiny: '144p',
+};
+
+const getQualityLabel = (quality) => YT_QUALITY_LABELS[quality] || 'Auto';
 
 function ControlBtn({ onClick, title, children, className = '' }) {
   return (
@@ -82,6 +105,21 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
       return next;
     });
     setShowQualityMenu(false);
+  }, [showControlsTemporarily]);
+
+  const handleQualityChange = useCallback((quality) => {
+    const player = ytPlayerRef.current;
+    if (!player) return;
+
+    try {
+      player.setPlaybackQuality?.(quality);
+      setCurrentQuality(player.getPlaybackQuality?.() || quality);
+    } catch (err) {
+      setCurrentQuality(quality);
+    }
+
+    setShowQualityMenu(false);
+    showControlsTemporarily();
   }, [showControlsTemporarily]);
 
   const skip = useCallback(
@@ -298,6 +336,16 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
                 const dur = event.target.getDuration?.() || 0;
                 setCurrent(cur);
                 if (dur > 0) setDuration(dur);
+
+                const levels = event.target.getAvailableQualityLevels?.();
+                if (Array.isArray(levels) && levels.length > 0) {
+                  setAvailableQualities(levels);
+                }
+
+                const playbackQuality = event.target.getPlaybackQuality?.();
+                if (playbackQuality) {
+                  setCurrentQuality(playbackQuality);
+                }
               } catch (err) {
                 // ignore
               }
@@ -321,6 +369,10 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
             if (event.target.getAvailableQualityLevels) {
               const levels = event.target.getAvailableQualityLevels();
               setAvailableQualities(levels);
+            }
+
+            if (event.target.getPlaybackQuality) {
+              setCurrentQuality(event.target.getPlaybackQuality() || 'auto');
             }
           },
           onStateChange: (event) => {
@@ -410,6 +462,10 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
       player.setVolume?.(Math.round(volume * 100));
     }
   }, [isYouTube, muted, volume]);
+
+  useEffect(() => {
+    if (!isFullscreen) setShowQualityMenu(false);
+  }, [isFullscreen]);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -589,34 +645,56 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
               </div>
             </div>
 
-            {/* FIX 4: Mobile-friendly Quality Menu */}
-            <AnimatePresence>
-              {showQualityMenu && (
-                <div 
-                  className="absolute bottom-24 right-6 z-[1000] bg-black/95 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-3 min-w-[160px] shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
-                  onClick={(e) => e.stopPropagation()}
+            {isFullscreen && isYouTube ? (
+              <div className="absolute bottom-24 right-4 z-[70] sm:right-6" onClick={(event) => event.stopPropagation()}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowQualityMenu((prev) => !prev);
+                    showControlsTemporarily();
+                  }}
+                  title={`Quality: ${getQualityLabel(currentQuality)}`}
+                  aria-label={`Quality: ${getQualityLabel(currentQuality)}`}
+                  className={`inline-flex min-h-12 min-w-12 items-center justify-center rounded-full bg-black/45 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-white transition-all hover:bg-white/15 active:scale-95 ${showQualityMenu ? 'bg-white/20 text-white' : ''}`}
                 >
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 px-4 py-3 border-b border-white/5 mb-2">Quality</p>
-                  <div className="flex flex-col gap-1">
-                    {['1080p', '720p', '480p', '360p', 'auto'].map((q) => (
-                      <button
-                        key={q}
-                        onClick={() => {
-                          if (isYouTube && ytPlayerRef.current?.setPlaybackQuality) {
-                            ytPlayerRef.current.setPlaybackQuality(q === '1080p' ? 'hd1080' : q === '720p' ? 'hd720' : q === '480p' ? 'large' : q === '360p' ? 'medium' : 'auto');
-                            setCurrentQuality(q);
-                          }
-                          setShowQualityMenu(false);
-                        }}
-                        className={`w-full text-left px-5 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all active:scale-95 ${currentQuality === q ? 'bg-white text-black' : 'text-white/60 hover:bg-white/10'}`}
-                      >
-                        {q === 'auto' ? 'Auto Mode' : q}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </AnimatePresence>
+                  {getQualityLabel(currentQuality)}
+                </button>
+
+                <AnimatePresence>
+                  {showQualityMenu ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute bottom-14 right-0 z-[80] w-44 overflow-hidden rounded-3xl border border-white/10 bg-black/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.75)] backdrop-blur-2xl"
+                    >
+                      <div className="px-3 py-2 text-[9px] font-black uppercase tracking-[0.28em] text-white/40">
+                        Quality
+                      </div>
+                      <div className="flex max-h-72 flex-col gap-1 overflow-y-auto pb-1">
+                        {YT_QUALITY_OPTIONS
+                          .filter((option) => option.value === 'auto' || availableQualities.length === 0 || availableQualities.includes(option.value))
+                          .map((option) => {
+                            const isActive = currentQuality === option.value || (option.value === 'auto' && currentQuality === 'auto');
+                            return (
+                              <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => handleQualityChange(option.apiValue)}
+                                className={`flex min-h-12 items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-black uppercase tracking-wider transition-all active:scale-95 ${isActive ? 'bg-white text-black' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
+                              >
+                                <span>{option.label}</span>
+                                {isActive ? <span className="text-[9px] font-black uppercase tracking-[0.28em]">Selected</span> : null}
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
+            ) : null}
 
             <div
               className="absolute bottom-0 left-0 z-40 w-full bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pb-3 pt-8 sm:px-4"
@@ -678,16 +756,6 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
                 </div>
 
                 <div className="flex items-center gap-0.5">
-                  <ControlBtn 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowQualityMenu(!showQualityMenu);
-                    }} 
-                    title="Quality"
-                    className={showQualityMenu ? 'bg-white/20' : ''}
-                  >
-                    <Settings className="h-5 w-5" />
-                  </ControlBtn>
                   <ControlBtn onClick={toggleFullscreen} title="Fullscreen">
                     {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
                   </ControlBtn>
