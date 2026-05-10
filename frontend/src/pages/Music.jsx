@@ -462,19 +462,16 @@ export default function Music() {
                 
                 {user && (
                   <div className="relative group">
-                    <button 
-                      onClick={() => document.getElementById('music-upload-input').click()}
-                      className="w-12 h-12 md:w-10 md:h-10 md:p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer flex items-center justify-center touch-manipulation active:scale-95">
-                      <Upload className="w-5 h-5" />
-                    </button>
-                    <input 
-                      id="music-upload-input"
-                      type="file" 
-                      accept="audio/*" 
-                      className="hidden" 
-                      onChange={handleFileUpload}
-                      aria-label="Upload audio file"
-                    />
+                    <label className="w-12 h-12 md:w-10 md:h-10 md:p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer flex items-center justify-center touch-manipulation active:scale-95">
+                      <Upload className="w-5 h-5 pointer-events-none" />
+                      <input 
+                        type="file" 
+                        accept="audio/*,video/*,.mp3,.wav,.m4a,.flac,.aac" 
+                        className="hidden" 
+                        onChange={handleFileUpload}
+                        aria-label="Upload audio file"
+                      />
+                    </label>
                     {uploadStatus && (
                       <div className="absolute top-1/2 -translate-y-1/2 right-14 w-48 bg-[#0F1115] border border-white/10 rounded-xl p-3 shadow-2xl pointer-events-none z-50">
                         <div className="text-[9px] text-white/70 font-black uppercase tracking-widest mb-2">{uploadStatus}</div>
