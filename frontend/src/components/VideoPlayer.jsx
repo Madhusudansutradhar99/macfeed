@@ -255,14 +255,24 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
       } else if (absY > 80 && absY > absX * 1.5) {
         // Vertical Swipe
         if (document.fullscreenElement || document.webkitFullscreenElement) {
-          if (deltaY > 80) { // Swipe Down - FIX 1 & 3
-            if (document.exitFullscreen) document.exitFullscreen();
-            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          if (deltaY > 80) { // Swipe Down - FIX 1 & 3: Exit Fullscreen
+            if (document.exitFullscreen) {
+              document.exitFullscreen().catch(() => {
+                if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+              });
+            } else if (document.webkitExitFullscreen) {
+              document.webkitExitFullscreen();
+            }
           }
         } else {
-          if (deltaY < -80) { // Swipe Up
-            if (container?.requestFullscreen) container.requestFullscreen();
-            else if (container?.webkitRequestFullscreen) container.webkitRequestFullscreen();
+          if (deltaY < -80) { // Swipe Up - FIX 3: Enter Fullscreen with iOS support
+            if (container?.requestFullscreen) {
+              container.requestFullscreen().catch(() => {
+                if (container?.webkitRequestFullscreen) container.webkitRequestFullscreen();
+              });
+            } else if (container?.webkitRequestFullscreen) {
+              container.webkitRequestFullscreen();
+            }
             setIsMinimized(false);
           } else if (deltaY > 80 && !isMinimized) { // Swipe Down - FIX 2
             setIsMinimized(true);
@@ -637,13 +647,14 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
               </div>
             ) : null}
 
-            {/* Fullscreen Swipe Overlay - FIX 1 */}
+            {/* Fullscreen Swipe Overlay - FIX 1 & 3 */}
             {isFullscreen && (
               <div 
-                className="absolute inset-0 z-[99999] w-full h-full bg-transparent touch-none"
+                className="fixed top-0 left-0 z-[99999] w-screen h-screen bg-transparent"
+                style={{ touchAction: 'none', position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'auto' }}
                 onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
+                onTouchMove={(e) => { e.preventDefault(); handleTouchMove(e); }}
+                onTouchEnd={(e) => { e.preventDefault(); handleTouchEnd(e); }}
               />
             )}
 
