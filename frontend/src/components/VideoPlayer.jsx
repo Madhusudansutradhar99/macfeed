@@ -108,16 +108,9 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
   }, [showControlsTemporarily]);
 
   const handleQualityChange = useCallback((quality) => {
-    const player = ytPlayerRef.current;
-    if (!player) return;
-
-    try {
-      player.setPlaybackQuality?.(quality);
-      setCurrentQuality(player.getPlaybackQuality?.() || quality);
-    } catch (err) {
-      setCurrentQuality(quality);
-    }
-
+    // YouTube API blocks setPlaybackQuality() due to cross-origin restrictions.
+    // YouTube automatically selects the best quality available.
+    console.warn('[YT-Player] Quality selection blocked by YouTube API (cross-origin restriction). YouTube auto-selects optimal quality.');
     setShowQualityMenu(false);
     showControlsTemporarily();
   }, [showControlsTemporarily]);
@@ -316,16 +309,15 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
         height: '100%',
         playerVars: {
           autoplay: connectionSpeed === 'slow' ? 0 : 1,
-          controls: 0,
+          controls: 1,
           rel: 0,
-          modestbranding: 1,
+          modestbranding: 0,
           enablejsapi: 1,
           playsinline: 1,
-          fs: 0,
-          disablekb: 1,
+          fs: 1,
+          disablekb: 0,
           origin: window.location.origin,
         },
-        host: 'https://www.youtube.com',
         events: {
           onReady: (event) => {
             setLoadFailed(false);
@@ -546,7 +538,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
     >
       <div
         ref={containerRef}
-        className={`${isFullscreen ? 'h-full w-full' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video'} overflow-hidden select-none bg-black flex items-center justify-center touch-none`}
+        className={`${isFullscreen ? 'h-full w-full' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video'} overflow-hidden select-none bg-black flex items-center justify-center`}
         onMouseMove={showControlsTemporarily}
         onTouchStart={handleTouchStart}
         onTouchEnd={(e) => {
@@ -587,10 +579,12 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
 
             <div ref={ytDomContainer} className="absolute inset-0 h-full w-full" />
             
-            {/* Transparent overlay captures all taps so the iframe doesn't swallow them. */}
+            {/* Transparent overlay captures all taps and swipes so the iframe doesn't swallow them. */}
             <div 
               className="absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent" 
               onClick={toggleControls}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
             />
           </div>
         ) : (
