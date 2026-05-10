@@ -1321,6 +1321,7 @@ function LocalPlayerOverlay() {
                                         { icon: <Repeat size={14} />, label: "Loop", color: "#22d3ee", onClick: () => setLoopVideo(!loopVideo) }
                                     ].map((action, i) => {
                                         // Calculate initial state for first render
+                                        const angleStep = 18;
                                         const totalRotation = (i * angleStep) - wheelRotationRef.current;
                                         const rad = (totalRotation * Math.PI) / 180;
                                         const panelRadius = window.innerWidth < 768 ? 200 : 350;

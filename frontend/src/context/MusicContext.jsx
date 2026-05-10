@@ -61,24 +61,7 @@ export function MusicProvider({ children }) {
   const audioRef = useRef();
   const currentSong = (playlist && playlist[currentIdx]) || null;
 
-  useEffect(() => {
-    const saved = localStorage.getItem('macfeed_music_state');
-    if (saved) {
-      try {
-        const { idx, list, song } = JSON.parse(saved);
-        if (list?.length) setPlaylist(list);
-        if (idx !== undefined) setCurrentIdx(idx);
-        if (song) setActiveLocalSong(song.source === 'local' ? song : null);
-      } catch (e) {}
-    }
 
-    supabase.from('videos').select('*').eq('category', 'Music').order('created_at', { ascending: false }).then(({ data }) => {
-      if (data?.length) setPlaylist(prev => deduplicate([...prev, ...data]));
-    });
-
-    // Always attempt to load stored device music/files on mount
-    loadStoredDeviceMusic();
-  }, []);
 
   const loadStoredDeviceMusic = async () => {
     try {
@@ -102,6 +85,25 @@ export function MusicProvider({ children }) {
       console.error('Failed to load stored device music:', e);
     }
   };
+
+  useEffect(() => {
+    const saved = localStorage.getItem('macfeed_music_state');
+    if (saved) {
+      try {
+        const { idx, list, song } = JSON.parse(saved);
+        if (list?.length) setPlaylist(list);
+        if (idx !== undefined) setCurrentIdx(idx);
+        if (song) setActiveLocalSong(song.source === 'local' ? song : null);
+      } catch (e) {}
+    }
+
+    supabase.from('videos').select('*').eq('category', 'Music').order('created_at', { ascending: false }).then(({ data }) => {
+      if (data?.length) setPlaylist(prev => deduplicate([...prev, ...data]));
+    });
+
+    // Always attempt to load stored device music/files on mount
+    loadStoredDeviceMusic();
+  }, []);
 
   const scanDirectory = async (directoryHandle) => {
     setIsScanning(true);
