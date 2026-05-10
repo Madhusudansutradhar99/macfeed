@@ -143,42 +143,14 @@ export default function VideoPlayerPage() {
   return (
     <div className="min-h-screen bg-primary text-primary transition-colors duration-500">
       <div className="flex flex-col w-full p-0 sm:p-6 max-w-[1400px] mx-auto">
-        {/* Back Button - Compact on Mobile */}
-        <button onClick={() => window.history.back()} className="flex items-center gap-2 text-secondary hover:text-primary mb-2 sm:mb-6 p-4 sm:p-0 w-fit transition-colors">
+        {/* Placeholder for Global Player (which is fixed/absolute) */}
+        <div className="w-full aspect-video rounded-2xl sm:rounded-[32px] overflow-hidden bg-black/10 mx-auto" />
+
+        {/* Back Button - Moved below video */}
+        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-secondary hover:text-primary mt-4 mb-2 sm:mb-6 p-4 sm:p-0 w-fit transition-colors">
           <ArrowLeft className="w-4 h-4" />
           <span className="text-[10px] font-black uppercase tracking-widest">Back</span>
         </button>
-
-        {/* Main Video Section - Edge to Edge on Mobile */}
-        <div className="w-full aspect-video rounded-2xl sm:rounded-[32px] overflow-hidden bg-black shadow-2xl border sm:border border-primary transition-colors duration-500 max-h-[85vh] mx-auto flex items-center justify-center">
-          {playerError ? (
-            <div className="w-full h-full flex items-center justify-center text-center p-6 bg-black text-white">
-              <div>
-                <p className="font-black uppercase tracking-[0.25em] text-sm text-red-300">Video failed to load</p>
-                <p className="mt-2 text-white/70 text-sm">{playerError}</p>
-                <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 rounded-full bg-white text-black font-black uppercase text-[10px] tracking-[0.2em]">Retry</button>
-              </div>
-            </div>
-          ) : (
-            <VideoPlayer 
-              video={video} 
-              onClose={() => navigate(-1)} 
-              onError={(message) => setPlayerError(message)} 
-              onNext={() => {
-                if (video.youtube_id && related.length > 0) {
-                  const nextVid = related[0];
-                  const targetId = nextVid.youtube_id ? `yt-${nextVid.youtube_id}` : nextVid.id;
-                  navigate(`/watch/${targetId}?title=${encodeURIComponent(nextVid.title)}`);
-                } else if (related.length > 0) {
-                   navigate(`/watch/${related[0].id}`);
-                }
-              }}
-              onPrevious={() => {
-                window.history.back();
-              }}
-            />
-          )}
-        </div>
 
         <div className="mt-4 sm:mt-6 px-4 sm:px-0 flex flex-col md:flex-row justify-between items-start gap-3">
           <div className="flex-1">

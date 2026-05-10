@@ -427,6 +427,12 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               if (ytPlayerRef.current) {
                 const cur = ytPlayerRef.current.getCurrentTime?.() || 0;
                 const dur = ytPlayerRef.current.getDuration?.() || durationStateRef.current || 0;
+                
+                // Real-time State Sync
+                const ytState = ytPlayerRef.current.getPlayerState?.();
+                if (ytState === 1 && !playing) setPlaying(true);
+                else if ((ytState === 2 || ytState === 0) && playing) setPlaying(false);
+
                 if (dur > 0) {
                   durationStateRef.current = dur;
                   const pct = (cur / dur) * 100;

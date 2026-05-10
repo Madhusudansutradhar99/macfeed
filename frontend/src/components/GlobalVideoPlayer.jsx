@@ -5,14 +5,14 @@ import { useVideoMiniPlayer } from '../context/VideoPlayerContext';
 import VideoPlayer from './VideoPlayer';
 
 export default function GlobalVideoPlayer() {
-  const { activeVideo, viewMode, minimize, maximize, closePlayer, ytPlayerRef } = useVideoMiniPlayer();
+  const { activeVideo, viewMode, minimize, maximize, closePlayer, ytPlayerRef, setPlaying } = useVideoMiniPlayer();
   const navigate = useNavigate();
   const location = useLocation();
   const swipeStartRef = useRef(0);
 
   const isWatchPage = location.pathname.startsWith('/watch/');
 
-  if (viewMode === 'closed' || !activeVideo || isWatchPage) return null;
+  if (viewMode === 'closed' || !activeVideo) return null;
 
   const handleTouchStart = (e) => {
     swipeStartRef.current = e.touches[0].clientY;
@@ -32,65 +32,48 @@ export default function GlobalVideoPlayer() {
     }
   };
 
-  const handleNext = async () => {
-    if (!activeVideo) return;
-    try {
-      const vidId = activeVideo.youtube_id || activeVideo.id;
-      const resp = await fetch(`/api/search?q=${vidId}`);
-      const data = await resp.json();
-      if (data.results && data.results.length > 1) {
-        const nextVid = data.results[1];
-        const targetId = nextVid.youtube_id ? `yt-${nextVid.youtube_id}` : nextVid.id;
-        navigate(`/watch/${targetId}`);
-      }
-    } catch (e) {
-      console.error('Failed to load next video', e);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (ytPlayerRef.current?.seekTo) {
-      ytPlayerRef.current.seekTo(0);
-    } else {
-      window.location.reload();
-    }
-  };
-
   const isMini = viewMode === 'mini';
 
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: 100 }}
+        layout
+        initial={false}
         animate={{ 
-          opacity: 1, 
-          y: 0,
           width: isMini ? '180px' : '100vw',
-          height: isMini ? '110px' : '100vh',
+          height: isMini ? '110px' : (isWatchPage ? 'auto' : '100vh'),
           right: isMini ? 20 : 0,
           bottom: isMini ? 100 : 0,
+          top: isMini ? 'auto' : 0,
+          left: isMini ? 'auto' : 0,
           borderRadius: isMini ? '16px' : 0,
-          boxShadow: isMini ? '0 10px 40px rgba(0,0,0,0.6)' : 'none'
+          boxShadow: isMini ? '0 10px 40px rgba(0,0,0,0.6)' : 'none',
+          zIndex: isMini ? 9999 : (isWatchPage ? 40 : 9999),
         }}
-        exit={{ opacity: 0, y: 100 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         style={{
           position: 'fixed',
-          zIndex: 9999,
-          backgroundColor: '#000',
+          backgroundColor: isMini ? '#000' : (isWatchPage ? 'transparent' : '#000'),
           overflow: 'hidden',
-          touchAction: 'none'
+          pointerEvents: isMini ? 'auto' : (isWatchPage ? 'none' : 'auto'),
         }}
         onClick={() => isMini && handleRestore()}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <VideoPlayer 
-          video={activeVideo} 
-          viewMode={viewMode}
-          onClose={closePlayer}
-          onNext={handleNext}
-          onPrevious={handlePrevious}
-        />
+        <div style={{ 
+          width: '100%', 
+          height: isMini ? '100%' : 'auto', 
+          aspectRatio: isMini ? 'auto' : '16/9',
+          pointerEvents: 'auto',
+          backgroundColor: '#000' // Ensure video area is black
+        }}>
+          <VideoPlayer 
+            video={activeVideo} 
+            viewMode={viewMode}
+            onClose={closePlayer}
+          />
+        </div>
       </motion.div>
     </AnimatePresence>
   );
