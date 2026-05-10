@@ -50,9 +50,9 @@ export default function GlobalVideoPlayer() {
     }
   }, [viewMode, controls]);
 
-  if (viewMode === 'closed' || !activeVideo || isWatchPage) return null;
-
   const swipeStartRef = useRef(0);
+
+  if (viewMode === 'closed' || !activeVideo || isWatchPage) return null;
 
   const handleTouchStart = (e) => {
     swipeStartRef.current = e.touches[0].clientY;
