@@ -410,6 +410,9 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
           controls: 0,
           rel: 0,
           modestbranding: 1,
+          showinfo: 0,
+          iv_load_policy: 3,
+          autohide: 1,
           enablejsapi: 1,
           playsinline: 1,
           fs: 1,
@@ -823,10 +826,11 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               </div>
             ) : null}
 
-            <div 
-              className={`absolute bottom-0 left-0 right-0 p-4 pt-16 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-opacity duration-300 z-50`}
-              onClick={(e) => e.stopPropagation()}
-            >
+          {viewMode === 'full' && showControls && (
+          <div 
+            className={`absolute bottom-0 left-0 right-0 p-4 pt-16 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 z-[100]`}
+            onClick={(e) => e.stopPropagation()}
+          >
               {/* FIX 3: Progress bar — drag input seeks, fill div updated via DOM ref */}
               <div className="mb-3 w-full group relative flex items-center h-4">
                 <input

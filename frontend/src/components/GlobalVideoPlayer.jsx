@@ -10,7 +10,9 @@ export default function GlobalVideoPlayer() {
   const location = useLocation();
   const swipeStartRef = useRef(0);
 
-  const isWatchPage = location.pathname.includes('/watch/');
+  // Robust path checking for both direct and hash routing
+  const path = location.pathname;
+  const isWatchPage = path.includes('/watch/') || window.location.hash.includes('/watch/');
 
   if (viewMode === 'closed' || !activeVideo) return null;
 
@@ -47,9 +49,9 @@ export default function GlobalVideoPlayer() {
         left: isMini ? 'auto' : 0,
         borderRadius: isMini ? '12px' : 0,
         backgroundColor: isMini ? '#000' : (isWatchPage ? 'rgba(0,0,0,0)' : '#000'),
-        zIndex: isMini ? 9999 : (isWatchPage ? 40 : 9999),
+        zIndex: isMini ? 9999 : (isWatchPage ? 50 : 9999),
       }}
-      transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+      transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.8 }}
       style={{
         position: 'fixed',
         overflow: 'hidden',
