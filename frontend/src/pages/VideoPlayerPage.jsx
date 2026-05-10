@@ -22,6 +22,7 @@ export default function VideoPlayerPage() {
   const [related, setRelated] = useState([]);
   const [loading, setLoading] = useState(true);
   const [playerError, setPlayerError] = useState('');
+  const [isLiked, setIsLiked] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -79,6 +80,10 @@ export default function VideoPlayerPage() {
         setVideo(data);
         const { data: rel } = await supabase.from('videos').select('*').eq('category', data?.category).neq('id', id).limit(10);
         setRelated(rel || []);
+        
+        // Check if liked
+        const likedObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
+        if (likedObj[data.id]) setIsLiked(true);
       }
       setLoading(false);
     }
@@ -161,7 +166,24 @@ export default function VideoPlayerPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="p-2 bg-secondary rounded-lg hover:bg-primary/10 transition-colors border border-primary text-primary"><ThumbsUp className="w-3.5 h-3.5" /></button>
+            <button 
+              onClick={() => {
+                if (!video?.id) return;
+                const likedObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
+                if (isLiked) {
+                  delete likedObj[video.id];
+                  setIsLiked(false);
+                } else {
+                  likedObj[video.id] = true;
+                  setIsLiked(true);
+                }
+                localStorage.setItem('macfeed_likes', JSON.stringify(likedObj));
+              }}
+              className={`p-2 rounded-lg transition-colors border ${isLiked ? 'bg-accent/20 border-accent text-accent' : 'bg-secondary hover:bg-primary/10 border-primary text-primary'}`}
+              style={isLiked ? { color: 'var(--accent-color)', borderColor: 'var(--accent-color)', backgroundColor: 'color-mix(in srgb, var(--accent-color) 20%, transparent)' } : {}}
+            >
+              <ThumbsUp className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
+            </button>
             <button className="p-2 bg-secondary rounded-lg hover:bg-primary/10 transition-colors border border-primary text-primary"><Share2 className="w-3.5 h-3.5" /></button>
           </div>
         </div>

@@ -67,11 +67,14 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
     clearTimeout(controlsTimeout.current);
     controlsTimeout.current = setTimeout(() => {
       if (playing) setShowControls(false);
-    }, 3000); // 3 seconds as requested
+    }, 3000); // Hide after 3 seconds of inactivity
   }, [playing]);
 
   const toggleControls = useCallback((e) => {
-    if (e) e.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setShowControls(prev => {
       const next = !prev;
       if (next) showControlsTemporarily();
@@ -101,16 +104,16 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
 
   const handleSeek = useCallback((e) => {
     e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = x / rect.width;
+    const percentage = parseFloat(e.target.value) / 100;
     
     if (isYouTube && ytPlayerRef.current?.seekTo) {
       const videoDuration = ytPlayerRef.current.getDuration?.() || duration || 0;
       ytPlayerRef.current.seekTo(percentage * videoDuration, true);
+      setCurrent(percentage * videoDuration);
     } else if (nativeVideoRef.current) {
       const videoDuration = nativeVideoRef.current.duration || duration || 0;
       nativeVideoRef.current.currentTime = percentage * videoDuration;
+      setCurrent(percentage * videoDuration);
     }
   }, [duration, isYouTube]);
 
@@ -525,18 +528,11 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
 
             <div ref={ytDomContainer} className="absolute inset-0 h-full w-full" />
             
-            {/* FIX: Transparent overlay captures taps so the iframe doesn't swallow them. 
-                Only active when playing so the user can click the native YouTube play button initially if needed by mobile browsers. */}
-            {(playing || !showControls) && (
-              <div 
-                className="absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleControls();
-                }}
-              />
-            )}
+            {/* Transparent overlay captures all taps so the iframe doesn't swallow them. */}
+            <div 
+              className="absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent" 
+              onClick={toggleControls}
+            />
           </div>
         ) : (
           <video
@@ -562,8 +558,11 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
               className="absolute left-0 top-0 z-40 flex w-full items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 pb-8 pt-3"
               onClick={(event) => {
                 event.stopPropagation();
-                showControlsTemporarily(); // Reset timer on interaction
+                showControlsTemporarily(); 
               }}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+              onMouseEnter={showControlsTemporarily}
             >
               <div className="min-w-0 flex-1 pr-3">
                 <p className="truncate text-sm font-medium text-white/90">{video.title}</p>
@@ -623,15 +622,29 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
               className="absolute bottom-0 left-0 z-40 w-full bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pb-3 pt-8 sm:px-4"
               onClick={(event) => {
                 event.stopPropagation();
-                showControlsTemporarily(); // Reset timer on interaction
+                showControlsTemporarily();
               }}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+              onMouseEnter={showControlsTemporarily}
             >
-              <div 
-                className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-white/15 cursor-pointer relative group/seek"
-                onClick={handleSeek}
-              >
-                <div className="absolute inset-0 h-full rounded-full bg-white/10 opacity-0 group-hover/seek:opacity-100 transition-opacity" />
-                <div className="h-full rounded-full bg-accent" style={{ width: `${(current / (duration || 1)) * 100 || 0}%`, backgroundColor: 'var(--accent-color, #facc15)' }} />
+              <div className="mb-3 w-full group relative flex items-center h-4">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={duration > 0 ? (current / duration) * 100 : 0}
+                  onChange={handleSeek}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  className="absolute w-full h-1.5 opacity-0 cursor-pointer z-10"
+                />
+                <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden pointer-events-none">
+                  <div className="h-full bg-white/40" style={{ width: `${(current / (duration || 1)) * 100 || 0}%`, transition: 'width 0.25s linear' }}>
+                     <div className="h-full bg-accent" style={{ width: '100%', backgroundColor: 'var(--accent-color, #facc15)' }} />
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center justify-between gap-1 text-white">
