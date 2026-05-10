@@ -128,12 +128,7 @@ export default function VideoPlayerPage() {
     }
   }, [video, loading]);
 
-  // Ensure video is maximized when arriving at watch page
-  useEffect(() => {
-    if (video && viewMode === 'mini') {
-      maximize();
-    }
-  }, [video, viewMode, maximize]);
+
 
   // If user minimizes on watch page, navigate back to reveal the global mini player
   useEffect(() => {

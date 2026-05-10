@@ -682,7 +682,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             className="block h-full w-full bg-black object-contain"
             playsInline
             autoPlay={!(navigator.connection && (navigator.connection.effectiveType === '2g' || navigator.connection.effectiveType === '3g'))}
-            onTimeUpdate={(event) => setCurrent(event.target.currentTime)}
+            onTimeUpdate={(event) => setCurrentTime(event.target.currentTime)}
             onLoadedMetadata={(event) => setDuration(event.target.duration)}
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
@@ -846,7 +846,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                   className="absolute w-full h-1.5 opacity-0 cursor-pointer z-10"
                 />
                 <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden pointer-events-none">
-                  <div ref={progressBarRef} className="h-full" style={{ width: '0%', backgroundColor: 'var(--accent-color, #facc15)', transition: 'width 0.25s linear' }} />
+                  <div ref={progressBarRef} className="h-full" style={{ width: '0%', backgroundColor: 'var(--accent-color, #facc15)' }} />
                 </div>
               </div>
 
