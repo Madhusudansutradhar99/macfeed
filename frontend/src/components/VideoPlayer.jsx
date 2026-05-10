@@ -60,7 +60,8 @@ function ControlBtn({ onClick, title, children, className = '' }) {
   );
 }
 
-export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, onError }) {
+export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'full', onError }) {
+  const { playing, setPlaying, minimize, maximize, closePlayer, ytPlayerRef } = useVideoMiniPlayer();
   const containerRef = useRef(null);
   const ytDomContainer = useRef(null);
   const ytPlayerRef = useRef(null);
@@ -90,7 +91,6 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
   // Keep these for native video & seek compatibility
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isMinimized, setIsMinimized] = useState(false);
 
   const isYouTube = video?.source === 'youtube';
 
@@ -197,8 +197,8 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => { });
     }
-    onMiniChange?.(current, playing);
-  }, [onMiniChange, current, playing]);
+    minimize();
+  }, [minimize]);
 
   const handleTouchStart = useCallback((event) => {
     const touch = event.touches[0];
@@ -244,18 +244,17 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
 
       const container = containerRef.current;
 
-      // FIX 2 & Tap detection
+      // Tap detection
       if (start.isTap && duration < 300 && absX < 10 && absY < 10) {
-        if (isMinimized) {
-          setIsMinimized(false);
-          setShowControls(true);
+        if (viewMode === 'mini') {
+          maximize();
         } else {
           toggleControls();
         }
       } else if (absY > 80 && absY > absX * 1.5) {
         // Vertical Swipe
         if (document.fullscreenElement || document.webkitFullscreenElement) {
-          if (deltaY > 80) { // Swipe Down - FIX 1 & 3: Exit Fullscreen
+          if (deltaY > 80) { // Swipe Down: Exit Fullscreen
             if (document.exitFullscreen) {
               document.exitFullscreen().catch(() => {
                 if (document.webkitExitFullscreen) document.webkitExitFullscreen();
@@ -265,7 +264,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
             }
           }
         } else {
-          if (deltaY < -80) { // Swipe Up - FIX 3: Enter Fullscreen with iOS support
+          if (deltaY < -80) { // Swipe Up: Enter Fullscreen
             if (container?.requestFullscreen) {
               container.requestFullscreen().catch(() => {
                 if (container?.webkitRequestFullscreen) container.webkitRequestFullscreen();
@@ -273,10 +272,8 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
             } else if (container?.webkitRequestFullscreen) {
               container.webkitRequestFullscreen();
             }
-            setIsMinimized(false);
-          } else if (deltaY > 80 && !isMinimized) { // Swipe Down - FIX 2
-            setIsMinimized(true);
-            setShowControls(false);
+          } else if (deltaY > 80 && viewMode === 'full') { // Swipe Down: Minimize
+            minimize();
           }
         }
       } else if (absX > 70 && absX > absY * 1.5 && duration < 500) {
@@ -289,7 +286,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
       touchStartRef.current = { x: 0, y: 0, time: 0, isTap: true };
       isSwipingRef.current = false;
     },
-    [isMinimized, skip, showControlsTemporarily, toggleControls]
+    [viewMode, maximize, minimize, skip, showControlsTemporarily, toggleControls]
   );
 
   useEffect(() => {
@@ -610,7 +607,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
 
   return (
     <div 
-      className={`flex w-full flex-col transition-all duration-500 ease-in-out ${isFullscreen ? 'fixed inset-0 z-[9999] bg-black h-screen w-screen' : ''} ${forceLandscape ? 'rotate-90 origin-center' : ''} ${isMinimized ? 'fixed bottom-[80px] right-4 w-[160px] h-[90px] z-[9999] rounded-xl shadow-2xl overflow-hidden border border-white/10' : ''}`}
+      className={`flex w-full flex-col transition-all duration-500 ease-in-out ${isFullscreen ? 'fixed inset-0 z-[9999] bg-black h-screen w-screen' : ''} ${forceLandscape ? 'rotate-90 origin-center' : ''} ${viewMode === 'mini' ? 'h-full flex-row items-center px-3 gap-3' : ''}`}
       style={forceLandscape ? { 
         width: '100vh', 
         height: '100vw', 
@@ -619,18 +616,21 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
         left: '50%', 
         transform: 'translate(-50%, -50%) rotate(90deg)',
         zIndex: 9999
-      } : (isFullscreen ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999 } : (isMinimized ? { transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)' } : {}))}
+      } : (isFullscreen ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999 } : {})}
     >
       <div
         ref={containerRef}
-        className={`${isFullscreen ? 'h-full w-full' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video'} overflow-hidden select-none bg-black flex items-center justify-center transition-all duration-300 ease-in-out`}
+        className={`${isFullscreen ? 'h-full w-full' : (viewMode === 'mini' ? 'w-[120px] h-[68px] rounded-lg' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video')} overflow-hidden select-none bg-black flex items-center justify-center transition-all duration-300 ease-in-out flex-shrink-0`}
         style={{ touchAction: 'none' }}
         onMouseMove={showControlsTemporarily}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onClick={(e) => {
-          if (!isFullscreen) {
+          if (viewMode === 'mini') {
+            e.stopPropagation();
+            maximize();
+          } else if (!isFullscreen) {
             e.stopPropagation();
             toggleControls();
           }
@@ -662,24 +662,12 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
             
             {/* Transparent overlay captures all taps and swipes. */}
             <div 
-              className={`absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent transition-opacity duration-300 ${isFullscreen ? 'pointer-events-none opacity-0' : 'opacity-100'}`} 
-              onClick={() => isMinimized ? setIsMinimized(false) : toggleControls()}
+              className={`absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent transition-opacity duration-300 ${isFullscreen || viewMode === 'mini' ? 'pointer-events-none opacity-0' : 'opacity-100'}`} 
+              onClick={() => viewMode === 'mini' ? maximize() : toggleControls()}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             />
-
-            {isMinimized && (
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClose?.();
-                }}
-                className="absolute top-1 right-1 z-[100] p-1 bg-black/60 rounded-full text-white hover:bg-black/80 transition-colors"
-              >
-                <X size={14} />
-              </button>
-            )}
           </div>
         ) : (
           <video
@@ -699,8 +687,42 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
           />
         )}
 
-        {/* FIX 2: Controls show in BOTH normal and fullscreen on tap */}
-        {showControls && (
+        {/* Mini Player Bar Content */}
+        {viewMode === 'mini' && (
+          <div className="flex-1 flex items-center justify-between min-w-0 pr-1">
+            <div className="flex-1 min-w-0 cursor-pointer" onClick={maximize}>
+              <h4 className="text-white text-[13px] font-bold truncate tracking-tight">{video.title}</h4>
+              <p className="text-white/50 text-[11px] font-medium truncate uppercase tracking-widest">{video.category || 'YouTube'}</p>
+            </div>
+            
+            <div className="flex items-center gap-1 ml-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const next = !playing;
+                  setPlaying(next);
+                  if (next) ytPlayerRef.current?.playVideo?.();
+                  else ytPlayerRef.current?.pauseVideo?.();
+                }}
+                className="p-2 text-white hover:bg-white/10 rounded-full transition-colors"
+              >
+                {playing ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
+              </button>
+              
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closePlayer();
+                }}
+                className="p-2 text-white hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showControls && viewMode === 'full' && (
           <>
             <div
               className="absolute left-0 top-0 z-40 flex w-full items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 pb-8 pt-3"

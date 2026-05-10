@@ -14,7 +14,7 @@ import { fetchJson } from '../utils/request';
 import { useVideoMiniPlayer } from '../context/VideoPlayerContext';
 
 export default function VideoPlayerPage() {
-  const { openMini } = useVideoMiniPlayer();
+  const { playVideo, viewMode, maximize } = useVideoMiniPlayer();
   const { user, setAuthModalOpen } = useAuth();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -62,7 +62,7 @@ export default function VideoPlayerPage() {
           } catch (e) { }
         }
 
-        setVideo({
+        const ytVideo = {
           id: id,
           youtube_id: ytId,
           title: title || 'YouTube Video',
@@ -70,7 +70,9 @@ export default function VideoPlayerPage() {
           video_url: `https://www.youtube.com/embed/${ytId}`,
           source: 'youtube',
           category: 'YouTube'
-        });
+        };
+        setVideo(ytVideo);
+        playVideo(ytVideo);
         setLoading(false);
         return;
       }
@@ -78,17 +80,21 @@ export default function VideoPlayerPage() {
       const { data, error } = await supabase.from('videos').select('*').eq('id', id).single();
       if (!error && data) {
         setVideo(data);
+        playVideo(data);
         const { data: rel } = await supabase.from('videos').select('*').eq('category', data?.category).neq('id', id).limit(10);
         setRelated(rel || []);
         
         // Check if liked
         const likedObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
         if (likedObj[data.id]) setIsLiked(true);
+
+        // Global Player Sync
+        playVideo(data);
       }
       setLoading(false);
     }
     fetchData();
-  }, [id, searchParams]);
+  }, [id, searchParams, playVideo]);
 
   useEffect(() => {
     const retryOnReconnect = () => {
@@ -145,15 +151,9 @@ export default function VideoPlayerPage() {
               </div>
             </div>
           ) : (
-            <VideoPlayer 
-              video={video} 
-              onClose={() => navigate(-1)} 
-              onError={(message) => setPlayerError(message)} 
-              onMiniChange={(time, isPlaying) => {
-                openMini(video, time, isPlaying);
-                navigate('/');
-              }}
-            />
+            <div className="w-full h-full bg-black flex items-center justify-center">
+              <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.5em]">Playing Globally</p>
+            </div>
           )}
         </div>
 

@@ -9,7 +9,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import MainLayout from './layout/MainLayout';
 import MusicMiniPlayer from './components/MusicMiniPlayer';
-import VideoGlobalMiniPlayer from './components/VideoGlobalMiniPlayer';
+import GlobalVideoPlayer from './components/GlobalVideoPlayer';
 import AuthModal from './components/AuthModal';
 import AdBanner from './components/AdBanner';
 import Loader from './components/Loader';
@@ -135,7 +135,7 @@ function AppContent() {
             </Routes>
           </Suspense>
           {/* Global persistent overlays */}
-          <VideoGlobalMiniPlayer />
+          <GlobalVideoPlayer />
           <MusicMiniPlayer />
           <LocalPlayerOverlay />
           <AdBanner />
