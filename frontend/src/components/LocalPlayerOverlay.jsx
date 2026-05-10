@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowLeft, Lock, Unlock, Maximize, ChevronsLeft, ChevronsRight,
@@ -34,7 +34,7 @@ const BG_MODES = ['None', 'Dark', 'Black'];
 const SCREENSHOT_QUALITIES = ['Low', 'Medium', 'High'];
 const SCREENSHOT_FORMATS = ['PNG', 'JPG'];
 
-export default function LocalPlayerOverlay() {
+function LocalPlayerOverlay() {
     const {
         isLocalPlayerOpen, setIsLocalPlayerOpen, activeLocalSong: currentSong,
         playingLocal: playing, setPlayingLocal: setPlaying,
@@ -53,6 +53,7 @@ export default function LocalPlayerOverlay() {
     // Core UI States
     const [showControls, setShowControls] = useState(true);
     const [isLocked, setIsLocked] = useState(false);
+    const [isSeeking, setIsSeeking] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [progress, setProgress] = useState(0);
@@ -66,6 +67,10 @@ export default function LocalPlayerOverlay() {
     const progressBarRef = useRef(null);
     const bufferBarRef = useRef(null);
     const thumbRef = useRef(null);
+    const seekBarRef = useRef(null);
+    const seekRafRef = useRef(null);
+    const seekPendingRef = useRef(null);
+    const isSeekingRef = useRef(false);
     const [showExtraPanel, setShowExtraPanel] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [showQualityMenu, setShowQualityMenu] = useState(false);
@@ -140,6 +145,80 @@ export default function LocalPlayerOverlay() {
     const showMXToast = useCallback((msg, icon, color = '#FFFFFF') => {
         setToast({ msg, icon, color });
         setTimeout(() => setToast(null), 2000);
+    }, []);
+
+    const resolveSeekPoint = useCallback((clientX) => {
+        const seekBar = seekBarRef.current;
+        const video = videoRef.current;
+        if (!seekBar || !video || !video.duration) return null;
+
+        const rect = seekBar.getBoundingClientRect();
+        const position = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        return {
+            position,
+            time: position * video.duration,
+            duration: video.duration,
+        };
+    }, []);
+
+    const paintSeekPreview = useCallback((clientX) => {
+        const nextSeek = resolveSeekPoint(clientX);
+        if (!nextSeek) return;
+        seekPendingRef.current = nextSeek;
+
+        if (seekRafRef.current) return;
+
+        seekRafRef.current = requestAnimationFrame(() => {
+            seekRafRef.current = null;
+            const pending = seekPendingRef.current;
+            if (!pending) return;
+
+            const percent = pending.position * 100;
+            if (progressBarRef.current) progressBarRef.current.style.width = `${percent}%`;
+            if (thumbRef.current) thumbRef.current.style.left = `calc(${percent}% - 10px)`;
+            if (currentTimeRef.current) currentTimeRef.current.innerText = formatTime(pending.time);
+            if (durationRef.current) durationRef.current.innerText = formatTime(pending.duration);
+        });
+    }, [resolveSeekPoint]);
+
+    const commitSeek = useCallback((clientX) => {
+        const pending = resolveSeekPoint(clientX) || seekPendingRef.current;
+        const video = videoRef.current;
+        if (!pending || !video) return;
+
+        const percent = pending.position * 100;
+        video.currentTime = pending.time;
+        if (progressBarRef.current) progressBarRef.current.style.width = `${percent}%`;
+        if (thumbRef.current) thumbRef.current.style.left = `calc(${percent}% - 10px)`;
+        if (currentTimeRef.current) currentTimeRef.current.innerText = formatTime(pending.time);
+        if (durationRef.current) durationRef.current.innerText = formatTime(pending.duration);
+        seekPendingRef.current = null;
+    }, [resolveSeekPoint]);
+
+    const startSeekDrag = useCallback((clientX) => {
+        const nextSeek = resolveSeekPoint(clientX);
+        if (!nextSeek) return;
+        setIsSeeking(true);
+        isSeekingRef.current = true;
+        seekPendingRef.current = nextSeek;
+        paintSeekPreview(clientX);
+    }, [paintSeekPreview, resolveSeekPoint]);
+
+    const endSeekDrag = useCallback((clientX) => {
+        if (!isSeekingRef.current) return;
+        setIsSeeking(false);
+        isSeekingRef.current = false;
+        if (seekRafRef.current) {
+            cancelAnimationFrame(seekRafRef.current);
+            seekRafRef.current = null;
+        }
+        commitSeek(clientX);
+    }, [commitSeek]);
+
+    useEffect(() => {
+        return () => {
+            if (seekRafRef.current) cancelAnimationFrame(seekRafRef.current);
+        };
     }, []);
 
     const resetControlsTimeout = useCallback(() => {
@@ -290,6 +369,47 @@ export default function LocalPlayerOverlay() {
         setShowResumeDialog(false);
         setPlaying(true);
     };
+
+    const handleSeekMouseDown = useCallback((e) => {
+        e.stopPropagation();
+        startSeekDrag(e.clientX);
+    }, [startSeekDrag]);
+
+    const handleSeekMouseMove = useCallback((e) => {
+        if (!isSeekingRef.current) return;
+        e.stopPropagation();
+        paintSeekPreview(e.clientX);
+    }, [paintSeekPreview]);
+
+    const handleSeekMouseUp = useCallback((e) => {
+        if (!isSeekingRef.current) return;
+        e.stopPropagation();
+        endSeekDrag(e.clientX);
+    }, [endSeekDrag]);
+
+    const handleSeekTouchStart = useCallback((e) => {
+        e.stopPropagation();
+        const touch = e.touches[0];
+        if (touch) startSeekDrag(touch.clientX);
+    }, [startSeekDrag]);
+
+    const handleSeekTouchMove = useCallback((e) => {
+        if (!isSeekingRef.current) return;
+        e.stopPropagation();
+        const touch = e.touches[0];
+        if (touch) paintSeekPreview(touch.clientX);
+    }, [paintSeekPreview]);
+
+    const handleSeekTouchEnd = useCallback((e) => {
+        if (!isSeekingRef.current) return;
+        const touch = e.changedTouches[0];
+        if (touch) endSeekDrag(touch.clientX);
+    }, [endSeekDrag]);
+
+    const handleSeekClick = useCallback((e) => {
+        e.stopPropagation();
+        commitSeek(e.clientX);
+    }, [commitSeek]);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -879,27 +999,48 @@ export default function LocalPlayerOverlay() {
                         >
                             <div className="flex items-center justify-between gap-6">
                                 <div
-                                    className="flex-1 flex items-center gap-4 py-4 cursor-pointer"
-                                    onTouchStart={(e) => {
-                                        const rect = e.currentTarget.getBoundingClientRect();
-                                        const pos = (e.touches[0].clientX - rect.left) / rect.width;
-                                        if (videoRef.current) videoRef.current.currentTime = pos * videoRef.current.duration;
+                                    ref={seekBarRef}
+                                    className="flex-1 flex items-center gap-4 py-4 cursor-pointer select-none"
+                                    style={{
+                                        transform: 'translateZ(0)',
+                                        backfaceVisibility: 'hidden',
+                                        WebkitBackfaceVisibility: 'hidden',
+                                        willChange: 'transform',
+                                        touchAction: 'none',
                                     }}
-                                    onTouchMove={(e) => {
-                                        const rect = e.currentTarget.getBoundingClientRect();
-                                        const pos = Math.max(0, Math.min(1, (e.touches[0].clientX - rect.left) / rect.width));
-                                        if (videoRef.current) videoRef.current.currentTime = pos * videoRef.current.duration;
-                                    }}
-                                    onClick={(e) => {
-                                        const rect = e.currentTarget.getBoundingClientRect();
-                                        const pos = (e.clientX - rect.left) / rect.width;
-                                        if (videoRef.current) videoRef.current.currentTime = pos * videoRef.current.duration;
-                                    }}
+                                    onMouseDown={handleSeekMouseDown}
+                                    onMouseMove={handleSeekMouseMove}
+                                    onMouseUp={handleSeekMouseUp}
+                                    onMouseLeave={handleSeekMouseUp}
+                                    onTouchStart={handleSeekTouchStart}
+                                    onTouchMove={handleSeekTouchMove}
+                                    onTouchEnd={handleSeekTouchEnd}
+                                    onClick={handleSeekClick}
                                 >
                                     <span ref={currentTimeRef} className="text-white text-[10px] font-black min-w-[45px]">00:00</span>
-                                    <div className="flex-1 h-1.5 bg-white/10 rounded-full relative">
+                                    <div
+                                        className="flex-1 h-1.5 bg-white/10 rounded-full relative"
+                                        style={{
+                                            transform: 'translateZ(0)',
+                                            backfaceVisibility: 'hidden',
+                                            WebkitBackfaceVisibility: 'hidden',
+                                            willChange: 'transform',
+                                            touchAction: 'none',
+                                        }}
+                                    >
                                         <div ref={bufferBarRef} className="absolute top-0 left-0 h-full bg-white/5 rounded-full" style={{ width: '0%' }} />
-                                        <div ref={progressBarRef} className="absolute top-0 left-0 h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: '0%' }}>
+                                        <div
+                                            ref={progressBarRef}
+                                            className="absolute top-0 left-0 h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                                            style={{
+                                                width: '0%',
+                                                transform: 'translateZ(0)',
+                                                backfaceVisibility: 'hidden',
+                                                WebkitBackfaceVisibility: 'hidden',
+                                                willChange: 'width, transform',
+                                                transition: isSeeking ? 'none' : 'width 0.12s linear',
+                                            }}
+                                        >
                                             <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-xl scale-110" />
                                         </div>
                                     </div>
@@ -1434,6 +1575,8 @@ export default function LocalPlayerOverlay() {
         </AnimatePresence>
     );
 }
+
+export default memo(LocalPlayerOverlay);
 
 function BottomAction({ icon, label, subLabel, onClick }) {
     return (
