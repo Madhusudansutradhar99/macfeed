@@ -30,10 +30,13 @@ export default function GlobalVideoPlayer() {
     } else if (viewMode === 'mini') {
       controls.start({
         y: 0,
-        height: '70px',
-        width: '100vw',
-        bottom: 80, // Above bottom navigation
-        borderRadius: 0,
+        x: 0,
+        height: '110px',
+        width: '180px',
+        bottom: 100,
+        right: 20,
+        left: 'auto',
+        borderRadius: '16px',
         opacity: 1,
         transition: { type: 'spring', damping: 25, stiffness: 250 }
       });
@@ -104,11 +107,13 @@ export default function GlobalVideoPlayer() {
         style={{
           y,
           position: 'fixed',
-          left: 0,
+          right: viewMode === 'mini' ? 20 : 0,
+          left: viewMode === 'mini' ? 'auto' : 0,
           zIndex: 100,
           backgroundColor: 'var(--bg-secondary, #000)',
-          boxShadow: '0 -8px 30px rgba(0,0,0,0.8)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
           overflow: 'hidden',
+          borderRadius: viewMode === 'mini' ? '16px' : 0,
           touchAction: 'none'
         }}
         className="border-t border-white/5"

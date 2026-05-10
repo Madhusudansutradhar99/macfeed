@@ -75,7 +75,7 @@ function LocalPlayerOverlay() {
     const wheelRafRef = useRef(null);
     const wheelPendingRef = useRef(0);
     const wheelContainerRef = useRef(null);
-    const wheelRotationRef = useRef(0);
+    const [wheelRotation, setWheelRotation] = useState(0);
     const wheelDragRef = useRef(null);
     const wheelTouchStartYRef = useRef(0);
     const panelRefs = useRef([]);
@@ -439,14 +439,7 @@ function LocalPlayerOverlay() {
         wheelPendingRef.current += delta;
         if (wheelRafRef.current) return;
 
-        wheelRafRef.current = requestAnimationFrame(() => {
-            wheelRafRef.current = null;
-            const nextDelta = wheelPendingRef.current;
-            wheelPendingRef.current = 0;
-            const maxRot = (14 - 1) * 18;
-            
-            const newRotation = Math.max(0, Math.min(wheelRotationRef.current + nextDelta, maxRot));
-            wheelRotationRef.current = newRotation;
+            setWheelRotation(prev => Math.max(0, Math.min(prev + nextDelta, maxRot)));
             
             if (panelRefs.current) {
                 const panelRadius = window.innerWidth < 768 ? 200 : 350;
@@ -1322,7 +1315,7 @@ function LocalPlayerOverlay() {
                                     ].map((action, i) => {
                                         // Calculate initial state for first render
                                         const angleStep = 18;
-                                        const totalRotation = (i * angleStep) - wheelRotationRef.current;
+                                        const totalRotation = (i * angleStep) - wheelRotation;
                                         const rad = (totalRotation * Math.PI) / 180;
                                         const panelRadius = window.innerWidth < 768 ? 200 : 350;
                                         const xPos = Math.cos(rad) * panelRadius + 200;

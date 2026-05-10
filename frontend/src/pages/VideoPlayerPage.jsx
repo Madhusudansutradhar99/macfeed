@@ -165,7 +165,16 @@ export default function VideoPlayerPage() {
               onClose={() => navigate(-1)} 
               onError={(message) => setPlayerError(message)} 
               onNext={() => {
-                // Next video logic handled by page navigation
+                if (video.youtube_id && related.length > 0) {
+                  const nextVid = related[0];
+                  const targetId = nextVid.youtube_id ? `yt-${nextVid.youtube_id}` : nextVid.id;
+                  navigate(`/watch/${targetId}?title=${encodeURIComponent(nextVid.title)}`);
+                } else if (related.length > 0) {
+                   navigate(`/watch/${related[0].id}`);
+                }
+              }}
+              onPrevious={() => {
+                window.history.back();
               }}
             />
           )}
