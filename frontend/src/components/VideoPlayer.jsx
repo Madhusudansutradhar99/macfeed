@@ -520,7 +520,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         ytPlayerRef.current = null;
       }
     };
-  }, [isYouTube, onError, video?.video_url]);
+  }, [isYouTube, video?.video_url]);
 
   useEffect(() => {
     if (!isYouTube) return;
