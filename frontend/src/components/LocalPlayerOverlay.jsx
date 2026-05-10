@@ -446,15 +446,9 @@ function LocalPlayerOverlay() {
             const newRotation = Math.max(0, Math.min(wheelRotationRef.current + nextDelta, maxRot));
             wheelRotationRef.current = newRotation;
             
-            // Update the wheel state significantly less frequently to prevent component rerenders
-            // This creates smooth drag while keeping the 14 items from recalculating positions constantly
-            // We'll batch state updates every ~100ms instead of every frame
-            if (!wheelRotationRef.batchTimeoutId) {
+                // Update state immediately for smooth real-time response (no batching delay)
+                // Instant updates eliminate lagging while refs keep 14 items efficient
                 setWheelRotation(newRotation);
-                wheelRotationRef.batchTimeoutId = setTimeout(() => {
-                    wheelRotationRef.batchTimeoutId = null;
-                }, 100);
-            }
         });
     }, []);
 
@@ -1150,7 +1144,7 @@ function LocalPlayerOverlay() {
                     */}
                             <div
                                 onWheel={(e) => {
-                                    const sensitivity = 1.5;
+                                     const sensitivity = 3.2;
                                     scheduleWheelRotation(-(e.deltaY * sensitivity));
                                 }}
                                 className="relative h-full w-[400px] md:w-[500px] flex items-center justify-start pointer-events-auto group/wheel"
@@ -1165,9 +1159,9 @@ function LocalPlayerOverlay() {
                                 {/* Drag Area (Full height & width of the interactive zone) */}
                                 <motion.div
                                     drag="y"
-                                    dragConstraints={{ top: -2000, bottom: 2000 }}
+                                        dragConstraints={{ top: -500, bottom: 500 }}
                                     onDrag={(e, info) => {
-                                        const sensitivity = 2.5;
+                                            const sensitivity = 4.5;
                                         scheduleWheelRotation(-(info.delta.y * sensitivity));
                                     }}
                                     className="absolute inset-0 z-[200] cursor-grab active:cursor-grabbing"
@@ -1185,19 +1179,19 @@ function LocalPlayerOverlay() {
                                     <motion.div
                                         animate={showExtraPanel ? { rotate: 360 } : {}}
                                         transition={{ repeat: Infinity, duration: 60, ease: 'linear' }}
-                                        className="absolute w-[320px] md:w-[420px] h-[320px] md:h-[420px] rounded-full border-[3px] border-dashed border-yellow-500/20"
+                                        className="absolute w-[320px] md:w-[420px] h-[320px] md:h-[420px] rounded-full border-[3px] border-dashed border-yellow-400/60 shadow-[0_0_20px_rgba(250,204,21,0.3)]"
                                     />
 
                                     {/* STABLE SYSTEM ARROW (FIXED AT RIGHT) */}
                                     <div className="absolute right-[15px] top-[50%] translate-y-[-50%] rotate-[-90deg] z-50">
-                                        <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[14px] border-t-yellow-400 shadow-[0_0_20px_#fbbf24]" />
+                                        <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[14px] border-t-yellow-300 shadow-[0_0_30px_rgba(253,224,71,0.8)]" />
                                     </div>
 
                                     {/* 2. INNER CYAN SYSTEM RING (THICK BORDER) */}
                                     <motion.div
                                         animate={showExtraPanel ? { rotate: -360 } : {}}
                                         transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
-                                        className="absolute w-[240px] md:w-[340px] h-[240px] md:h-[340px] rounded-full border-[4px] border-cyan-400/40 shadow-[0_0_25px_rgba(34,211,238,0.2)]"
+                                        className="absolute w-[240px] md:w-[340px] h-[240px] md:h-[340px] rounded-full border-[4px] border-cyan-300/70 shadow-[0_0_35px_rgba(34,211,238,0.5)]"
                                     >
                                         {[...Array(36)].map((_, i) => (
                                             <div key={i} className="absolute w-1 h-3 bg-cyan-400/40" style={{ left: '50%', top: -2, transform: `rotate(${i * 10}deg)` }} />

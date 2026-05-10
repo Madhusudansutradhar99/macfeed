@@ -68,7 +68,8 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
   const ytFailSafeRef = useRef(null);
   const nativeVideoRef = useRef(null);
   const controlsTimeout = useRef(null);
-  const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
+  const touchStartRef = useRef({ x: 0, y: 0, time: 0, isTap: true });
+  const isSwipingRef = useRef(false);
 
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -94,6 +95,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
   }, [playing]);
 
   const toggleControls = useCallback((e) => {
+    if (isFullscreen) return; // FIX 2: No custom controls in fullscreen
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -105,7 +107,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
       return next;
     });
     setShowQualityMenu(false);
-  }, [showControlsTemporarily]);
+  }, [isFullscreen, showControlsTemporarily]);
 
   const handleQualityChange = useCallback((quality) => {
     // YouTube API blocks setPlaybackQuality() due to cross-origin restrictions.
@@ -188,8 +190,29 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
 
   const handleTouchStart = useCallback((event) => {
     const touch = event.touches[0];
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+    touchStartRef.current = { 
+      x: touch.clientX, 
+      y: touch.clientY, 
+      time: Date.now(), 
+      isTap: true 
+    };
+    isSwipingRef.current = false;
   }, []);
+
+  const handleTouchMove = useCallback((event) => {
+    const touch = event.touches[0];
+    const start = touchStartRef.current;
+    if (!start.time) return;
+
+    const deltaX = Math.abs(touch.clientX - start.x);
+    const deltaY = Math.abs(touch.clientY - start.y);
+
+    if (deltaX > 10 || deltaY > 10) {
+      touchStartRef.current.isTap = false;
+      isSwipingRef.current = true;
+      if (showControls) setShowControls(false);
+    }
+  }, [showControls]);
 
   const handleTouchEnd = useCallback(
     (event) => {
@@ -201,23 +224,30 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
       const deltaY = touch.clientY - start.y;
       const absX = Math.abs(deltaX);
       const absY = Math.abs(deltaY);
+      const duration = Date.now() - start.time;
 
-      // YouTube-style horizontal swipe seeking.
-      if (absX > 70 && absX > absY * 1.2) {
-        if (deltaX > 0) skip(10);
-        else skip(-10);
-        showControlsTemporarily();
+      // FIX 2: Tap detection (Strict 10px threshold)
+      if (start.isTap && duration < 300 && absX < 10 && absY < 10) {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleControls();
+        touchStartRef.current = { x: 0, y: 0, time: 0, isTap: true };
+        return;
       }
 
-      // FIX 3: Swipe UP to enter fullscreen (80px threshold)
-      if (deltaY < -80 && absY > absX * 1.2) {
+      // FIX 1 & 2: Swipe UP to enter fullscreen (80px threshold)
+      if (deltaY < -80 && absY > absX * 1.5) {
+        event.preventDefault();
+        event.stopPropagation();
         if (!document.fullscreenElement) {
           toggleFullscreen();
         }
       }
 
-      // FIX 3: Swipe DOWN to exit fullscreen or minimize (80px threshold)
-      if (deltaY > 80 && absY > absX * 1.2) {
+      // FIX 1 & 2: Swipe DOWN to exit fullscreen or minimize (80px threshold)
+      if (deltaY > 80 && absY > absX * 1.5) {
+        event.preventDefault();
+        event.stopPropagation();
         if (document.fullscreenElement) {
           toggleFullscreen();
         } else if (window.innerWidth <= 768 && onMiniChange) {
@@ -225,9 +255,19 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
         }
       }
 
-      touchStartRef.current = { x: 0, y: 0, time: 0 };
+      // YouTube-style horizontal swipe seeking (70px threshold)
+      if (absX > 70 && absX > absY * 1.5 && duration < 500) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (deltaX > 0) skip(10);
+        else skip(-10);
+        showControlsTemporarily();
+      }
+
+      touchStartRef.current = { x: 0, y: 0, time: 0, isTap: true };
+      isSwipingRef.current = false;
     },
-    [onMiniChange, showControlsTemporarily, skip, toggleFullscreen]
+    [onMiniChange, showControlsTemporarily, skip, toggleFullscreen, toggleControls]
   );
 
   useEffect(() => {
@@ -538,32 +578,16 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
     >
       <div
         ref={containerRef}
-        className={`${isFullscreen ? 'h-full w-full' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video'} overflow-hidden select-none bg-black flex items-center justify-center`}
+        className={`${isFullscreen ? 'h-full w-full' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video'} overflow-hidden select-none bg-black flex items-center justify-center transition-all duration-300 ease-in-out`}
         onMouseMove={showControlsTemporarily}
         onTouchStart={handleTouchStart}
-        onTouchEnd={(e) => {
-          // Save start before handleTouchEnd clears it
-          const start = { ...touchStartRef.current };
-          handleTouchEnd(e);
-          
-          if (!start.time) return;
-          const deltaX = Math.abs(e.changedTouches[0].clientX - start.x);
-          const deltaY = Math.abs(e.changedTouches[0].clientY - start.y);
-          const duration = Date.now() - start.time;
-          
-          if (duration < 300 && deltaX < 15 && deltaY < 15) {
-            // Do not call preventDefault here, otherwise it swallows button clicks!
-            // Wait for the synthesized click to handle toggleControls, OR only toggle if the target is the container itself.
-            if (e.target === containerRef.current || e.target === ytDomContainer.current || e.target.classList.contains('cursor-pointer')) {
-              // It's a background tap
-              e.preventDefault();
-              toggleControls();
-            }
-          }
-        }}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         onClick={(e) => {
-          e.stopPropagation();
-          toggleControls();
+          if (!isFullscreen) {
+            e.stopPropagation();
+            toggleControls();
+          }
         }}
       >
         {isYouTube ? (
@@ -579,11 +603,13 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
 
             <div ref={ytDomContainer} className="absolute inset-0 h-full w-full" />
             
-            {/* Transparent overlay captures all taps and swipes so the iframe doesn't swallow them. */}
+            {/* Transparent overlay captures all taps and swipes. 
+                In fullscreen, pointer-events are disabled to allow native YouTube controls. */}
             <div 
-              className="absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent" 
+              className={`absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent transition-opacity duration-300 ${isFullscreen ? 'pointer-events-none opacity-0' : 'opacity-100'}`} 
               onClick={toggleControls}
               onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             />
           </div>
@@ -605,7 +631,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
           />
         )}
 
-        {showControls && (
+        {showControls && !isFullscreen && (
           <>
             <div
               className="absolute left-0 top-0 z-40 flex w-full items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 pb-8 pt-3"
