@@ -85,7 +85,9 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const currentTimeRef = useRef(null);
   const durationRef = useRef(null);
   const playBtnRef = useRef(null);
-  const durationStateRef = useRef(0); // tracks duration without setState
+  const durationStateRef = useRef(0);
+  const playingRef = useRef(playing);
+  useEffect(() => { playingRef.current = playing; }, [playing]);
   const inputRangeRef = useRef(null);
 
   const [showControls, setShowControls] = useState(true);
@@ -430,8 +432,8 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                 
                 // Real-time State Sync
                 const ytState = ytPlayerRef.current.getPlayerState?.();
-                if (ytState === 1 && !playing) setPlaying(true);
-                else if ((ytState === 2 || ytState === 0) && playing) setPlaying(false);
+                if (ytState === 1 && !playingRef.current) setPlaying(true);
+                else if ((ytState === 2 || ytState === 0) && playingRef.current) setPlaying(false);
 
                 if (dur > 0) {
                   durationStateRef.current = dur;
@@ -517,7 +519,17 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
       initYouTube();
     }
 
+    // Dedicated sync interval for state (Backs up the RAF loop)
+    const stateSyncInterval = setInterval(() => {
+      if (ytPlayerRef.current?.getPlayerState) {
+        const state = ytPlayerRef.current.getPlayerState();
+        const isPlaying = state === 1; // 1 is PLAYING
+        if (isPlaying !== playingRef.current) setPlaying(isPlaying);
+      }
+    }, 1000);
+
     return () => {
+      clearInterval(stateSyncInterval);
       if (ytTimerRef.current) cancelAnimationFrame(ytTimerRef.current);
       if (ytFailSafeRef.current) clearTimeout(ytFailSafeRef.current);
       if (ytPlayerRef.current) {

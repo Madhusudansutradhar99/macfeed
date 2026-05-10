@@ -10,7 +10,8 @@ export default function GlobalVideoPlayer() {
   const location = useLocation();
   const swipeStartRef = useRef(0);
 
-  const isWatchPage = location.pathname.startsWith('/watch/');
+  // Use a more robust check for watch page
+  const isWatchPage = location.pathname.includes('/watch/');
 
   if (viewMode === 'closed' || !activeVideo) return null;
 
@@ -26,36 +27,40 @@ export default function GlobalVideoPlayer() {
   };
 
   const handleRestore = () => {
-    maximize();
+    // If we are restoring, we want to go to the watch page IMMEDIATELY
+    // so the height animation starts with isWatchPage = true
     if (!isWatchPage) {
       navigate(`/watch/${activeVideo.id}`);
     }
+    maximize();
   };
 
   const isMini = viewMode === 'mini';
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
+        key={activeVideo.id} // Re-mount if video changes to ensure player stability
         layout
         initial={false}
         animate={{ 
           width: isMini ? '180px' : '100vw',
-          height: isMini ? '110px' : (isWatchPage ? 'auto' : '100vh'),
+          // On watch page, we only want the video height. On other pages in full mode, we want a fullscreen overlay.
+          height: isMini ? '110px' : (isWatchPage ? '56.25vw' : '100vh'),
           right: isMini ? 20 : 0,
-          bottom: isMini ? 100 : 0,
+          bottom: isMini ? 20 : 0, // Lowered bottom for mini player
           top: isMini ? 'auto' : 0,
           left: isMini ? 'auto' : 0,
           borderRadius: isMini ? '16px' : 0,
-          boxShadow: isMini ? '0 10px 40px rgba(0,0,0,0.6)' : 'none',
-          zIndex: isMini ? 9999 : (isWatchPage ? 40 : 9999),
+          backgroundColor: isMini ? '#000' : (isWatchPage ? 'rgba(0,0,0,0)' : '#000'),
+          zIndex: isMini ? 9999 : (isWatchPage ? 50 : 9999),
         }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         style={{
           position: 'fixed',
-          backgroundColor: isMini ? '#000' : (isWatchPage ? 'transparent' : '#000'),
           overflow: 'hidden',
           pointerEvents: isMini ? 'auto' : (isWatchPage ? 'none' : 'auto'),
+          boxShadow: isMini ? '0 20px 50px rgba(0,0,0,0.5)' : 'none',
         }}
         onClick={() => isMini && handleRestore()}
         onTouchStart={handleTouchStart}
@@ -63,10 +68,10 @@ export default function GlobalVideoPlayer() {
       >
         <div style={{ 
           width: '100%', 
-          height: isMini ? '100%' : 'auto', 
-          aspectRatio: isMini ? 'auto' : '16/9',
+          height: '100%',
           pointerEvents: 'auto',
-          backgroundColor: '#000' // Ensure video area is black
+          backgroundColor: '#000',
+          position: 'relative'
         }}>
           <VideoPlayer 
             video={activeVideo} 
