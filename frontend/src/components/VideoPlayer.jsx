@@ -79,6 +79,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const controlsTimeout = useRef(null);
   const touchStartRef = useRef({ x: 0, y: 0, time: 0, isTap: true });
   const isSwipingRef = useRef(false);
+  const fullscreenOverlayRef = useRef(null);
   // FIX 3/4: DOM refs for zero-re-render realtime updates
   const progressBarRef = useRef(null);
   const currentTimeRef = useRef(null);
@@ -290,6 +291,36 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     },
     [viewMode, maximize, minimize, skip, showControlsTemporarily, toggleControls]
   );
+
+  useEffect(() => {
+    const overlay = fullscreenOverlayRef.current;
+    if (!overlay) return;
+
+    let startY = 0;
+
+    const onTouchStart = (e) => {
+      startY = e.touches[0].clientY;
+    };
+
+    const onTouchEnd = (e) => {
+      const endY = e.changedTouches[0].clientY;
+      if (endY - startY > 80) {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
+    };
+
+    overlay.addEventListener('touchstart', onTouchStart, { passive: false });
+    overlay.addEventListener('touchend', onTouchEnd, { passive: false });
+
+    return () => {
+      overlay.removeEventListener('touchstart', onTouchStart);
+      overlay.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [isFullscreen]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -627,7 +658,8 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             {/* Fullscreen Swipe Overlay - FIX 1 & 3 */}
             {isFullscreen && (
               <div 
-                className="fixed top-0 left-0 z-[99999] w-screen h-screen bg-transparent pointer-events-none"
+                ref={fullscreenOverlayRef}
+                className="fixed top-0 left-0 z-[99999] w-screen h-screen bg-transparent"
               />
             )}
 
