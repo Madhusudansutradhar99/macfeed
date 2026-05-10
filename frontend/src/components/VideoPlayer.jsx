@@ -527,9 +527,11 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
       if (ytPlayerRef.current?.getPlayerState) {
         const state = ytPlayerRef.current.getPlayerState();
         const isPlaying = state === 1; // 1 is PLAYING
-        if (isPlaying !== playingRef.current) setPlaying(isPlaying);
+        if (isPlaying !== playingRef.current) {
+          setPlaying(isPlaying);
+        }
       }
-    }, 1000);
+    }, 200);
 
     return () => {
       clearInterval(stateSyncInterval);

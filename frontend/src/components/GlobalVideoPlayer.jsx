@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useMatch } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVideoMiniPlayer } from '../context/VideoPlayerContext';
 import VideoPlayer from './VideoPlayer';
@@ -8,11 +8,11 @@ export default function GlobalVideoPlayer() {
   const { activeVideo, viewMode, minimize, maximize, closePlayer } = useVideoMiniPlayer();
   const navigate = useNavigate();
   const location = useLocation();
+  const watchMatch = useMatch('/watch/:id');
   const swipeStartRef = useRef(0);
 
-  // Robust path checking for both direct and hash routing
-  const path = location.pathname;
-  const isWatchPage = path.includes('/watch/') || window.location.hash.includes('/watch/');
+  // Robust path checking
+  const isWatchPage = !!watchMatch || location.pathname.includes('/watch/') || window.location.hash.includes('/watch/');
 
   if (viewMode === 'closed' || !activeVideo) return null;
 
@@ -48,7 +48,7 @@ export default function GlobalVideoPlayer() {
         top: isMini ? 'auto' : 0,
         left: isMini ? 'auto' : 0,
         borderRadius: isMini ? '12px' : 0,
-        backgroundColor: isMini ? '#000' : (isWatchPage ? 'rgba(0,0,0,0)' : '#000'),
+        backgroundColor: isMini ? '#000' : (isWatchPage ? 'transparent' : '#000'),
         zIndex: isMini ? 9999 : (isWatchPage ? 50 : 9999),
       }}
       transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.8 }}
