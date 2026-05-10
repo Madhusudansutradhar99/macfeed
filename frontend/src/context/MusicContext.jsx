@@ -1,5 +1,9 @@
-import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import * as musicMetadata from 'music-metadata-browser';
+import { getHandle, setHandle } from '../utils/db';
+import { Buffer } from 'buffer';
+
+if (typeof window !== 'undefined') window.Buffer = window.Buffer || Buffer;
 
 const MusicContext = createContext(null);
 
@@ -47,6 +51,11 @@ export function MusicProvider({ children }) {
   const [playingLocal, setPlayingLocal] = useState(false);
   const [volumeLocal, setVolumeLocal] = useState(1);
   const [mutedLocal, setMutedLocal] = useState(false);
+
+  // ── DEVICE MUSIC STATE ──────────────────────────────────────────────────
+  const [deviceSongs, setDeviceSongs] = useState([]);
+  const [devicePermission, setDevicePermission] = useState(localStorage.getItem('macfeed_device_permission') === 'granted');
+  const [isScanning, setIsScanning] = useState(false);
   
   const audioRef = useRef();
   const currentSong = (playlist && playlist[currentIdx]) || null;
@@ -65,7 +74,134 @@ export function MusicProvider({ children }) {
     supabase.from('videos').select('*').eq('category', 'Music').order('created_at', { ascending: false }).then(({ data }) => {
       if (data?.length) setPlaylist(prev => deduplicate([...prev, ...data]));
     });
+
+    // Load device music if permission exists
+    if (devicePermission) {
+      loadStoredDeviceMusic();
+    }
   }, []);
+
+  const loadStoredDeviceMusic = async () => {
+    try {
+      const handle = await getHandle('musicFolder');
+      if (handle) {
+        // Request permission for the handle
+        const status = await handle.requestPermission({ mode: 'read' });
+        if (status === 'granted') {
+          await scanDirectory(handle);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load stored device music:', e);
+    }
+  };
+
+  const scanDirectory = async (directoryHandle) => {
+    setIsScanning(true);
+    const songs = [];
+    const supportedFormats = ['.mp3', '.m4a', '.aac', '.wav', '.flac', '.ogg', '.opus', '.wma', '.aiff'];
+
+    try {
+      for await (const entry of directoryHandle.values()) {
+        if (entry.kind === 'file') {
+          const isSupported = supportedFormats.some(ext => entry.name.toLowerCase().endsWith(ext));
+          if (isSupported) {
+            const file = await entry.getFile();
+            try {
+              const metadata = await musicMetadata.parseBlob(file);
+              let artworkUrl = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800';
+              if (metadata.common.picture && metadata.common.picture[0]) {
+                const pic = metadata.common.picture[0];
+                const blob = new Blob([pic.data], { type: pic.format });
+                artworkUrl = URL.createObjectURL(blob);
+              }
+
+              songs.push({
+                id: `device-${entry.name}-${file.lastModified}`,
+                title: metadata.common.title || entry.name.replace(/\.[^/.]+$/, ''),
+                artist: metadata.common.artist || 'Unknown Artist',
+                album: metadata.common.album || 'Unknown Album',
+                duration: metadata.common.duration || 0,
+                thumbnail_url: artworkUrl,
+                video_url: URL.createObjectURL(file),
+                source: 'device',
+                category: 'Device Music',
+                file: file
+              });
+            } catch (err) {
+              // Fallback for files with no metadata
+              songs.push({
+                id: `device-${entry.name}-${file.lastModified}`,
+                title: entry.name.replace(/\.[^/.]+$/, ''),
+                artist: 'Unknown Artist',
+                duration: 0,
+                thumbnail_url: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800',
+                video_url: URL.createObjectURL(file),
+                source: 'device',
+                category: 'Device Music',
+                file: file
+              });
+            }
+          }
+        }
+      }
+      setDeviceSongs(songs);
+    } catch (e) {
+      console.error('Directory scan failed:', e);
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleDeviceFiles = async (files) => {
+    setIsScanning(true);
+    const songs = [];
+    const fileList = Array.from(files);
+
+    try {
+      for (const file of fileList) {
+        try {
+          const metadata = await musicMetadata.parseBlob(file);
+          let artworkUrl = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800';
+          if (metadata.common.picture && metadata.common.picture[0]) {
+            const pic = metadata.common.picture[0];
+            const blob = new Blob([pic.data], { type: pic.format });
+            artworkUrl = URL.createObjectURL(blob);
+          }
+
+          songs.push({
+            id: `device-${file.name}-${file.lastModified}`,
+            title: metadata.common.title || file.name.replace(/\.[^/.]+$/, ''),
+            artist: metadata.common.artist || 'Unknown Artist',
+            album: metadata.common.album || 'Unknown Album',
+            duration: metadata.common.duration || 0,
+            thumbnail_url: artworkUrl,
+            video_url: URL.createObjectURL(file),
+            source: 'device',
+            category: 'Device Music',
+            file: file
+          });
+        } catch (err) {
+          songs.push({
+            id: `device-${file.name}-${file.lastModified}`,
+            title: file.name.replace(/\.[^/.]+$/, ''),
+            artist: 'Unknown Artist',
+            duration: 0,
+            thumbnail_url: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800',
+            video_url: URL.createObjectURL(file),
+            source: 'device',
+            category: 'Device Music',
+            file: file
+          });
+        }
+      }
+      setDeviceSongs(prev => deduplicate([...prev, ...songs]));
+    } catch (e) {
+      console.error('File processing failed:', e);
+    } finally {
+      setIsScanning(false);
+    }
+  };
 
   useEffect(() => {
     if (playlist.length > 0) {
@@ -292,6 +428,28 @@ export function MusicProvider({ children }) {
       setIsLocalPlayerOpen(true);
       setPlayingLocal(true);
       setPlaying(false);
+    },
+    deviceSongs,
+    devicePermission,
+    isScanning,
+    requestDevicePermission: async () => {
+      localStorage.setItem('macfeed_device_permission', 'granted');
+      setDevicePermission(true);
+      if ('showDirectoryPicker' in window) {
+        try {
+          const handle = await window.showDirectoryPicker();
+          await setHandle('musicFolder', handle);
+          await scanDirectory(handle);
+        } catch (e) {
+          console.error('Permission denied or picker closed', e);
+        }
+      }
+    },
+    handleDeviceFiles,
+    refreshDeviceMusic: () => {
+      if (devicePermission) {
+        loadStoredDeviceMusic();
+      }
     }
   };
 

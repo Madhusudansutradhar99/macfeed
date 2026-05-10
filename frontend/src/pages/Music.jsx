@@ -57,7 +57,11 @@ export default function Music() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const dropdownRef = useRef(null);
 
-  const { playVideo, setIsExpanded, playlist: contextPlaylist } = useMusicPlayer() || {};
+  const { 
+    playVideo, setIsExpanded, playlist: contextPlaylist,
+    deviceSongs, devicePermission, isScanning, requestDevicePermission, 
+    handleDeviceFiles, refreshDeviceMusic 
+  } = useMusicPlayer() || {};
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -580,6 +584,17 @@ export default function Music() {
           </div>
         ) : null}
 
+        {/* Device Music Hidden Input */}
+        <input 
+          id="device-music-input"
+          type="file" 
+          accept="audio/*" 
+          multiple
+          className="hidden" 
+          onChange={(e) => handleDeviceFiles(e.target.files)}
+          aria-label="Add Device Music"
+        />
+
         <div className="w-full h-full bg-transparent flex flex-col overflow-hidden pt-8 md:pt-12">
           {/* Header Bar */}
           <div className="flex flex-col md:flex-row items-center justify-between px-6 md:px-12 py-4 gap-4">
@@ -834,6 +849,89 @@ export default function Music() {
               </div>
             </div>
             )}
+            <div className="mt-12 space-y-10">
+              <div className="flex items-center justify-between px-2">
+                <h3 className="text-xl font-black uppercase italic tracking-[0.4em] text-white/90">My Device Music</h3>
+                {devicePermission && (
+                  <button 
+                    onClick={refreshDeviceMusic}
+                    className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition-all group"
+                  >
+                    {isScanning ? (
+                      <div className="w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Clock className="w-3 h-3 text-purple-400 group-hover:rotate-180 transition-transform duration-500" />
+                    )}
+                    <span className="text-[9px] font-black uppercase tracking-widest text-white/60">Refresh</span>
+                  </button>
+                )}
+              </div>
+
+              {!devicePermission ? (
+                <div className={`p-10 rounded-[3rem] border-2 border-dashed ${activeBorder} bg-white/5 flex flex-col items-center justify-center text-center gap-6 group hover:bg-white/10 transition-all duration-500`}>
+                  <div className="w-20 h-20 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                    <MusicIcon className="w-10 h-10 text-purple-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-black uppercase italic tracking-wider text-white mb-2">Access Device Music</h4>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 max-w-xs">Allow MacFeed to scan and play music files directly from your device storage.</p>
+                  </div>
+                  <button 
+                    onClick={requestDevicePermission}
+                    className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-full font-black uppercase tracking-[0.2em] text-[10px] shadow-[0_0_30px_rgba(168,85,247,0.4)] hover:shadow-[0_0_50px_rgba(168,85,247,0.6)] transition-all active:scale-95"
+                  >
+                    Allow / Grant Permission
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {isScanning && deviceSongs.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                      <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 animate-pulse">Scanning device for music...</p>
+                    </div>
+                  ) : deviceSongs.length === 0 ? (
+                    <div className={`p-10 rounded-[3rem] border border-white/10 bg-white/5 flex flex-col items-center justify-center text-center gap-6`}>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-white/30 italic">No device music found or added.</p>
+                      <button 
+                        onClick={() => document.getElementById('device-music-input').click()}
+                        className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition-all group"
+                      >
+                        <Plus className="w-4 h-4 text-purple-400 group-hover:scale-125 transition-transform" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Add More Music</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-6 overflow-x-auto no-scrollbar pb-10">
+                      {deviceSongs.map((song) => (
+                        <div key={song.id} onClick={() => handleSongClick(song)} className="w-[180px] md:w-[240px] shrink-0 group cursor-pointer transition-transform active:scale-95">
+                          <div className={`aspect-[2/3] rounded-[2.5rem] overflow-hidden mb-4 relative border ${activeBorder} transition-colors duration-500 shadow-2xl bg-white/5`}>
+                            <img src={song.thumbnail_url} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-6">
+                              <h5 className="text-[10px] font-black uppercase italic line-clamp-2 leading-tight mb-1">{song.title}</h5>
+                              <p className="text-[8px] font-bold text-white/40 uppercase mb-3 truncate">{song.artist}</p>
+                              <div className="flex items-center justify-between">
+                                <div className={`w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border ${activeBorder} transition-colors duration-500 group-hover:bg-purple-600`}><Play className="w-3.5 h-3.5 fill-white" /></div>
+                                <span className="text-[8px] font-bold text-white/30 uppercase">{Math.floor(song.duration / 60)}:{Math.floor(song.duration % 60).toString().padStart(2, '0')}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      <div 
+                        onClick={() => document.getElementById('device-music-input').click()}
+                        className="w-[180px] md:w-[240px] shrink-0 aspect-[2/3] rounded-[2.5rem] border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-white/5 transition-all group"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Plus className="w-6 h-6 text-white/20 group-hover:text-purple-400 transition-colors" />
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-white/30 group-hover:text-white/60">Add More</span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </main>
         </div>
       </div>
