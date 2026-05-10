@@ -90,6 +90,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
   // Keep these for native video & seek compatibility
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const isYouTube = video?.source === 'youtube';
 
@@ -211,6 +212,10 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
   }, []);
 
   const handleTouchMove = useCallback((event) => {
+    // Block page scroll when touching the video area
+    if (event.cancelable) event.preventDefault();
+    event.stopPropagation();
+
     const touch = event.touches[0];
     const start = touchStartRef.current;
     if (!start.time) return;
@@ -227,9 +232,54 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
 
   const handleTouchEnd = useCallback(
     (event) => {
-      // Logic moved to native listener on mount for strict passive:false handling
+      const start = touchStartRef.current;
+      if (!start.time) return;
+
+      const touch = event.changedTouches[0];
+      const deltaX = touch.clientX - start.x;
+      const deltaY = touch.clientY - start.y;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+      const duration = Date.now() - start.time;
+
+      const container = containerRef.current;
+
+      // FIX 2 & Tap detection
+      if (start.isTap && duration < 300 && absX < 10 && absY < 10) {
+        if (isMinimized) {
+          setIsMinimized(false);
+          setShowControls(true);
+        } else {
+          toggleControls();
+        }
+      } else if (absY > 80 && absY > absX * 1.5) {
+        // Vertical Swipe
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          if (deltaY > 80) { // Swipe Down - FIX 1 & 3
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          }
+        } else {
+          if (deltaY < -80) { // Swipe Up
+            if (container?.requestFullscreen) container.requestFullscreen();
+            else if (container?.webkitRequestFullscreen) container.webkitRequestFullscreen();
+            setIsMinimized(false);
+          } else if (deltaY > 80 && !isMinimized) { // Swipe Down - FIX 2
+            setIsMinimized(true);
+            setShowControls(false);
+          }
+        }
+      } else if (absX > 70 && absX > absY * 1.5 && duration < 500) {
+        // Horizontal Swipe
+        if (deltaX > 0) skip(10);
+        else skip(-10);
+        showControlsTemporarily();
+      }
+
+      touchStartRef.current = { x: 0, y: 0, time: 0, isTap: true };
+      isSwipingRef.current = false;
     },
-    []
+    [isMinimized, skip, showControlsTemporarily, toggleControls]
   );
 
   useEffect(() => {
@@ -254,85 +304,22 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
     document.addEventListener('webkitfullscreenchange', onFsChange);
 
     // FIX 1: Native Listeners for strict scroll block only on video
-    const onTouchStart = (e) => {
-      const touch = e.touches[0];
-      touchStartRef.current = { 
-        x: touch.clientX, 
-        y: touch.clientY, 
-        time: Date.now(),
-        isTap: true 
-      };
-      isSwipingRef.current = false;
-    };
-
-    const onTouchMove = (e) => {
-      // FIX 1: Prevent page scroll only when touching the video
-      if (e.cancelable) e.preventDefault();
-      e.stopPropagation();
-
-      const touch = e.touches[0];
-      const start = touchStartRef.current;
-      if (!start.time) return;
-
-      const deltaX = Math.abs(touch.clientX - start.x);
-      const deltaY = Math.abs(touch.clientY - start.y);
-
-      if (deltaX > 10 || deltaY > 10) {
-        touchStartRef.current.isTap = false;
-        isSwipingRef.current = true;
-      }
-    };
-
-    const onTouchEnd = (e) => {
-      const start = touchStartRef.current;
-      if (!start.time) return;
-
-      const touch = e.changedTouches[0];
-      const deltaX = touch.clientX - start.x;
-      const deltaY = touch.clientY - start.y;
-      const absX = Math.abs(deltaX);
-      const absY = Math.abs(deltaY);
-      const duration = Date.now() - start.time;
-
-      // FIX 2 & Tap detection
-      if (start.isTap && duration < 300 && absX < 10 && absY < 10) {
-        toggleControls();
-      } else if (absY > 80 && absY > absX * 1.5) {
-        // Vertical Swipe
-        if (document.fullscreenElement || document.webkitFullscreenElement) {
-          if (deltaY > 80) { // Swipe Down
-            if (document.exitFullscreen) document.exitFullscreen();
-            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-          }
-        } else {
-          if (deltaY < -80) { // Swipe Up
-            if (container.requestFullscreen) container.requestFullscreen();
-            else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
-          }
-        }
-      } else if (absX > 70 && absX > absY * 1.5 && duration < 500) {
-        // Horizontal Swipe
-        if (deltaX > 0) skip(10);
-        else skip(-10);
-        showControlsTemporarily();
-      }
-
-      touchStartRef.current = { x: 0, y: 0, time: 0, isTap: true };
-      isSwipingRef.current = false;
-    };
-
-    container.addEventListener('touchstart', onTouchStart, { passive: false });
-    container.addEventListener('touchmove', onTouchMove, { passive: false });
-    container.addEventListener('touchend', onTouchEnd, { passive: false });
+    if (container) {
+      container.addEventListener('touchstart', handleTouchStart, { passive: false });
+      container.addEventListener('touchmove', handleTouchMove, { passive: false });
+      container.addEventListener('touchend', handleTouchEnd, { passive: false });
+    }
     
     return () => {
       document.removeEventListener('fullscreenchange', onFsChange);
       document.removeEventListener('webkitfullscreenchange', onFsChange);
-      container.removeEventListener('touchstart', onTouchStart);
-      container.removeEventListener('touchmove', onTouchMove);
-      container.removeEventListener('touchend', onTouchEnd);
+      if (container) {
+        container.removeEventListener('touchstart', handleTouchStart);
+        container.removeEventListener('touchmove', handleTouchMove);
+        container.removeEventListener('touchend', handleTouchEnd);
+      }
     };
-  }, [skip, showControlsTemporarily, toggleControls]);
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   useEffect(() => {
     if (!isYouTube) {
@@ -613,7 +600,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
 
   return (
     <div 
-      className={`flex w-full flex-col transition-all duration-500 ease-in-out ${isFullscreen ? 'fixed inset-0 z-[9999] bg-black h-screen w-screen' : ''} ${forceLandscape ? 'rotate-90 origin-center' : ''}`}
+      className={`flex w-full flex-col transition-all duration-500 ease-in-out ${isFullscreen ? 'fixed inset-0 z-[9999] bg-black h-screen w-screen' : ''} ${forceLandscape ? 'rotate-90 origin-center' : ''} ${isMinimized ? 'fixed bottom-[80px] right-4 w-[160px] h-[90px] z-[9999] rounded-xl shadow-2xl overflow-hidden border border-white/10' : ''}`}
       style={forceLandscape ? { 
         width: '100vh', 
         height: '100vw', 
@@ -622,7 +609,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
         left: '50%', 
         transform: 'translate(-50%, -50%) rotate(90deg)',
         zIndex: 9999
-      } : (isFullscreen ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999 } : {})}
+      } : (isFullscreen ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999 } : (isMinimized ? { transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)' } : {}))}
     >
       <div
         ref={containerRef}
@@ -650,17 +637,38 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
               </div>
             ) : null}
 
+            {/* Fullscreen Swipe Overlay - FIX 1 */}
+            {isFullscreen && (
+              <div 
+                className="absolute inset-0 z-[99999] w-full h-full bg-transparent touch-none"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              />
+            )}
+
             <div ref={ytDomContainer} className="absolute inset-0 h-full w-full" />
             
-            {/* Transparent overlay captures all taps and swipes. 
-                In fullscreen, pointer-events are disabled to allow native YouTube controls. */}
+            {/* Transparent overlay captures all taps and swipes. */}
             <div 
               className={`absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent transition-opacity duration-300 ${isFullscreen ? 'pointer-events-none opacity-0' : 'opacity-100'}`} 
-              onClick={toggleControls}
+              onClick={() => isMinimized ? setIsMinimized(false) : toggleControls()}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             />
+
+            {isMinimized && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose?.();
+                }}
+                className="absolute top-1 right-1 z-[100] p-1 bg-black/60 rounded-full text-white hover:bg-black/80 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
         ) : (
           <video
