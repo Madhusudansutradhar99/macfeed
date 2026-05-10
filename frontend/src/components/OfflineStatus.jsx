@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { WifiOff, WifiCheck } from 'lucide-react';
+import { WifiOff, Wifi } from 'lucide-react';
 
 export default function OfflineStatus() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -60,7 +60,7 @@ export default function OfflineStatus() {
               {isOffline ? (
                 <WifiOff className="w-4 h-4 text-white" />
               ) : (
-                <WifiCheck className="w-4 h-4 text-white" />
+                <Wifi className="w-4 h-4 text-white" />
               )}
             </div>
             <div className="flex flex-col gap-0.5">
