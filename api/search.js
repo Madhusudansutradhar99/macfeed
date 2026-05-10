@@ -1,6 +1,22 @@
 import ytSearch from 'yt-search';
 import { getCache, normalizeQuery } from './_utils.js';
 
+// Adult content keywords that should be blocked
+const BLOCKED_KEYWORDS = [
+  // English
+  'sex', 'porn', 'xxx', 'adult', 'nude', 'naked', 'sexy', 'nsfw', 'explicit', 
+  'orgy', 'hookup', 'dirty', 'ass hole', 'boobs', 'breast', 'cock', 'pussy',
+  'cum', 'blowjob', 'deepthroat', 'hardcore', 'gangbang', 'lesbian sex', 'gay sex',
+  // Hindi/Urdu
+  'sexy', 'nudes', 'xxx', 'adult', 'sex', 'chudai', 'chut', 'lund', 'randi', 
+  'rand', 'bitch', 'slut', 'whore', 'harami', 'jahil',
+];
+
+function isBlockedQuery(query) {
+  const q = query.toLowerCase().trim();
+  return BLOCKED_KEYWORDS.some(keyword => q.includes(keyword.toLowerCase()));
+}
+
 function extractQuery(req) {
   const raw = req.query?.q ?? new URL(req.url, 'http://localhost').searchParams.get('q') ?? '';
   return normalizeQuery(String(raw).replace(/[\-_]+/g, ' '));
@@ -11,6 +27,11 @@ export default async function handler(req, res) {
 
   if (!query) {
     return res.status(400).json({ error: 'Query required' });
+  }
+
+  // Block adult/explicit content
+  if (isBlockedQuery(query)) {
+    return res.status(200).json({ results: [], source: 'blocked', message: 'Content not available' });
   }
 
   const cacheKey = `search:${query}`;

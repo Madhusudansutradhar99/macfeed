@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, memo } from 'react';
+import React, { useEffect, useState, useRef, memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, ArrowLeft, Music as MusicIcon, Search, Flame, Clock, Sparkles,
@@ -448,12 +448,18 @@ export default function Music() {
                 
                 {user && (
                   <div className="relative group">
-                    <label className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer flex">
+                    <label className="w-12 h-12 md:w-10 md:h-10 md:p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer flex items-center justify-center touch-manipulation active:scale-95">
                       <Upload className="w-5 h-5" />
-                      <input type="file" accept="audio/*" className="hidden" onChange={handleFileUpload} />
+                      <input 
+                        type="file" 
+                        accept="audio/*" 
+                        className="hidden" 
+                        onChange={handleFileUpload}
+                        aria-label="Upload audio file"
+                      />
                     </label>
                     {uploadStatus && (
-                      <div className="absolute top-1/2 -translate-y-1/2 right-14 w-48 bg-[#0F1115] border border-white/10 rounded-xl p-3 shadow-2xl pointer-events-none">
+                      <div className="absolute top-1/2 -translate-y-1/2 right-14 w-48 bg-[#0F1115] border border-white/10 rounded-xl p-3 shadow-2xl pointer-events-none z-50">
                         <div className="text-[9px] text-white/70 font-black uppercase tracking-widest mb-2">{uploadStatus}</div>
                         <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                           <div className="h-full bg-purple-500 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />

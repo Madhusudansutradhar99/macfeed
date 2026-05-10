@@ -17,6 +17,7 @@ import LocalPlayerOverlay from './components/LocalPlayerOverlay';
 import InstallPWA from './components/InstallPWA';
 import OfflineStatus from './components/OfflineStatus';
 import StartupAnimation from './components/StartupAnimation';
+import InstantFeedbackProvider from './components/InstantFeedbackProvider';
 
 // Lazy load pages for performance optimization
 const Home = lazy(() => import('./pages/Home'));
@@ -105,30 +106,31 @@ function AppContent() {
       {showSplash && <StartupAnimation onComplete={() => setShowSplash(false)} />}
       <MusicProvider>
         <VideoPlayerProvider>
+          <InstantFeedbackProvider />
           <Suspense fallback={<Loader />}>
             <Routes>
               <Route path="/intro" element={<ErrorBoundary resetKey="intro"><IntroPage /></ErrorBoundary>} />
               <Route element={<MainLayout />}>
-                <Route index element={<Home />} />
-                <Route path="/watch/:id" element={<VideoPlayerPage />} />
-                <Route path="/movies" element={<Movies />} />
-                <Route path="/music" element={<Music />} />
-                <Route path="/series" element={<Series />} />
-                <Route path="/sports" element={<Sports />} />
-                <Route path="/sports/cricket" element={<CricketPage />} />
-                <Route path="/sports/football" element={<FootballPage />} />
-                <Route path="/shorts" element={<Shorts />} />
-                <Route path="/trending" element={<Trending />} />
-                <Route path="/history" element={<History />} />
-                <Route path="/liked" element={<Liked />} />
-                <Route path="/playlists" element={<Playlists />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/shopping" element={<Shopping />} />
-                <Route path="/downloads" element={<Downloads />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/admin/ads" element={<AdManager />} />
-                <Route path="/search" element={<SearchResults />} />
-                <Route path="/smart-search" element={<SmartSearchPage />} />
+                <Route index element={<ErrorBoundary resetKey="home"><Home /></ErrorBoundary>} />
+                <Route path="/watch/:id" element={<ErrorBoundary resetKey="watch"><VideoPlayerPage /></ErrorBoundary>} />
+                <Route path="/movies" element={<ErrorBoundary resetKey="movies"><Movies /></ErrorBoundary>} />
+                <Route path="/music" element={<ErrorBoundary resetKey="music"><Music /></ErrorBoundary>} />
+                <Route path="/series" element={<ErrorBoundary resetKey="series"><Series /></ErrorBoundary>} />
+                <Route path="/sports" element={<ErrorBoundary resetKey="sports"><Sports /></ErrorBoundary>} />
+                <Route path="/sports/cricket" element={<ErrorBoundary resetKey="cricket"><CricketPage /></ErrorBoundary>} />
+                <Route path="/sports/football" element={<ErrorBoundary resetKey="football"><FootballPage /></ErrorBoundary>} />
+                <Route path="/shorts" element={<ErrorBoundary resetKey="shorts"><Shorts /></ErrorBoundary>} />
+                <Route path="/trending" element={<ErrorBoundary resetKey="trending"><Trending /></ErrorBoundary>} />
+                <Route path="/history" element={<ErrorBoundary resetKey="history"><History /></ErrorBoundary>} />
+                <Route path="/liked" element={<ErrorBoundary resetKey="liked"><Liked /></ErrorBoundary>} />
+                <Route path="/playlists" element={<ErrorBoundary resetKey="playlists"><Playlists /></ErrorBoundary>} />
+                <Route path="/settings" element={<ErrorBoundary resetKey="settings"><Settings /></ErrorBoundary>} />
+                <Route path="/shopping" element={<ErrorBoundary resetKey="shopping"><Shopping /></ErrorBoundary>} />
+                <Route path="/downloads" element={<ErrorBoundary resetKey="downloads"><Downloads /></ErrorBoundary>} />
+                <Route path="/admin" element={<ErrorBoundary resetKey="admin"><Admin /></ErrorBoundary>} />
+                <Route path="/admin/ads" element={<ErrorBoundary resetKey="admanager"><AdManager /></ErrorBoundary>} />
+                <Route path="/search" element={<ErrorBoundary resetKey="search"><SearchResults /></ErrorBoundary>} />
+                <Route path="/smart-search" element={<ErrorBoundary resetKey="smartsearch"><SmartSearchPage /></ErrorBoundary>} />
               </Route>
             </Routes>
           </Suspense>

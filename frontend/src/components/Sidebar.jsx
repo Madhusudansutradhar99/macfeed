@@ -38,12 +38,12 @@ const DynamicNavItem = ({ item, active, onClick }) => {
           navigate(item.path);
         }
       }}
-      className={`absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-full cursor-pointer z-[2000] shadow-2xl transition-all duration-300
+      className={`absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-full cursor-pointer z-[2000] shadow-2xl will-change-transform
         ${active ? 'bg-accent text-white shadow-[0_0_20px_rgba(var(--accent-rgb),0.4)]' : 'bg-secondary backdrop-blur-xl text-secondary hover:text-primary hover:bg-primary/10 border border-primary'}
       `}
       style={active ? { backgroundColor: 'var(--accent-color)', boxShadow: '0 0 20px var(--accent-color)44' } : {}}
       animate={{ width: hover ? 230 : 44 }}
-      transition={{ type: 'tween', ease: 'circOut', duration: 0.15 }}
+      transition={{ type: 'tween', ease: 'circOut', duration: 0.12 }}
     >
       <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0">
         <item.icon className="w-5 h-5" />
@@ -51,6 +51,7 @@ const DynamicNavItem = ({ item, active, onClick }) => {
       <motion.span
         initial={false}
         animate={{ opacity: hover ? 1 : 0 }}
+        transition={{ duration: 0.12 }}
         className={`whitespace-nowrap font-bold pr-6 text-[11px] uppercase tracking-widest ml-1 ${active ? 'text-white' : 'text-primary'}`}
       >
         {item.label}
@@ -101,9 +102,12 @@ export default function Sidebar() {
       <AnimatePresence>
         {isSidebarOpen && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.12 }}
             onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 bg-primary/40 z-[1000] backdrop-blur-sm cursor-pointer"
+            className="fixed inset-0 bg-primary/40 z-[1000] backdrop-blur-sm cursor-pointer will-change-transform"
           />
         )}
       </AnimatePresence>
@@ -114,7 +118,7 @@ export default function Sidebar() {
           x: isSidebarOpen ? 0 : '-150%',
           opacity: isSidebarOpen ? 1 : 0
         }}
-        transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
+        transition={{ type: 'tween', ease: 'circOut', duration: 0.14 }}
         className="fixed top-20 left-4 h-[calc(100vh-100px)] w-[260px] z-[1100] flex flex-col pointer-events-none will-change-transform"
       >
         <div className={`w-full h-full py-6 flex flex-col flex-1 relative overflow-y-auto no-scrollbar overflow-x-visible ${isSidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
@@ -140,13 +144,21 @@ export default function Sidebar() {
             </div>
             <div className="relative h-10 md:h-11 w-full shrink-0">
                <motion.div
-                  onMouseEnter={() => setShowUserMenu(true)} onMouseLeave={() => setShowUserMenu(false)}
+                  onMouseEnter={() => setShowUserMenu(true)} 
+                  onMouseLeave={() => setShowUserMenu(false)}
                   onClick={() => user ? navigate('/settings') : setAuthModalOpen(true)}
-                  className="absolute left-0 top-0 flex items-center h-10 md:h-11 bg-secondary backdrop-blur-xl rounded-full cursor-pointer overflow-hidden z-50 border border-primary shadow-lg transition-colors duration-500"
+                  className="absolute left-0 top-0 flex items-center h-10 md:h-11 bg-secondary backdrop-blur-xl rounded-full cursor-pointer overflow-hidden z-50 border border-primary shadow-lg will-change-transform"
                   animate={{ width: showUserMenu ? 150 : 44 }}
+                  transition={{ type: 'tween', ease: 'circOut', duration: 0.12 }}
                >
                   <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0"><User className="w-5 h-5 text-accent" style={{ color: 'var(--accent-color)' }} /></div>
-                  <motion.span animate={{ opacity: showUserMenu ? 1 : 0 }} className="text-[10px] font-black uppercase text-primary pr-4">{user ? 'Profile' : 'Sign In'}</motion.span>
+                  <motion.span 
+                    animate={{ opacity: showUserMenu ? 1 : 0 }}
+                    transition={{ duration: 0.12 }}
+                    className="text-[10px] font-black uppercase text-primary pr-4"
+                  >
+                    {user ? 'Profile' : 'Sign In'}
+                  </motion.span>
                </motion.div>
             </div>
           </div>

@@ -6,13 +6,24 @@
     
     <!-- Deployment Version: v1.1.1 - Mobile Rotation Fixes -->
 
-    <!-- Pre-connect to YouTube -->
-    <link rel="preconnect" href="https://www.youtube.com" />
-    <link rel="preconnect" href="https://s.ytimg.com" />
+    <!-- Performance: DNS Prefetch & Preconnect to Critical Domains -->
     <link rel="dns-prefetch" href="https://www.youtube.com" />
+    <link rel="dns-prefetch" href="https://www.google.com" />
+    <link rel="dns-prefetch" href="https://s.ytimg.com" />
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
     
-    <script src="https://www.youtube.com/iframe_api" async></script>
-    <script src="https://accounts.google.com/gsi/client"></script>
+    <link rel="preconnect" href="https://www.youtube.com" />
+    <link rel="preconnect" href="https://www.youtube.com" crossorigin />
+    <link rel="preconnect" href="https://accounts.google.com" />
+    <link rel="preconnect" href="https://s.ytimg.com" />
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="/src/main.jsx" as="script" />
+    <link rel="prefetch" href="/src/pages/Home.jsx" />
+    
+    <!-- Scripts -->
+    <script src="https://www.youtube.com/iframe_api" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <title>MacFeed - Final Sync</title>
     <script>
