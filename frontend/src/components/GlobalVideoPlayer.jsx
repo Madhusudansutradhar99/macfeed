@@ -50,7 +50,7 @@ export default function GlobalVideoPlayer() {
     }
   }, [viewMode, controls]);
 
-  if (viewMode === 'closed' || !activeVideo) return null;
+  if (viewMode === 'closed' || !activeVideo || isWatchPage) return null;
 
   const handleDragEnd = (_, info) => {
     if (viewMode === 'full') {

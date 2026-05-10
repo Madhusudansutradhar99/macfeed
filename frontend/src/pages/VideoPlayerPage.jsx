@@ -151,9 +151,14 @@ export default function VideoPlayerPage() {
               </div>
             </div>
           ) : (
-            <div className="w-full h-full bg-black flex items-center justify-center">
-              <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.5em]">Playing Globally</p>
-            </div>
+            <VideoPlayer 
+              video={video} 
+              onClose={() => navigate(-1)} 
+              onError={(message) => setPlayerError(message)} 
+              onNext={() => {
+                // Next video logic handled by page navigation
+              }}
+            />
           )}
         </div>
 
