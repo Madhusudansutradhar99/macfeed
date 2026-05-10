@@ -61,10 +61,17 @@ function ControlBtn({ onClick, title, children, className = '' }) {
 }
 
 export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'full', onError }) {
-  const { playing, setPlaying, minimize, maximize, closePlayer, ytPlayerRef } = useVideoMiniPlayer();
+  const { 
+    playing, setPlaying, 
+    muted, setMuted, 
+    volume, setVolume, 
+    currentTime, setCurrentTime, 
+    duration, setDuration, 
+    minimize, maximize, closePlayer, 
+    ytPlayerRef 
+  } = useVideoMiniPlayer();
   const containerRef = useRef(null);
   const ytDomContainer = useRef(null);
-  const ytPlayerRef = useRef(null);
   const ytTimerRef = useRef(null);
   const ytFailSafeRef = useRef(null);
   const nativeVideoRef = useRef(null);
@@ -78,9 +85,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const playBtnRef = useRef(null);
   const durationStateRef = useRef(0); // tracks duration without setState
 
-  const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [volume, setVolume] = useState(1);
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -89,9 +93,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const [currentQuality, setCurrentQuality] = useState('auto');
   const [forceLandscape, setForceLandscape] = useState(false);
   // Keep these for native video & seek compatibility
-  const [current, setCurrent] = useState(0);
-  const [duration, setDuration] = useState(0);
-
   const isYouTube = video?.source === 'youtube';
 
   const showControlsTemporarily = useCallback(() => {
@@ -147,11 +148,11 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     if (isYouTube && ytPlayerRef.current?.seekTo) {
       const videoDuration = ytPlayerRef.current.getDuration?.() || duration || 0;
       ytPlayerRef.current.seekTo(percentage * videoDuration, true);
-      setCurrent(percentage * videoDuration);
+      setCurrentTime(percentage * videoDuration);
     } else if (nativeVideoRef.current) {
       const videoDuration = nativeVideoRef.current.duration || duration || 0;
       nativeVideoRef.current.currentTime = percentage * videoDuration;
-      setCurrent(percentage * videoDuration);
+      setCurrentTime(percentage * videoDuration);
     }
   }, [duration, isYouTube]);
 
