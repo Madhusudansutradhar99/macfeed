@@ -76,10 +76,8 @@ export function MusicProvider({ children }) {
       if (data?.length) setPlaylist(prev => deduplicate([...prev, ...data]));
     });
 
-    // Load device music if permission exists
-    if (devicePermission) {
-      loadStoredDeviceMusic();
-    }
+    // Always attempt to load stored device music/files on mount
+    loadStoredDeviceMusic();
   }, []);
 
   const loadStoredDeviceMusic = async () => {

@@ -78,6 +78,7 @@ function LocalPlayerOverlay() {
     const wheelRotationRef = useRef(0);
     const wheelDragRef = useRef(null);
     const wheelTouchStartYRef = useRef(0);
+    const panelRefs = useRef([]);
     const [showExtraPanel, setShowExtraPanel] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [showQualityMenu, setShowQualityMenu] = useState(false);
@@ -447,8 +448,59 @@ function LocalPlayerOverlay() {
             const newRotation = Math.max(0, Math.min(wheelRotationRef.current + nextDelta, maxRot));
             wheelRotationRef.current = newRotation;
             
-            if (wheelContainerRef.current) {
-                wheelContainerRef.current.style.transform = `rotate(${newRotation}deg)`;
+            if (panelRefs.current) {
+                const panelRadius = window.innerWidth < 768 ? 200 : 350;
+                panelRefs.current.forEach((panel, i) => {
+                    if (!panel) return;
+                    const totalRotation = (i * 18) - newRotation;
+                    const rad = (totalRotation * Math.PI) / 180;
+                    
+                    const xPos = Math.cos(rad) * panelRadius + 200;
+                    const yPos = Math.sin(rad) * panelRadius;
+                    
+                    const normalizedDist = Math.abs(yPos) / (panelRadius * 1.5);
+                    const scale = Math.max(0.7, 1.15 - normalizedDist);
+                    const opacity = Math.max(0.3, 1 - normalizedDist);
+                    const isFocused = scale > 1.05;
+                    
+                    panel.style.transform = `translate3d(${xPos}px, ${yPos}px, 0) scale(${scale})`;
+                    panel.style.opacity = opacity;
+                    panel.style.zIndex = 300 + Math.round(opacity * 100);
+                    
+                    const innerBox = panel.querySelector('.mx-panel-inner');
+                    const innerIcon = panel.querySelector('.mx-panel-icon');
+                    const innerLabel = panel.querySelector('.mx-panel-label');
+                    const line = panel.querySelector('.mx-panel-line');
+                    const svgLine = panel.querySelector('.mx-panel-svg');
+                    const color = panel.dataset.color;
+                    
+                    if (innerBox) {
+                        if (isFocused) {
+                            innerBox.style.borderLeftColor = color;
+                            innerBox.style.boxShadow = `0 0 25px ${color}33`;
+                            innerBox.style.transform = 'scale(1.05)';
+                            innerBox.style.opacity = '1';
+                        } else {
+                            innerBox.style.borderLeftColor = 'rgba(255,255,255,0.1)';
+                            innerBox.style.boxShadow = 'none';
+                            innerBox.style.transform = 'scale(1)';
+                            innerBox.style.opacity = '0.6';
+                        }
+                    }
+                    if (innerIcon) {
+                        innerIcon.style.color = isFocused ? color : 'rgba(255,255,255,0.4)';
+                        innerIcon.style.transform = isFocused ? 'scale(1.25)' : 'scale(1)';
+                    }
+                    if (innerLabel) {
+                        innerLabel.style.color = isFocused ? '#ffffff' : 'rgba(255,255,255,0.4)';
+                    }
+                    if (line) {
+                        line.style.display = isFocused ? 'block' : 'none';
+                    }
+                    if (svgLine) {
+                        svgLine.style.opacity = isFocused ? '1' : '0.2';
+                    }
+                });
             }
         });
     }, []);
@@ -458,17 +510,30 @@ function LocalPlayerOverlay() {
         if (!el) return;
 
         const handleTouchStart = (e) => {
-            e.preventDefault(); // Prevent default scroll
-            wheelTouchStartYRef.current = e.touches[0].clientY;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = el.getBoundingClientRect();
+            const centerX = rect.left + 200;
+            const centerY = rect.top + rect.height / 2;
+            const angle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
+            wheelTouchStartYRef.current = angle;
         };
 
         const handleTouchMove = (e) => {
             e.preventDefault();
-            const currentY = e.touches[0].clientY;
-            const deltaY = currentY - wheelTouchStartYRef.current;
-            wheelTouchStartYRef.current = currentY;
-            const sensitivity = 4.5;
-            scheduleWheelRotation(deltaY * sensitivity);
+            const touch = e.touches[0];
+            const rect = el.getBoundingClientRect();
+            const centerX = rect.left + 200;
+            const centerY = rect.top + rect.height / 2;
+            
+            const currentAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
+            let deltaAngle = currentAngle - wheelTouchStartYRef.current;
+            
+            if (deltaAngle > 180) deltaAngle -= 360;
+            if (deltaAngle < -180) deltaAngle += 360;
+            
+            wheelTouchStartYRef.current = currentAngle;
+            scheduleWheelRotation(-deltaAngle);
         };
 
         el.addEventListener('touchstart', handleTouchStart, { passive: false });
@@ -1255,77 +1320,64 @@ function LocalPlayerOverlay() {
                                         { icon: <SkipBack size={14} />, label: "Prev", color: "#fbbf24", onClick: () => { prev(); showMXToast('Prev Video', <SkipBack size={16} />); } },
                                         { icon: <Repeat size={14} />, label: "Loop", color: "#22d3ee", onClick: () => setLoopVideo(!loopVideo) }
                                     ].map((action, i) => {
-                                        const angleStep = 18;
-                                        const totalRotation = (i * angleStep) - wheelRotation;
+                                        // Calculate initial state for first render
+                                        const totalRotation = (i * angleStep) - wheelRotationRef.current;
                                         const rad = (totalRotation * Math.PI) / 180;
-
-                                        // Cyan ring is at 170. Panel is at 350. Wire is 180px long.
-                                        // Tighter radius on mobile for better thumb reach
                                         const panelRadius = window.innerWidth < 768 ? 200 : 350;
-
-                                        const xPos = Math.cos(rad) * panelRadius + 200; // Center offset
+                                        const xPos = Math.cos(rad) * panelRadius + 200;
                                         const yPos = Math.sin(rad) * panelRadius;
-
                                         const normalizedDist = Math.abs(yPos) / (panelRadius * 1.5);
                                         const scale = Math.max(0.7, 1.15 - normalizedDist);
                                         const opacity = Math.max(0.3, 1 - normalizedDist);
                                         const isFocused = scale > 1.05;
 
                                         return (
-                                            <motion.div
+                                            <div
+                                                ref={el => panelRefs.current[i] = el}
                                                 key={i}
+                                                data-color={action.color}
                                                 className="absolute pointer-events-auto flex items-center cursor-pointer group"
                                                 style={{
-                                                    x: xPos,
-                                                    y: yPos,
-                                                    scale: scale,
+                                                    transform: `translate3d(${xPos}px, ${yPos}px, 0) scale(${scale})`,
                                                     opacity: opacity,
                                                     zIndex: 300 + Math.round(opacity * 100),
-                                                    transform: 'translateZ(0)',
                                                     backfaceVisibility: 'hidden',
                                                     WebkitBackfaceVisibility: 'hidden',
                                                     willChange: 'transform',
                                                 }}
-                                                transition={{ type: 'spring', stiffness: 500, damping: 50, mass: 0.5 }}
-                                                onTap={(e) => { e.stopPropagation(); action.onClick(); }}
+                                                onClick={(e) => { e.stopPropagation(); action.onClick(); }}
                                             >
                                                 {/* LONG ZERO-GAP CONNECTION */}
-                                                <div className={`absolute left-[-190px] w-[200px] h-10 pointer-events-none transition-opacity duration-300 ${isFocused ? 'opacity-100' : 'opacity-20'}`}>
+                                                <div className="mx-panel-svg absolute left-[-190px] w-[200px] h-10 pointer-events-none transition-opacity duration-300" style={{ opacity: isFocused ? '1' : '0.2' }}>
                                                     <svg width="200" height="40" viewBox="0 0 200 40" fill="none">
-                                                        {/* Start exactly at Cyan Ring edge (x=0) and reach panel (x=200) */}
                                                         <path d="M10 20 H120 L150 5 H200" stroke={action.color} strokeWidth="1.5" strokeOpacity="0.7" />
                                                         <path d="M10 20 H120 L150 35 H200" stroke={action.color} strokeWidth="1.5" strokeOpacity="0.7" />
                                                         <circle cx="10" cy="20" r="3.5" fill={action.color} />
-                                                        {isFocused && (
-                                                            <motion.circle
-                                                                initial={{ cx: 10 }}
-                                                                animate={{ cx: 200 }}
-                                                                transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-                                                                r="2.5" fill="white"
-                                                            />
-                                                        )}
                                                     </svg>
                                                 </div>
 
                                                 {/* Endfield Style Panel */}
                                                 <div
-                                                    className={`relative w-32 h-12 bg-black/98 backdrop-blur-3xl border-l-[6px] border-r-[2px] border-y-[2px] transition-all duration-300 flex items-center justify-between px-3 ${isFocused ? `border-l-[${action.color}] border-white/40 shadow-[0_0_25px_${action.color}33] scale-105` : 'border-white/10 opacity-60'}`}
+                                                    className="mx-panel-inner relative w-32 h-12 bg-black/98 backdrop-blur-3xl border-l-[6px] border-r-[2px] border-y-[2px] transition-all duration-300 flex items-center justify-between px-3"
                                                     style={{
                                                         clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)',
-                                                        borderLeftColor: isFocused ? action.color : 'rgba(255,255,255,0.1)'
+                                                        borderLeftColor: isFocused ? action.color : 'rgba(255,255,255,0.1)',
+                                                        boxShadow: isFocused ? `0 0 25px ${action.color}33` : 'none',
+                                                        transform: isFocused ? 'scale(1.05)' : 'scale(1)',
+                                                        opacity: isFocused ? '1' : '0.6'
                                                     }}
                                                 >
-                                                    <div className={`transition-all duration-300 ${isFocused ? 'scale-125' : 'text-white/40'}`} style={{ color: isFocused ? action.color : 'rgba(255,255,255,0.4)' }}>
+                                                    <div className="mx-panel-icon transition-all duration-300" style={{ color: isFocused ? action.color : 'rgba(255,255,255,0.4)', transform: isFocused ? 'scale(1.25)' : 'scale(1)' }}>
                                                         {action.icon}
                                                     </div>
                                                     <div className="flex flex-col items-end mr-1">
-                                                        <span className={`text-[8.5px] font-black uppercase tracking-tighter transition-all duration-300 ${isFocused ? 'text-white' : 'text-white/40'}`}>
+                                                        <span className="mx-panel-label text-[8.5px] font-black uppercase tracking-tighter transition-all duration-300" style={{ color: isFocused ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>
                                                             {action.label}
                                                         </span>
-                                                        {isFocused && <motion.div layoutId="endfield-line-bold" className="h-[1.5px] w-8 mt-1" style={{ backgroundColor: action.color }} />}
+                                                        <div className="mx-panel-line h-[1.5px] w-8 mt-1" style={{ backgroundColor: action.color, display: isFocused ? 'block' : 'none' }} />
                                                     </div>
                                                 </div>
-                                            </motion.div>
+                                            </div>
                                         );
                                     })}
                                 </div>
