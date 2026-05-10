@@ -226,57 +226,15 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
 
   const handleTouchEnd = useCallback(
     (event) => {
-      const start = touchStartRef.current;
-      if (!start.time) return;
-
-      const touch = event.changedTouches[0];
-      const deltaX = touch.clientX - start.x;
-      const deltaY = touch.clientY - start.y;
-      const absX = Math.abs(deltaX);
-      const absY = Math.abs(deltaY);
-      const duration = Date.now() - start.time;
-
-      // FIX 2: Tap detection (Strict 10px threshold)
-      if (start.isTap && duration < 300 && absX < 10 && absY < 10) {
-        // e.preventDefault() is handled by the passive:false listener on mount
-        toggleControls();
-        touchStartRef.current = { x: 0, y: 0, time: 0, isTap: true };
-        return;
-      }
-
-      // FIX 2: Swipe UP to enter fullscreen (80px threshold)
-      if (deltaY < -80 && absY > absX * 1.5) {
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-          toggleFullscreen();
-        }
-      }
-
-      // FIX 2: Swipe DOWN to exit fullscreen or minimize (80px threshold)
-      if (deltaY > 80 && absY > absX * 1.5) {
-        if (document.fullscreenElement || document.webkitFullscreenElement) {
-          toggleFullscreen();
-        } else if (window.innerWidth <= 768 && onMiniChange) {
-          onMiniChange(true);
-        }
-      }
-
-      // YouTube-style horizontal swipe seeking (70px threshold)
-      if (absX > 70 && absX > absY * 1.5 && duration < 500) {
-        if (deltaX > 0) skip(10);
-        else skip(-10);
-        showControlsTemporarily();
-      }
-
-      touchStartRef.current = { x: 0, y: 0, time: 0, isTap: true };
-      isSwipingRef.current = false;
+      // Logic moved to native listener on mount for strict passive:false handling
     },
-    [onMiniChange, showControlsTemporarily, skip, toggleFullscreen, toggleControls]
+    []
   );
 
   useEffect(() => {
-    // FIX 3: Block pull-to-refresh on body
-    document.body.classList.add('video-player-active');
-    
+    const container = containerRef.current;
+    if (!container) return;
+
     const onFsChange = () => {
       const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
       setIsFullscreen(isFs);
@@ -294,27 +252,86 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
     document.addEventListener('fullscreenchange', onFsChange);
     document.addEventListener('webkitfullscreenchange', onFsChange);
 
-    // FIX 1: Block default scrolling inside container with passive: false
-    const container = containerRef.current;
-    const blockScroll = (e) => {
-      if (e.cancelable) e.preventDefault();
+    // FIX 1: Native Listeners for strict scroll block only on video
+    const onTouchStart = (e) => {
+      const touch = e.touches[0];
+      touchStartRef.current = { 
+        x: touch.clientX, 
+        y: touch.clientY, 
+        time: Date.now(),
+        isTap: true 
+      };
+      isSwipingRef.current = false;
     };
 
-    if (container) {
-      container.addEventListener('touchstart', blockScroll, { passive: false });
-      container.addEventListener('touchmove', blockScroll, { passive: false });
-    }
-    
-    return () => {
-      document.body.classList.remove('video-player-active');
-      document.removeEventListener('fullscreenchange', onFsChange);
-      document.removeEventListener('webkitfullscreenchange', onFsChange);
-      if (container) {
-        container.removeEventListener('touchstart', blockScroll);
-        container.removeEventListener('touchmove', blockScroll);
+    const onTouchMove = (e) => {
+      // FIX 1: Prevent page scroll only when touching the video
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+
+      const touch = e.touches[0];
+      const start = touchStartRef.current;
+      if (!start.time) return;
+
+      const deltaX = Math.abs(touch.clientX - start.x);
+      const deltaY = Math.abs(touch.clientY - start.y);
+
+      if (deltaX > 10 || deltaY > 10) {
+        touchStartRef.current.isTap = false;
+        isSwipingRef.current = true;
       }
     };
-  }, []);
+
+    const onTouchEnd = (e) => {
+      const start = touchStartRef.current;
+      if (!start.time) return;
+
+      const touch = e.changedTouches[0];
+      const deltaX = touch.clientX - start.x;
+      const deltaY = touch.clientY - start.y;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+      const duration = Date.now() - start.time;
+
+      // FIX 2 & Tap detection
+      if (start.isTap && duration < 300 && absX < 10 && absY < 10) {
+        toggleControls();
+      } else if (absY > 80 && absY > absX * 1.5) {
+        // Vertical Swipe
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          if (deltaY > 80) { // Swipe Down
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          }
+        } else {
+          if (deltaY < -80) { // Swipe Up
+            if (container.requestFullscreen) container.requestFullscreen();
+            else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+          }
+        }
+      } else if (absX > 70 && absX > absY * 1.5 && duration < 500) {
+        // Horizontal Swipe
+        if (deltaX > 0) skip(10);
+        else skip(-10);
+        showControlsTemporarily();
+      }
+
+      touchStartRef.current = { x: 0, y: 0, time: 0, isTap: true };
+      isSwipingRef.current = false;
+    };
+
+    container.addEventListener('touchstart', onTouchStart, { passive: false });
+    container.addEventListener('touchmove', onTouchMove, { passive: false });
+    container.addEventListener('touchend', onTouchEnd, { passive: false });
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', onFsChange);
+      document.removeEventListener('webkitfullscreenchange', onFsChange);
+      container.removeEventListener('touchstart', onTouchStart);
+      container.removeEventListener('touchmove', onTouchMove);
+      container.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [skip, showControlsTemporarily, toggleControls]);
 
   useEffect(() => {
     if (!isYouTube) {
