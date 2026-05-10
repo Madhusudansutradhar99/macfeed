@@ -188,10 +188,6 @@ export default function Music() {
       setUploadProgress(5);
       console.log('📖 Reading file...');
       
-      // Read file into memory first to prevent any stream locks in the browser
-      const arrayBuffer = await file.arrayBuffer();
-      console.log(`✅ File read: ${arrayBuffer.byteLength} bytes`);
-
       setUploadStatus("Extracting metadata...");
       setUploadProgress(10);
       
@@ -232,11 +228,10 @@ export default function Music() {
       
       const audioFileName = `music/${user?.id || 'anon'}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       
-      // Use Supabase SDK instead of XHR for consistency and better error handling
-      const audioBlob = new Blob([arrayBuffer], { type: file.type || 'audio/mpeg' });
+      // Use native File object directly to avoid Supabase stream issues
       const { data: uploadData, error: uploadErr } = await supabase.storage
         .from('thumbnails')
-        .upload(audioFileName, audioBlob, { 
+        .upload(audioFileName, file, { 
           upsert: true, 
           contentType: file.type || 'audio/mpeg'
         });

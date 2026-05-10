@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Maximize2, X, Rewind, FastForward, ChevronLeft, ChevronRight, Settings2, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Maximize2, X, Rewind, FastForward, ChevronLeft, ChevronRight, Settings2, SlidersHorizontal, ChevronDown, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMusicPlayer } from '../context/MusicContext';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -11,6 +11,15 @@ function formatTime(s) {
   if (!s || isNaN(s)) return '0:00';
   return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
 }
+
+const themes = [
+  { name: 'Cyberpunk', bg1: '#2B9EAD', bg2: '#4C1D95', bg3: '#094F5C', bg4: '#8B5CF6', bg5: '#1A8A95', bg6: '#EC4899', bg7: '#0D6670', blur1: '#F472B6', blur2: '#2DD4BF' },
+  { name: 'Neon Dream', bg1: '#F43F5E', bg2: '#8B5CF6', bg3: '#3B82F6', bg4: '#EC4899', bg5: '#6366F1', bg6: '#14B8A6', bg7: '#0F766E', blur1: '#FCD34D', blur2: '#67E8F9' },
+  { name: 'Sunset Vibe', bg1: '#F59E0B', bg2: '#E11D48', bg3: '#4C1D95', bg4: '#FCD34D', bg5: '#F43F5E', bg6: '#9333EA', bg7: '#581C87', blur1: '#FDE047', blur2: '#F472B6' },
+  { name: 'Aurora', bg1: '#10B981', bg2: '#3B82F6', bg3: '#1E3A8A', bg4: '#34D399', bg5: '#2563EB', bg6: '#8B5CF6', bg7: '#4C1D95', blur1: '#6EE7B7', blur2: '#A78BFA' },
+  { name: 'Dark Void', bg1: '#111827', bg2: '#000000', bg3: '#030712', bg4: '#1F2937', bg5: '#0F172A', bg6: '#1E1B4B', bg7: '#000000', blur1: '#6366F1', blur2: '#EC4899' },
+  { name: 'Cosmic', bg1: '#312E81', bg2: '#831843', bg3: '#4C1D95', bg4: '#4F46E5', bg5: '#BE185D', bg6: '#D946EF', bg7: '#1E1B4B', blur1: '#818CF8', blur2: '#F472B6' }
+];
 
 // ── SINGLETON IFRAME — never destroyed, always playing ──────────────────────
 let _iframe = null;
@@ -47,6 +56,8 @@ export default React.memo(function MusicMiniPlayer() {
   const offscreenRef = useRef(null);
   const [showTopBar, setShowTopBar] = useState(false);
   const [showBottomBar, setShowBottomBar] = useState(false);
+  const [themeIdx, setThemeIdx] = useState(0);
+  const currentTheme = themes[themeIdx] || themes[0];
 
   const {
     playlist = [], currentSong = null, currentIdx = 0, isOpen = false,
@@ -200,9 +211,11 @@ export default React.memo(function MusicMiniPlayer() {
       {isExpanded && (
         <div className="fixed inset-0 z-[200] bg-[#050505] flex flex-col items-center justify-center pointer-events-auto select-none overflow-hidden">
           {/* Ambient background */}
-          <div className="absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse at center, #2B9EAD 0%, #0D6B7A 50%, #094F5C 100%)' }}>
-            <div className="absolute inset-0 opacity-60 mix-blend-overlay" style={{ background: 'linear-gradient(135deg, #0A5C6B 0%, #1A8A95 40%, #2BA8B5 70%, #0D6670 100%)' }} />
+          <div className="absolute inset-0 z-0 transition-colors duration-1000" style={{ background: `radial-gradient(ellipse at center, ${currentTheme.bg1} 0%, ${currentTheme.bg2} 50%, ${currentTheme.bg3} 100%)` }}>
+            <div className="absolute inset-0 opacity-60 mix-blend-overlay transition-colors duration-1000" style={{ background: `linear-gradient(135deg, ${currentTheme.bg4} 0%, ${currentTheme.bg5} 40%, ${currentTheme.bg6} 70%, ${currentTheme.bg7} 100%)` }} />
             <div className="absolute inset-0 bg-[#041D24]/40" />
+            <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] blur-[130px] rounded-full transition-colors duration-1000" style={{ backgroundColor: currentTheme.blur1, opacity: 0.15 }} />
+            <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] blur-[130px] rounded-full transition-colors duration-1000" style={{ backgroundColor: currentTheme.blur2, opacity: 0.2 }} />
           </div>
 
           {/* TOP BAR TOGGLE ICON */}
@@ -235,6 +248,7 @@ export default React.memo(function MusicMiniPlayer() {
                   </div>
                   <span className="text-[11px] font-black uppercase text-white/60 truncate max-w-[120px] mx-auto">{currentSong.title}</span>
                   <div className="flex items-center gap-1">
+                    <button onClick={() => setThemeIdx(p => (p + 1) % themes.length)} className="p-1.5 hover:bg-white/10 rounded-full text-white/50 hover:text-white outline-none"><Palette className="w-3.5 h-3.5" /></button>
                     <button onClick={handleMinimize} className="p-1.5 hover:bg-white/10 rounded-full text-white/50 hover:text-white outline-none"><Maximize2 className="w-3.5 h-3.5 rotate-180" /></button>
                     <button onClick={handleClose} className="p-1.5 hover:bg-red-500/20 rounded-full text-red-500/50 hover:text-red-500 outline-none"><X className="w-4 h-4" /></button>
                   </div>
