@@ -363,17 +363,9 @@ export default function Home() {
   
   // If no featured/header videos, show ONLY the latest high-quality videos (not YouTube auto-saved ones)
   // We limit this fallback to prevent random low-quality or recently played videos from jumping up.
-  if (heroBannerVideos.length === 0 && videos.length > 0) {
-    heroBannerVideos = videos
-      .filter(v => (v.is_featured === true || v.upload_location === 'Header Banner') && v.category !== 'YouTube')
-      .slice(0, 4);
-      
-    // If still empty, we ONLY take the very latest 4 videos if they are NOT from YouTube or Music categories
-    // This ensures a "curated" feel even in fallback mode.
+    // Absolute fallback: just take the latest 4 videos
     if (heroBannerVideos.length === 0) {
-      heroBannerVideos = videos
-        .filter(v => v.category !== 'YouTube' && v.category !== 'Music' && v.category !== 'Shorts')
-        .slice(0, 4);
+      heroBannerVideos = videos.slice(0, 4);
     }
   }
   

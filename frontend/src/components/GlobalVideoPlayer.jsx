@@ -8,12 +8,11 @@ export default function GlobalVideoPlayer() {
   const { activeVideo, viewMode, minimize, maximize, closePlayer, ytPlayerRef } = useVideoMiniPlayer();
   const navigate = useNavigate();
   const location = useLocation();
+  const swipeStartRef = useRef(0);
 
   const isWatchPage = location.pathname.startsWith('/watch/');
 
   if (viewMode === 'closed' || !activeVideo || isWatchPage) return null;
-
-  const swipeStartRef = useRef(0);
 
   const handleTouchStart = (e) => {
     swipeStartRef.current = e.touches[0].clientY;
