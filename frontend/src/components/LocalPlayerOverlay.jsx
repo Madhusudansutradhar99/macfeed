@@ -71,6 +71,8 @@ function LocalPlayerOverlay() {
     const seekRafRef = useRef(null);
     const seekPendingRef = useRef(null);
     const isSeekingRef = useRef(false);
+    const wheelRafRef = useRef(null);
+    const wheelPendingRef = useRef(0);
     const [showExtraPanel, setShowExtraPanel] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [showQualityMenu, setShowQualityMenu] = useState(false);
@@ -410,6 +412,25 @@ function LocalPlayerOverlay() {
         e.stopPropagation();
         commitSeek(e.clientX);
     }, [commitSeek]);
+
+    const scheduleWheelRotation = useCallback((delta) => {
+        wheelPendingRef.current += delta;
+        if (wheelRafRef.current) return;
+
+        wheelRafRef.current = requestAnimationFrame(() => {
+            wheelRafRef.current = null;
+            const nextDelta = wheelPendingRef.current;
+            wheelPendingRef.current = 0;
+            const maxRot = (14 - 1) * 18;
+            setWheelRotation(prev => Math.max(0, Math.min(prev + nextDelta, maxRot)));
+        });
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (wheelRafRef.current) cancelAnimationFrame(wheelRafRef.current);
+        };
+    }, []);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -1098,23 +1119,33 @@ function LocalPlayerOverlay() {
                     */}
                             <div
                                 onWheel={(e) => {
-                                    const sensitivity = 1.5; // Increased from 0.8
-                                    const maxRot = (14 - 1) * 18;
-                                    setWheelRotation(prev => Math.max(0, Math.min(prev - (e.deltaY * sensitivity), maxRot)));
+                                    const sensitivity = 1.5;
+                                    scheduleWheelRotation(-(e.deltaY * sensitivity));
                                 }}
                                 className="relative h-full w-[400px] md:w-[500px] flex items-center justify-start pointer-events-auto group/wheel"
                                 onClick={e => e.stopPropagation()}
+                                style={{
+                                    transform: 'translateZ(0)',
+                                    backfaceVisibility: 'hidden',
+                                    WebkitBackfaceVisibility: 'hidden',
+                                    willChange: 'transform',
+                                }}
                             >
                                 {/* Drag Area (Full height & width of the interactive zone) */}
                                 <motion.div
                                     drag="y"
                                     dragConstraints={{ top: -2000, bottom: 2000 }}
                                     onDrag={(e, info) => {
-                                        const sensitivity = 2.5; // Increased from 1.2
-                                        const maxRot = (14 - 1) * 18;
-                                        setWheelRotation(prev => Math.max(0, Math.min(prev - (info.delta.y * sensitivity), maxRot)));
+                                        const sensitivity = 2.5;
+                                        scheduleWheelRotation(-(info.delta.y * sensitivity));
                                     }}
                                     className="absolute inset-0 z-[200] cursor-grab active:cursor-grabbing"
+                                    style={{
+                                        transform: 'translateZ(0)',
+                                        backfaceVisibility: 'hidden',
+                                        WebkitBackfaceVisibility: 'hidden',
+                                        willChange: 'transform',
+                                    }}
                                 />
                                 {/* COMPACT & TIGHT MOBILE WHEEL (Smaller radius and size) */}
                                 <div className="absolute left-[-220px] md:left-[-280px] w-[300px] md:w-[400px] h-[300px] md:h-[400px] flex items-center justify-center pointer-events-none scale-[0.8] md:scale-100 origin-left">
@@ -1203,7 +1234,11 @@ function LocalPlayerOverlay() {
                                                     y: yPos,
                                                     scale: scale,
                                                     opacity: opacity,
-                                                    zIndex: 300 + Math.round(opacity * 100)
+                                                    zIndex: 300 + Math.round(opacity * 100),
+                                                    transform: 'translateZ(0)',
+                                                    backfaceVisibility: 'hidden',
+                                                    WebkitBackfaceVisibility: 'hidden',
+                                                    willChange: 'transform',
                                                 }}
                                                 transition={{ type: 'spring', stiffness: 500, damping: 50, mass: 0.5 }}
                                                 onTap={(e) => { e.stopPropagation(); action.onClick(); }}

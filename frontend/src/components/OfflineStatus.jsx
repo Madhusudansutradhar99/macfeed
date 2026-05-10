@@ -6,31 +6,33 @@ export default function OfflineStatus() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [show, setShow] = useState(!navigator.onLine);
   const [message, setMessage] = useState('You are offline — showing cached content');
+  const hideTimerRef = React.useRef(null);
+  const refreshTimerRef = React.useRef(null);
+
+  const showBanner = (nextMessage, offline) => {
+    setIsOffline(offline);
+    setMessage(nextMessage);
+    setShow(true);
+
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+
+    hideTimerRef.current = setTimeout(() => setShow(false), 2000);
+
+    if (!offline) {
+      refreshTimerRef.current = setTimeout(() => {
+        window.location.reload();
+      }, 2200);
+    }
+  };
 
   useEffect(() => {
     const handleOnline = () => {
-      setIsOffline(false);
-      setMessage('Back online!');
-      setShow(true);
-      
-      // Hide banner after 2 seconds
-      const timer = setTimeout(() => setShow(false), 2000);
-      
-      // Refresh page after showing message
-      const refreshTimer = setTimeout(() => {
-        window.location.reload();
-      }, 2500);
-
-      return () => {
-        clearTimeout(timer);
-        clearTimeout(refreshTimer);
-      };
+      showBanner('Back online!', false);
     };
 
     const handleOffline = () => {
-      setIsOffline(true);
-      setMessage('You are offline — showing cached content');
-      setShow(true);
+      showBanner('You are offline — showing cached content', true);
     };
 
     window.addEventListener('online', handleOnline);
@@ -39,6 +41,8 @@ export default function OfflineStatus() {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
     };
   }, []);
 
