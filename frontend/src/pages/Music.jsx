@@ -324,10 +324,37 @@ export default function Music() {
       }
     }
 
-    const message = lastError?.message || 'Upload failed. Please try again.';
-    setUploadError(`Could not upload song after 3 attempts. ${message}`);
-    setUploadStatus('Upload failed');
-    setUploadProgress(0);
+    // Fallback: try backend upload if client upload fails
+    try {
+      setUploadStatus('Trying server upload fallback...');
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('userId', user?.id || 'anon');
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const result = await res.json();
+      if (result.success) {
+        setUploadStatus('✅ Upload successful (server)!');
+        setUploadProgress(100);
+        setUploadError('');
+        setPendingUploadFile(null);
+        setTimeout(() => {
+          setUploadStatus('');
+          setUploadProgress(0);
+        }, 2500);
+        // Optionally, refresh song list here
+        return;
+      } else {
+        throw new Error(result.error || 'Server upload failed');
+      }
+    } catch (serverErr) {
+      const message = lastError?.message || serverErr?.message || 'Upload failed. Please try again.';
+      setUploadError(`Could not upload song after 3 attempts. ${message}`);
+      setUploadStatus('Upload failed');
+      setUploadProgress(0);
+    }
   }, [uploadSongOnce]);
 
   const handleFileUpload = async (e) => {

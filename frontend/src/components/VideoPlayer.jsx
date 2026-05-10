@@ -309,6 +309,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
         if (type === '2g' || type === '3g') connectionSpeed = 'slow';
       }
 
+      console.log('[YT-Player] Creating with origin:', window.location.origin);
       ytPlayerRef.current = new window.YT.Player(host, {
         videoId: youtubeId,
         width: '100%',
@@ -324,6 +325,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
           disablekb: 1,
           origin: window.location.origin,
         },
+        host: 'https://www.youtube.com',
         events: {
           onReady: (event) => {
             setLoadFailed(false);
