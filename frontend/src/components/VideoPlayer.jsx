@@ -70,12 +70,16 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
   const controlsTimeout = useRef(null);
   const touchStartRef = useRef({ x: 0, y: 0, time: 0, isTap: true });
   const isSwipingRef = useRef(false);
+  // FIX 3/4: DOM refs for zero-re-render realtime updates
+  const progressBarRef = useRef(null);
+  const currentTimeRef = useRef(null);
+  const durationRef = useRef(null);
+  const playBtnRef = useRef(null);
+  const durationStateRef = useRef(0); // tracks duration without setState
 
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(1);
-  const [current, setCurrent] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -83,26 +87,23 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
   const [availableQualities, setAvailableQualities] = useState([]);
   const [currentQuality, setCurrentQuality] = useState('auto');
   const [forceLandscape, setForceLandscape] = useState(false);
+  // Keep these for native video & seek compatibility
+  const [current, setCurrent] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   const isYouTube = video?.source === 'youtube';
 
   const showControlsTemporarily = useCallback(() => {
     setShowControls(true);
     clearTimeout(controlsTimeout.current);
+    // FIX 2: Always auto-hide after 3s (works in normal & fullscreen)
     controlsTimeout.current = setTimeout(() => {
-      if (playing) setShowControls(false);
-    }, 3000); // Hide after 3 seconds of inactivity
-  }, [playing]);
-
-  const toggleControls = useCallback((e) => {
-    if (isFullscreen) {
       setShowControls(false);
-      return;
-    }
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+    }, 3000);
+  }, []);
+
+  const toggleControls = useCallback(() => {
+    // FIX 2: Tap toggles controls in both normal AND fullscreen
     setShowControls(prev => {
       const next = !prev;
       if (next) showControlsTemporarily();
@@ -110,7 +111,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
       return next;
     });
     setShowQualityMenu(false);
-  }, [isFullscreen, showControlsTemporarily]);
+  }, [showControlsTemporarily]);
 
   const handleQualityChange = useCallback((quality) => {
     // YouTube API blocks setPlaybackQuality() due to cross-origin restrictions.
@@ -386,16 +387,24 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
         events: {
           onReady: (event) => {
             setLoadFailed(false);
-            setDuration(event.target.getDuration?.() || 0);
+            const initDur = event.target.getDuration?.() || 0;
+            durationStateRef.current = initDur;
+            setDuration(initDur);
             setVolume((event.target.getVolume?.() || 100) / 100);
 
             if (ytTimerRef.current) clearInterval(ytTimerRef.current);
+            // FIX 3: Update progress via DOM refs — zero re-renders
             ytTimerRef.current = setInterval(() => {
               try {
                 const cur = event.target.getCurrentTime?.() || 0;
-                const dur = event.target.getDuration?.() || 0;
-                setCurrent(cur);
-                if (dur > 0) setDuration(dur);
+                const dur = event.target.getDuration?.() || durationStateRef.current || 0;
+                if (dur > 0) {
+                  durationStateRef.current = dur;
+                  const pct = (cur / dur) * 100;
+                  if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
+                  if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(cur);
+                  if (durationRef.current) durationRef.current.textContent = formatTime(dur);
+                }
 
                 const levels = event.target.getAvailableQualityLevels?.();
                 if (Array.isArray(levels) && levels.length > 0) {
@@ -436,10 +445,13 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
             }
           },
           onStateChange: (event) => {
-            // FIX 4: Sync state with YouTube API
+            // FIX 4: Update play/pause icon via DOM ref — zero re-renders
             const state = event.data;
-            if (state === window.YT.PlayerState.PLAYING) setPlaying(true);
-            else if (state === window.YT.PlayerState.PAUSED || state === window.YT.PlayerState.BUFFERING) setPlaying(false);
+            const isPlaying = state === window.YT.PlayerState.PLAYING;
+            setPlaying(isPlaying);
+            if (playBtnRef.current) {
+              playBtnRef.current.dataset.playing = isPlaying ? '1' : '0';
+            }
             
             if (state === window.YT.PlayerState.ENDED) {
               setPlaying(false);
@@ -668,7 +680,8 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
           />
         )}
 
-        {showControls && !isFullscreen && (
+        {/* FIX 2: Controls show in BOTH normal and fullscreen on tap */}
+        {showControls && (
           <>
             <div
               className="absolute left-0 top-0 z-40 flex w-full items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 pb-8 pt-3"
@@ -766,40 +779,42 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
               onTouchEnd={(e) => e.stopPropagation()}
               onMouseEnter={showControlsTemporarily}
             >
+              {/* FIX 3: Progress bar — drag input seeks, fill div updated via DOM ref */}
               <div className="mb-3 w-full group relative flex items-center h-4">
                 <input
                   type="range"
                   min="0"
                   max="100"
                   step="0.1"
-                  value={duration > 0 ? (current / duration) * 100 : 0}
+                  defaultValue={0}
                   onChange={handleSeek}
                   onMouseDown={(e) => e.stopPropagation()}
                   onTouchStart={(e) => e.stopPropagation()}
                   className="absolute w-full h-1.5 opacity-0 cursor-pointer z-10"
                 />
                 <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden pointer-events-none">
-                  <div className="h-full bg-white/40" style={{ width: `${(current / (duration || 1)) * 100 || 0}%`, transition: 'width 0.25s linear' }}>
-                     <div className="h-full bg-accent" style={{ width: '100%', backgroundColor: 'var(--accent-color, #facc15)' }} />
-                  </div>
+                  <div ref={progressBarRef} className="h-full" style={{ width: '0%', backgroundColor: 'var(--accent-color, #facc15)', transition: 'width 0.25s linear' }} />
                 </div>
               </div>
 
               <div className="flex items-center justify-between gap-1 text-white">
                 <div className="flex items-center gap-0.5">
+                  {/* FIX 4: playBtnRef tracks state for icon swap without extra re-render */}
                   <ControlBtn onClick={(e) => {
                     e.stopPropagation();
                     const next = !playing;
-                    setPlaying(next); // Instant UI update
-                    if (isYouTube && ytPlayerRef.current?.playVideo) {
-                      if (next) ytPlayerRef.current.playVideo();
-                      else ytPlayerRef.current.pauseVideo();
+                    setPlaying(next);
+                    if (isYouTube && ytPlayerRef.current) {
+                      if (next) ytPlayerRef.current.playVideo?.();
+                      else ytPlayerRef.current.pauseVideo?.();
                     } else if (nativeVideoRef.current) {
                       if (next) nativeVideoRef.current.play();
                       else nativeVideoRef.current.pause();
                     }
                   }} title={playing ? 'Pause' : 'Play'}>
-                    {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 fill-white" />}
+                    <span ref={playBtnRef} data-playing={playing ? '1' : '0'}>
+                      {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 fill-white" />}
+                    </span>
                   </ControlBtn>
                   <ControlBtn onClick={() => skip(-10)} title="Back 10s">
                     <SkipBack className="h-5 w-5" />
@@ -810,8 +825,9 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
                   <ControlBtn onClick={() => setMuted((prev) => !prev)} title="Mute">
                     {muted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
                   </ControlBtn>
-                  <span className="ml-2 hidden font-mono text-[11px] tabular-nums text-white/60 sm:block">
-                    {formatTime(current)} / {formatTime(duration)}
+                  {/* FIX 3: Time display via DOM refs — zero re-render */}
+                  <span className="ml-2 font-mono text-[11px] tabular-nums text-white/60">
+                    <span ref={currentTimeRef}>0:00</span> / <span ref={durationRef}>0:00</span>
                   </span>
                 </div>
 
