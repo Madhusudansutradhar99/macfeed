@@ -116,7 +116,7 @@ function LocalPlayerOverlay() {
     const [orientation, setOrientation] = useState('portrait');
     const [physOrientation, setPhysOrientation] = useState(window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
     const [forceLandscape, setForceLandscape] = useState(false);
-    const [wheelRotation, setWheelRotation] = useState(0);
+
 
     // Web Audio API Refs for Boost & EQ
     const audioCtxRef = useRef(null);
@@ -436,66 +436,8 @@ function LocalPlayerOverlay() {
     }, [commitSeek]);
 
     const scheduleWheelRotation = useCallback((delta) => {
-        wheelPendingRef.current += delta;
-        if (wheelRafRef.current) return;
-
-            setWheelRotation(prev => Math.max(0, Math.min(prev + nextDelta, maxRot)));
-            
-            if (panelRefs.current) {
-                const panelRadius = window.innerWidth < 768 ? 200 : 350;
-                panelRefs.current.forEach((panel, i) => {
-                    if (!panel) return;
-                    const totalRotation = (i * 18) - newRotation;
-                    const rad = (totalRotation * Math.PI) / 180;
-                    
-                    const xPos = Math.cos(rad) * panelRadius + 200;
-                    const yPos = Math.sin(rad) * panelRadius;
-                    
-                    const normalizedDist = Math.abs(yPos) / (panelRadius * 1.5);
-                    const scale = Math.max(0.7, 1.15 - normalizedDist);
-                    const opacity = Math.max(0.3, 1 - normalizedDist);
-                    const isFocused = scale > 1.05;
-                    
-                    panel.style.transform = `translate3d(${xPos}px, ${yPos}px, 0) scale(${scale})`;
-                    panel.style.opacity = opacity;
-                    panel.style.zIndex = 300 + Math.round(opacity * 100);
-                    
-                    const innerBox = panel.querySelector('.mx-panel-inner');
-                    const innerIcon = panel.querySelector('.mx-panel-icon');
-                    const innerLabel = panel.querySelector('.mx-panel-label');
-                    const line = panel.querySelector('.mx-panel-line');
-                    const svgLine = panel.querySelector('.mx-panel-svg');
-                    const color = panel.dataset.color;
-                    
-                    if (innerBox) {
-                        if (isFocused) {
-                            innerBox.style.borderLeftColor = color;
-                            innerBox.style.boxShadow = `0 0 25px ${color}33`;
-                            innerBox.style.transform = 'scale(1.05)';
-                            innerBox.style.opacity = '1';
-                        } else {
-                            innerBox.style.borderLeftColor = 'rgba(255,255,255,0.1)';
-                            innerBox.style.boxShadow = 'none';
-                            innerBox.style.transform = 'scale(1)';
-                            innerBox.style.opacity = '0.6';
-                        }
-                    }
-                    if (innerIcon) {
-                        innerIcon.style.color = isFocused ? color : 'rgba(255,255,255,0.4)';
-                        innerIcon.style.transform = isFocused ? 'scale(1.25)' : 'scale(1)';
-                    }
-                    if (innerLabel) {
-                        innerLabel.style.color = isFocused ? '#ffffff' : 'rgba(255,255,255,0.4)';
-                    }
-                    if (line) {
-                        line.style.display = isFocused ? 'block' : 'none';
-                    }
-                    if (svgLine) {
-                        svgLine.style.opacity = isFocused ? '1' : '0.2';
-                    }
-                });
-            }
-        });
+        const maxRot = (14 - 1) * 18;
+        setWheelRotation(prev => Math.max(0, Math.min(prev + delta, maxRot)));
     }, []);
 
     useEffect(() => {
