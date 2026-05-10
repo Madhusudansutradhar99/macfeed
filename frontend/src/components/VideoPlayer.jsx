@@ -95,7 +95,10 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
   }, [playing]);
 
   const toggleControls = useCallback((e) => {
-    if (isFullscreen) return; // FIX 2: No custom controls in fullscreen
+    if (isFullscreen) {
+      setShowControls(false);
+      return;
+    }
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -235,27 +238,22 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
 
       // FIX 2: Tap detection (Strict 10px threshold)
       if (start.isTap && duration < 300 && absX < 10 && absY < 10) {
-        event.preventDefault();
-        event.stopPropagation();
+        // e.preventDefault() is handled by the passive:false listener on mount
         toggleControls();
         touchStartRef.current = { x: 0, y: 0, time: 0, isTap: true };
         return;
       }
 
-      // FIX 1 & 2: Swipe UP to enter fullscreen (80px threshold)
+      // FIX 2: Swipe UP to enter fullscreen (80px threshold)
       if (deltaY < -80 && absY > absX * 1.5) {
-        event.preventDefault();
-        event.stopPropagation();
-        if (!document.fullscreenElement) {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
           toggleFullscreen();
         }
       }
 
-      // FIX 1 & 2: Swipe DOWN to exit fullscreen or minimize (80px threshold)
+      // FIX 2: Swipe DOWN to exit fullscreen or minimize (80px threshold)
       if (deltaY > 80 && absY > absX * 1.5) {
-        event.preventDefault();
-        event.stopPropagation();
-        if (document.fullscreenElement) {
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
           toggleFullscreen();
         } else if (window.innerWidth <= 768 && onMiniChange) {
           onMiniChange(true);
@@ -264,8 +262,6 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
 
       // YouTube-style horizontal swipe seeking (70px threshold)
       if (absX > 70 && absX > absY * 1.5 && duration < 500) {
-        event.preventDefault();
-        event.stopPropagation();
         if (deltaX > 0) skip(10);
         else skip(-10);
         showControlsTemporarily();
@@ -278,6 +274,9 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
   );
 
   useEffect(() => {
+    // FIX 3: Block pull-to-refresh on body
+    document.body.classList.add('video-player-active');
+    
     const onFsChange = () => {
       const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
       setIsFullscreen(isFs);
@@ -294,10 +293,26 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
 
     document.addEventListener('fullscreenchange', onFsChange);
     document.addEventListener('webkitfullscreenchange', onFsChange);
+
+    // FIX 1: Block default scrolling inside container with passive: false
+    const container = containerRef.current;
+    const blockScroll = (e) => {
+      if (e.cancelable) e.preventDefault();
+    };
+
+    if (container) {
+      container.addEventListener('touchstart', blockScroll, { passive: false });
+      container.addEventListener('touchmove', blockScroll, { passive: false });
+    }
     
     return () => {
+      document.body.classList.remove('video-player-active');
       document.removeEventListener('fullscreenchange', onFsChange);
       document.removeEventListener('webkitfullscreenchange', onFsChange);
+      if (container) {
+        container.removeEventListener('touchstart', blockScroll);
+        container.removeEventListener('touchmove', blockScroll);
+      }
     };
   }, []);
 
@@ -404,11 +419,14 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
             }
           },
           onStateChange: (event) => {
-            if (event.data === window.YT.PlayerState.PLAYING) setPlaying(true);
-            if (event.data === window.YT.PlayerState.PAUSED) setPlaying(false);
-            if (event.data === window.YT.PlayerState.ENDED) {
+            // FIX 4: Sync state with YouTube API
+            const state = event.data;
+            if (state === window.YT.PlayerState.PLAYING) setPlaying(true);
+            else if (state === window.YT.PlayerState.PAUSED || state === window.YT.PlayerState.BUFFERING) setPlaying(false);
+            
+            if (state === window.YT.PlayerState.ENDED) {
               setPlaying(false);
-              // FIX 3: Auto play next related video
+              // Auto play next related video
               fetch(`/api/related?videoId=${video.id || ''}`)
                 .then(res => res.json())
                 .then(data => {
@@ -580,6 +598,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
       <div
         ref={containerRef}
         className={`${isFullscreen ? 'h-full w-full' : 'relative w-full rounded-2xl sm:rounded-[32px] aspect-video'} overflow-hidden select-none bg-black flex items-center justify-center transition-all duration-300 ease-in-out`}
+        style={{ touchAction: 'none' }}
         onMouseMove={showControlsTemporarily}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
