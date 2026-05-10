@@ -207,9 +207,9 @@ function LocalPlayerOverlay() {
     const startSeekDrag = useCallback((clientX) => {
         const nextSeek = resolveSeekPoint(clientX);
         if (!nextSeek) return;
-        // Don't set isSeeking state - keep it in ref only to prevent rerenders
         isSeekingRef.current = true;
         seekPendingRef.current = nextSeek;
+        if (progressBarRef.current) progressBarRef.current.style.transition = 'none';
         paintSeekPreview(clientX);
     }, [paintSeekPreview, resolveSeekPoint]);
 
@@ -220,6 +220,7 @@ function LocalPlayerOverlay() {
             cancelAnimationFrame(seekRafRef.current);
             seekRafRef.current = null;
         }
+        if (progressBarRef.current) progressBarRef.current.style.transition = 'width 0.12s linear';
         commitSeek(clientX);
     }, [commitSeek]);
 
@@ -310,8 +311,20 @@ function LocalPlayerOverlay() {
                     video.style.backfaceVisibility = 'hidden';
                     video.style.WebkitBackfaceVisibility = 'hidden';
 
-                    // Don't play immediately - let the 'playing' state handle it
-                    setPlaying(true); // Trigger play via the effect below
+                    // Check slow network
+                    let connectionSpeed = 'fast';
+                    if (navigator.connection && navigator.connection.effectiveType) {
+                        const type = navigator.connection.effectiveType;
+                        if (type === '2g' || type === '3g') connectionSpeed = 'slow';
+                    }
+
+                    if (connectionSpeed === 'slow') {
+                        setPlaying(false);
+                        video.autoplay = false;
+                        showMXToast('Slow network detected. Autoplay paused.', <Zap size={16} />, '#F59E0B');
+                    } else {
+                        setPlaying(true);
+                    }
 
                 } catch (err) {
                     console.error("Player setup error:", err);
@@ -1078,7 +1091,6 @@ function LocalPlayerOverlay() {
                                                 backfaceVisibility: 'hidden',
                                                 WebkitBackfaceVisibility: 'hidden',
                                                 willChange: 'width, transform',
-                                                transition: isSeeking ? 'none' : 'width 0.12s linear',
                                             }}
                                         >
                                             <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-xl scale-110" />

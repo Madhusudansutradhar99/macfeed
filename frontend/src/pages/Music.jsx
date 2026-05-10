@@ -92,6 +92,13 @@ export default function Music() {
   async function fetchMusic() {
     setLoading(true);
     try {
+      const cached = localStorage.getItem('macfeed_music_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        setSongs(parsed);
+        setFilteredSongs(parsed);
+        setLoading(false); // Show stale data immediately
+      }
       const { data } = await supabase
         .from('videos')
         .select('*')
@@ -100,6 +107,7 @@ export default function Music() {
       const musicData = data || [];
       setSongs(musicData);
       setFilteredSongs(musicData);
+      localStorage.setItem('macfeed_music_cache', JSON.stringify(musicData));
     } catch (e) {
       console.error(e);
     } finally {
@@ -120,7 +128,7 @@ export default function Music() {
           id: `yt-${v.ytId || v.id}`,
           youtubeId: v.ytId || v.id,
           title: v?.title || 'Untitled Video',
-          thumbnail_url: v.thumbnail || v.thumbnail_url,
+          thumbnail_url: (v.thumbnail || v.thumbnail_url)?.replace('maxresdefault.jpg', 'mqdefault.jpg') || '',
           video_url: `https://www.youtube.com/embed/${v.ytId || v.id}`,
           source: 'youtube',
           category: 'Music',
@@ -454,16 +462,19 @@ export default function Music() {
                 
                 {user && (
                   <div className="relative group">
-                    <label className="w-12 h-12 md:w-10 md:h-10 md:p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer flex items-center justify-center touch-manipulation active:scale-95">
+                    <button 
+                      onClick={() => document.getElementById('music-upload-input').click()}
+                      className="w-12 h-12 md:w-10 md:h-10 md:p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer flex items-center justify-center touch-manipulation active:scale-95">
                       <Upload className="w-5 h-5" />
-                      <input 
-                        type="file" 
-                        accept="audio/*" 
-                        className="hidden" 
-                        onChange={handleFileUpload}
-                        aria-label="Upload audio file"
-                      />
-                    </label>
+                    </button>
+                    <input 
+                      id="music-upload-input"
+                      type="file" 
+                      accept="audio/*" 
+                      className="hidden" 
+                      onChange={handleFileUpload}
+                      aria-label="Upload audio file"
+                    />
                     {uploadStatus && (
                       <div className="absolute top-1/2 -translate-y-1/2 right-14 w-48 bg-[#0F1115] border border-white/10 rounded-xl p-3 shadow-2xl pointer-events-none z-50">
                         <div className="text-[9px] text-white/70 font-black uppercase tracking-widest mb-2">{uploadStatus}</div>
@@ -507,8 +518,8 @@ export default function Music() {
                       
                       {filteredSongs.slice(0, 3).map((r) => (
                         <div key={'loc-'+r.id} onClick={() => { handleSongClick(r); setIsSearchFocused(false); setSearchQuery(''); }} className="flex items-center gap-4 px-6 py-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 group transition-all">
-                          <div className="relative w-16 h-10 rounded overflow-hidden shrink-0">
-                            <img src={r.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                          <div className="relative w-16 h-10 rounded overflow-hidden shrink-0 bg-white/5">
+                            <img src={r.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-white text-xs font-black truncate group-hover:text-red-400 transition-colors uppercase italic">{r.title}</p>
@@ -524,8 +535,8 @@ export default function Music() {
                       
                       {ytResults.map((r, idx) => (
                         <div key={'yt-'+r.id+idx} onClick={() => { handleSongClick(r); setIsSearchFocused(false); setSearchQuery(''); }} className="flex items-center gap-4 px-6 py-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 group transition-all">
-                          <div className="relative w-16 h-10 rounded overflow-hidden shrink-0">
-                            <img src={r.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                          <div className="relative w-16 h-10 rounded overflow-hidden shrink-0 bg-white/5">
+                            <img src={r.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-white text-xs font-black truncate group-hover:text-red-400 transition-colors uppercase italic">{r.title}</p>
@@ -567,7 +578,7 @@ export default function Music() {
                       <div className="flex items-center gap-5 min-w-0">
                         <div className="text-[10px] font-black uppercase text-white/30 w-6">{(i + 1).toString().padStart(2, '0')}</div>
                         <div className={`w-14 h-14 rounded-xl overflow-hidden bg-white/10 shrink-0 border ${activeBorder} transition-colors duration-500`}>
-                          <img src={song.thumbnail_url} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all" alt="" />
+                          <img src={song.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all" alt="" />
                         </div>
                         <div className="flex flex-col">
                           <span className="text-[13px] font-black uppercase tracking-tighter truncate text-white/80 group-hover:text-white max-w-[200px] md:max-w-md">{song.title}</span>
@@ -596,7 +607,7 @@ export default function Music() {
                     {sideSongs.map((song, i) => (
                       <div key={song.id} onClick={() => handleSongClick(song)} className="flex items-center gap-6 group cursor-pointer transition-transform active:scale-95">
                         <div className="text-[9px] font-black uppercase text-white/30 w-4">0{i+2}</div>
-                        <div className={`w-16 h-16 rounded-3xl overflow-hidden shrink-0 border ${activeBorder} transition-colors duration-500`}><img src={song.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt="" /></div>
+                        <div className={`w-16 h-16 rounded-3xl overflow-hidden shrink-0 border ${activeBorder} transition-colors duration-500 bg-white/5`}><img src={song.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt="" /></div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-xs font-black uppercase italic tracking-wider truncate mb-1">{song.title}</h4>
                           <span className="text-[8px] font-black uppercase tracking-widest text-white/50">{song.source === 'local' ? 'Local' : 'YouTube'}</span>
@@ -620,7 +631,7 @@ export default function Music() {
                     {recentlyPlayed.map(song => (
                       <div key={song.id} onClick={() => handleSongClick(song)} className="flex items-center justify-between group cursor-pointer transition-transform active:scale-95">
                         <div className="flex items-center gap-5 min-w-0">
-                          <div className={`w-12 h-12 rounded-2xl overflow-hidden bg-white/10 shrink-0 border ${activeBorder} transition-colors duration-500`}><img src={song.thumbnail_url} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all" alt="" /></div>
+                          <div className={`w-12 h-12 rounded-2xl overflow-hidden bg-white/10 shrink-0 border ${activeBorder} transition-colors duration-500`}><img src={song.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all" alt="" /></div>
                           <span className="text-[11px] font-black uppercase tracking-tighter truncate text-white/60 group-hover:text-white">{song.title}</span>
                         </div>
                         <div className="flex items-center gap-3">
@@ -640,8 +651,8 @@ export default function Music() {
               {/* Right Side */}
               <div className="col-span-12 lg:col-span-7 space-y-12">
                 {heroSong && (
-                  <div onClick={() => handleSongClick(heroSong)} className={`relative w-full h-[220px] md:h-[280px] rounded-[3.5rem] overflow-hidden cursor-pointer group border ${activeBorder} transition-all duration-500 shadow-2xl active:scale-[0.98]`}>
-                    <img src={heroSong.thumbnail_url} className="w-full h-full object-cover object-center transition-transform duration-[3s] group-hover:scale-105" alt="" />
+                  <div onClick={() => handleSongClick(heroSong)} className={`relative w-full h-[220px] md:h-[280px] rounded-[3.5rem] overflow-hidden cursor-pointer group border ${activeBorder} transition-all duration-500 shadow-2xl active:scale-[0.98] bg-white/5`}>
+                    <img src={heroSong.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover object-center transition-transform duration-[3s] group-hover:scale-105" alt="" />
                     <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent flex flex-col justify-end p-8">
                       <div className="flex items-center gap-2 mb-2"><span className="bg-yellow-500 text-black px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest italic">Featured</span></div>
                       <h2 className="text-xl md:text-3xl font-black italic uppercase tracking-tighter leading-[1.1] mb-3 max-w-md">{heroSong.title}</h2>
@@ -669,7 +680,7 @@ export default function Music() {
                               <div onClick={() => handleSongClick(song)} className="relative w-36 h-44 md:w-56 md:h-64 cursor-pointer group transition-transform hover:scale-110 active:scale-95" style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}>
                                 <div className={`absolute inset-0 ${activeBgBorder} transition-colors duration-500 group-hover:bg-purple-500 p-[2px]`} style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}>
                                   <div className="w-full h-full bg-[#0F1115] overflow-hidden relative" style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}>
-                                    <img src={song.thumbnail_url} className="absolute inset-0 w-full h-full object-cover brightness-[0.4] group-hover:brightness-110 transition-all duration-1000" alt="" />
+                                    <img src={song.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover brightness-[0.4] group-hover:brightness-110 transition-all duration-1000" alt="" />
                                     <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-30 px-4 text-center bg-black/40 backdrop-blur-[2px]">
                                       <h5 className="text-[10px] font-black uppercase text-white line-clamp-3">{song.title}</h5>
                                     </div>
@@ -686,8 +697,8 @@ export default function Music() {
                   <div className="flex gap-6 overflow-x-auto no-scrollbar pb-6">
                     {bottomSongs.map((song) => (
                       <div key={song.id} onClick={() => handleSongClick(song)} className="w-[180px] md:w-[240px] shrink-0 group cursor-pointer transition-transform active:scale-95">
-                        <div className={`aspect-[2/3] rounded-[2.5rem] overflow-hidden mb-4 relative border ${activeBorder} transition-colors duration-500 shadow-2xl`}>
-                          <img src={song.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
+                        <div className={`aspect-[2/3] rounded-[2.5rem] overflow-hidden mb-4 relative border ${activeBorder} transition-colors duration-500 shadow-2xl bg-white/5`}>
+                          <img src={song.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent flex flex-col justify-end p-6">
                             <h5 className="text-[10px] font-black uppercase italic line-clamp-2 leading-tight mb-2">{song.title}</h5>
                             <div className="flex items-center justify-between">

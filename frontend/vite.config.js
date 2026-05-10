@@ -75,6 +75,7 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 5000,
+    sourcemap: false,
     minify: 'terser',
     terserOptions: {
       compress: {
@@ -102,6 +103,9 @@ export default defineConfig({
             }
             if (id.includes('framer-motion')) {
               return 'vendor-animation';
+            }
+            if (id.includes('swiper')) {
+              return 'vendor-player';
             }
             return 'vendor';
           }

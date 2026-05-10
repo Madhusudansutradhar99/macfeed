@@ -37,7 +37,7 @@ function ControlBtn({ onClick, title, children, className = '' }) {
   );
 }
 
-export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
+export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, onError }) {
   const containerRef = useRef(null);
   const ytDomContainer = useRef(null);
   const ytPlayerRef = useRef(null);
@@ -261,12 +261,19 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
       const host = document.createElement('div');
       ytDomContainer.current.appendChild(host);
 
+      // Check network speed
+      let connectionSpeed = 'fast';
+      if (navigator.connection && navigator.connection.effectiveType) {
+        const type = navigator.connection.effectiveType;
+        if (type === '2g' || type === '3g') connectionSpeed = 'slow';
+      }
+
       ytPlayerRef.current = new window.YT.Player(host, {
         videoId: youtubeId,
         width: '100%',
         height: '100%',
         playerVars: {
-          autoplay: 1,
+          autoplay: connectionSpeed === 'slow' ? 0 : 1,
           controls: 0,
           rel: 0,
           modestbranding: 1,
@@ -536,9 +543,10 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
             ref={nativeVideoRef}
             data-macfeed-player="youtube"
             src={video.video_url}
-            poster={video.thumbnail_url}
+            poster={video.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')}
             className="block h-full w-full bg-black object-contain"
             playsInline
+            autoPlay={!(navigator.connection && (navigator.connection.effectiveType === '2g' || navigator.connection.effectiveType === '3g'))}
             onTimeUpdate={(event) => setCurrent(event.target.currentTime)}
             onLoadedMetadata={(event) => setDuration(event.target.duration)}
             onPlay={() => setPlaying(true)}
@@ -687,4 +695,4 @@ export default function VideoPlayer({ video, onClose, onMiniChange, onError }) {
       </div>
     </div>
   );
-}
+});

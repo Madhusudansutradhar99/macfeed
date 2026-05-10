@@ -40,7 +40,7 @@ function moveIframeTo(container) {
 }
 // ────────────────────────────────────────────────────────────────────────────
 
-export default function MusicMiniPlayer() {
+export default React.memo(function MusicMiniPlayer() {
   const ctx = useMusicPlayer();
   const swiperRef = useRef(null);
   const cardTargetRef = useRef(null);
@@ -265,7 +265,7 @@ export default function MusicMiniPlayer() {
                     ${currentIdx === i ? 'scale-100 border-white/20' : 'scale-[0.8] opacity-30 grayscale border-white/5'}`}>
 
                     {/* Thumbnail always visible as fallback — prevents black flash during swipe */}
-                    <img src={song.thumbnail_url} className="absolute inset-0 w-full h-full object-cover" alt="" />
+                    <img src={song.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" alt="" />
 
                     {/* Active slide: iframe teleport target sits on top of thumbnail */}
                     {currentIdx === i && (
@@ -324,7 +324,7 @@ export default function MusicMiniPlayer() {
                   {/* Progress */}
                   <div className="flex-1 flex items-center gap-2 md:gap-3 px-3 md:px-10 w-full min-w-0">
                     <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-white/10">
-                      <img src={currentSong?.thumbnail_url} className="w-full h-full object-cover" alt="" />
+                      <img src={currentSong?.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover" alt="" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center mb-2">
@@ -363,7 +363,7 @@ export default function MusicMiniPlayer() {
           style={{ willChange: 'transform' }}
         >
           <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl overflow-hidden cursor-pointer shadow-xl shrink-0 border border-primary" onClick={handleExpand}>
-            <img src={currentSong?.thumbnail_url} className="w-full h-full object-cover" alt="" />
+            <img src={currentSong?.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover" alt="" />
           </div>
           <div className="flex-1 min-w-0 cursor-pointer" onClick={handleExpand}>
             <h4 className="text-[11px] font-black uppercase text-primary truncate leading-tight italic">{currentSong?.title}</h4>
@@ -391,4 +391,4 @@ export default function MusicMiniPlayer() {
       )}
     </>
   );
-}
+});
