@@ -22,10 +22,12 @@ if (typeof window !== 'undefined') window.Buffer = window.Buffer || Buffer;
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const themes = [
-  { name: 'Teal', bg1: '#2B9EAD', bg2: '#0D6B7A', bg3: '#094F5C', bg4: '#0A5C6B', bg5: '#1A8A95', bg6: '#2BA8B5', bg7: '#0D6670', blur1: '#4AACB8', blur2: '#0A5C6B', border: 'border-teal-400/50', bgBorder: 'bg-teal-400/50' },
-  { name: 'Purple', bg1: '#8B5CF6', bg2: '#6D28D9', bg3: '#4C1D95', bg4: '#5B21B6', bg5: '#7C3AED', bg6: '#8B5CF6', bg7: '#4C1D95', blur1: '#A78BFA', blur2: '#5B21B6', border: 'border-purple-400/50', bgBorder: 'bg-purple-400/50' },
-  { name: 'Crimson', bg1: '#EF4444', bg2: '#B91C1C', bg3: '#7F1D1D', bg4: '#991B1B', bg5: '#DC2626', bg6: '#EF4444', bg7: '#7F1D1D', blur1: '#F87171', blur2: '#991B1B', border: 'border-red-400/50', bgBorder: 'bg-red-400/50' },
-  { name: 'Dark', bg1: '#1F2937', bg2: '#111827', bg3: '#030712', bg4: '#1F2937', bg5: '#374151', bg6: '#4B5563', bg7: '#030712', blur1: '#374151', blur2: '#111827', border: 'border-white/20', bgBorder: 'bg-white/20' },
+  { name: 'Cyberpunk', bg1: '#2B9EAD', bg2: '#4C1D95', bg3: '#094F5C', bg4: '#8B5CF6', bg5: '#1A8A95', bg6: '#EC4899', bg7: '#0D6670', blur1: '#F472B6', blur2: '#2DD4BF', border: 'border-pink-500/50', bgBorder: 'bg-pink-500/50' },
+  { name: 'Neon Dream', bg1: '#F43F5E', bg2: '#8B5CF6', bg3: '#3B82F6', bg4: '#EC4899', bg5: '#6366F1', bg6: '#14B8A6', bg7: '#0F766E', blur1: '#FCD34D', blur2: '#67E8F9', border: 'border-cyan-400/60', bgBorder: 'bg-cyan-400/60' },
+  { name: 'Sunset Vibe', bg1: '#F59E0B', bg2: '#E11D48', bg3: '#4C1D95', bg4: '#FCD34D', bg5: '#F43F5E', bg6: '#9333EA', bg7: '#581C87', blur1: '#FDE047', blur2: '#F472B6', border: 'border-amber-400/60', bgBorder: 'bg-amber-400/60' },
+  { name: 'Aurora', bg1: '#10B981', bg2: '#3B82F6', bg3: '#1E3A8A', bg4: '#34D399', bg5: '#2563EB', bg6: '#8B5CF6', bg7: '#4C1D95', blur1: '#6EE7B7', blur2: '#A78BFA', border: 'border-emerald-400/50', bgBorder: 'bg-emerald-400/50' },
+  { name: 'Dark Void', bg1: '#111827', bg2: '#000000', bg3: '#030712', bg4: '#1F2937', bg5: '#0F172A', bg6: '#1E1B4B', bg7: '#000000', blur1: '#6366F1', blur2: '#EC4899', border: 'border-fuchsia-500/40', bgBorder: 'bg-fuchsia-500/40' },
+  { name: 'Cosmic', bg1: '#312E81', bg2: '#831843', bg3: '#4C1D95', bg4: '#4F46E5', bg5: '#BE185D', bg6: '#D946EF', bg7: '#1E1B4B', blur1: '#818CF8', blur2: '#F472B6', border: 'border-purple-400/50', bgBorder: 'bg-purple-400/50' }
 ];
 
 const MusicBackground = memo(({ themeIdx = 0 }) => {
@@ -236,8 +238,7 @@ export default function Music() {
         .from('thumbnails')
         .upload(audioFileName, audioBlob, { 
           upsert: true, 
-          contentType: file.type || 'audio/mpeg',
-          duplex: 'half' 
+          contentType: file.type || 'audio/mpeg'
         });
       
       if (uploadErr) {
@@ -448,33 +449,7 @@ export default function Music() {
 
       <div className="relative z-10 w-full h-full">
         {/* Floating Controls */}
-        {/* Floating Controls */}
-        <div className={`fixed right-6 md:right-10 top-[60%] flex flex-col items-center bg-white/10 backdrop-blur-3xl border ${activeBorder} transition-colors duration-500 rounded-full shadow-2xl z-[100] p-2`}>
-          <AnimatePresence>
-            {showCapsule && (
-              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="flex flex-col gap-4 overflow-hidden items-center pb-4">
-                <button onClick={() => navigate('/')} className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"><ArrowLeft className="w-5 h-5 rotate-180" /></button>
-                <button onClick={() => { setActiveTab('Liked'); setSearchQuery(''); }} className={`p-2.5 rounded-full transition-all ${activeTab === 'Liked' && !searchQuery ? 'bg-purple-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}><Heart className={`w-5 h-5 ${activeTab === 'Liked' && !searchQuery ? 'fill-white' : ''}`} /></button>
-                <button className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"><Download className="w-5 h-5" /></button>
-                <button onClick={() => setThemeIdx(p => (p + 1) % themes.length)} className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"><Palette className="w-5 h-5" /></button>
-                
-                {user && (
-                  <button 
-                    onClick={() => {
-                      const fileInput = document.getElementById('music-upload-input');
-                      if (fileInput) fileInput.click();
-                    }}
-                    className="w-12 h-12 md:w-10 md:h-10 md:p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer flex items-center justify-center touch-manipulation active:scale-95">
-                    <Upload className="w-5 h-5" />
-                  </button>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <button onClick={() => setShowCapsule(!showCapsule)} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all">
-             <Settings className={`w-5 h-5 transition-transform duration-500 ${showCapsule ? 'rotate-90' : ''}`} />
-          </button>
-        </div>
+        {/* Floating Controls Removed - Moved to Tabs */}
 
         {/* Hidden Input & Progress Bar ALWAYS MOUNTED */}
         {user && (
@@ -561,13 +536,42 @@ export default function Music() {
                 )}
               </AnimatePresence>
             </div>
-            <div className="flex gap-4 md:gap-8 overflow-x-auto w-full md:w-auto no-scrollbar">
-              {['New', 'My Uploads', 'All Hits', 'Artists', 'History'].map((tab) => (
-                <button key={tab} onClick={() => { setActiveTab(tab); setSearchQuery(''); }} className={`text-[10px] font-black uppercase tracking-[0.3em] transition-all relative py-2 shrink-0 ${activeTab === tab && !searchQuery ? 'text-white' : 'text-white/30 hover:text-white'}`}>
-                  {tab}
-                  {activeTab === tab && !searchQuery && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />}
+            <div className="flex gap-4 md:gap-8 overflow-visible w-full md:w-auto items-center relative z-[4000]">
+              <div className="relative shrink-0 flex items-center">
+                <button onClick={() => setShowCapsule(!showCapsule)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all">
+                  <Settings className={`w-4 h-4 transition-transform duration-500 ${showCapsule ? 'rotate-90' : ''}`} />
                 </button>
-              ))}
+                <AnimatePresence>
+                  {showCapsule && (
+                    <motion.div initial={{ opacity: 0, scale: 0.9, x: -10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9, x: -10 }} className="absolute top-10 left-0 bg-[#0F1115] border border-white/10 shadow-2xl rounded-2xl flex flex-col gap-1 p-2 z-[4001]">
+                      <button onClick={() => navigate('/')} className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"><ArrowLeft className="w-4 h-4 rotate-180" /></button>
+                      <button onClick={() => { setActiveTab('Liked'); setSearchQuery(''); setShowCapsule(false); }} className={`p-2 rounded-full transition-all ${activeTab === 'Liked' && !searchQuery ? 'bg-purple-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}><Heart className={`w-4 h-4 ${activeTab === 'Liked' && !searchQuery ? 'fill-white' : ''}`} /></button>
+                      <button className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"><Download className="w-4 h-4" /></button>
+                      <button onClick={() => setThemeIdx(p => (p + 1) % themes.length)} className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"><Palette className="w-4 h-4" /></button>
+                      {user && (
+                        <button 
+                          onClick={() => {
+                            const fileInput = document.getElementById('music-upload-input');
+                            if (fileInput) fileInput.click();
+                            setShowCapsule(false);
+                          }}
+                          className="w-8 h-8 p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer flex items-center justify-center">
+                          <Upload className="w-4 h-4" />
+                        </button>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              
+              <div className="flex gap-4 md:gap-8 overflow-x-auto w-full md:w-auto no-scrollbar items-center">
+                {['New', 'My Uploads', 'All Hits', 'Artists', 'History'].map((tab) => (
+                  <button key={tab} onClick={() => { setActiveTab(tab); setSearchQuery(''); }} className={`text-[10px] font-black uppercase tracking-[0.3em] transition-all relative py-2 shrink-0 ${activeTab === tab && !searchQuery ? 'text-white' : 'text-white/30 hover:text-white'}`}>
+                    {tab}
+                    {activeTab === tab && !searchQuery && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
