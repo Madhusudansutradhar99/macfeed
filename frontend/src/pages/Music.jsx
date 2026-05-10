@@ -188,6 +188,9 @@ export default function Music() {
       setUploadProgress(5);
       console.log('📖 Reading file...');
       
+      const arrayBuffer = await file.arrayBuffer();
+      const fileClone = new Blob([arrayBuffer], { type: file.type || 'audio/mpeg' });
+
       setUploadStatus("Extracting metadata...");
       setUploadProgress(10);
       
@@ -196,7 +199,7 @@ export default function Music() {
       let thumbnailPublicUrl = "/default_music_cover.jpg";
 
       try {
-        const metadata = await musicMetadata.parseBlob(file);
+        const metadata = await musicMetadata.parseBlob(fileClone);
         if (metadata.common.title) title = metadata.common.title;
         if (metadata.common.artist) artist = metadata.common.artist;
         console.log(`📝 Metadata: ${artist} - ${title}`);
@@ -228,10 +231,10 @@ export default function Music() {
       
       const audioFileName = `music/${user?.id || 'anon'}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       
-      // Use native File object directly to avoid Supabase stream issues
+      // Pass ArrayBuffer directly to bypass any locked stream issues in fetch
       const { data: uploadData, error: uploadErr } = await supabase.storage
         .from('thumbnails')
-        .upload(audioFileName, file, { 
+        .upload(audioFileName, arrayBuffer, { 
           upsert: true, 
           contentType: file.type || 'audio/mpeg'
         });
