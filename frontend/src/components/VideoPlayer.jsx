@@ -441,22 +441,9 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                 ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause h-5 w-5"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>'
                 : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play h-5 w-5 fill-white"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
             }
+            if (state === window.YT.PlayerState.ENDED) {
               setPlaying(false);
-              // Auto play next related video
-              fetch(`/api/related?videoId=${video.id || ''}`)
-                .then(res => res.json())
-                .then(data => {
-                  if (data.results && data.results.length > 0) {
-                    const nextVid = data.results[0];
-                    // Navigate or call onClose and then open new one?
-                    // The best way in this app structure is to trigger a custom event or use the context.
-                    // Since VideoPlayer is a component, we might need a way to tell the parent.
-                    // For now, let's try to find a global way or just reload with new video ID.
-                    window.location.href = `/#/watch/${nextVid.id}`;
-                    window.location.reload();
-                  }
-                })
-                .catch(() => {});
+              onNext?.(); // Use the onNext prop for better integration
             }
           },
           onError: () => {
