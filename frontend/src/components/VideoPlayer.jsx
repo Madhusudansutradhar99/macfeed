@@ -353,9 +353,11 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
       );
       const youtubeId = match ? match[1] : '';
 
-      ytDomContainer.current.innerHTML = '';
+      if (ytDomContainer.current) {
+        ytDomContainer.current.innerHTML = '';
+      }
       const host = document.createElement('div');
-      ytDomContainer.current.appendChild(host);
+      ytDomContainer.current?.appendChild(host);
 
       // Check network speed
       let connectionSpeed = 'fast';
@@ -436,10 +438,8 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             const isPlaying = state === window.YT.PlayerState.PLAYING;
             setPlaying(isPlaying);
             if (playBtnRef.current) {
-              // Direct DOM icon swap
-              playBtnRef.current.innerHTML = isPlaying 
-                ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause h-5 w-5"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>'
-                : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play h-5 w-5 fill-white"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+              // We rely on React state 'playing' for the icon swap to avoid 'removeChild' errors
+              // The performance bottleneck was the progress bar, not the play icon.
             }
             if (state === window.YT.PlayerState.ENDED) {
               setPlaying(false);
