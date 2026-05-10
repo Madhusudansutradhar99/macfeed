@@ -322,6 +322,7 @@ export default React.memo(function VideoPlayer({ video, onClose, onMiniChange, o
           playsinline: 1,
           fs: 0,
           disablekb: 1,
+          origin: window.location.origin,
         },
         events: {
           onReady: (event) => {

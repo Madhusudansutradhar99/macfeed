@@ -244,9 +244,10 @@ export default function Music() {
       setUploadStatus(`Uploading audio file... ${pseudo}%`);
     }, 450);
 
+    // Upload using the original File/Blob instead of ArrayBuffer to avoid fetch stream issues
     const { error: uploadErr } = await freshSupabase.storage
       .from('music')
-      .upload(audioFileName, arrayBuffer, { upsert: true, contentType: file.type || 'audio/mpeg' });
+      .upload(audioFileName, file, { upsert: true, contentType: file.type || 'audio/mpeg' });
 
     clearInterval(pseudoTimer);
     if (uploadErr) throw uploadErr;
@@ -313,9 +314,12 @@ export default function Music() {
         return;
       } catch (err) {
         lastError = err;
+        // If aborted, pause briefly before retrying; otherwise still retry with a small backoff
         if (attempt < 3) {
+          const shortDelay = /aborted/i.test(err?.message || '') ? 1200 : 700;
           setUploadStatus(`Retrying upload (${attempt}/2)...`);
           setUploadProgress(0);
+          await new Promise((res) => setTimeout(res, shortDelay));
         }
       }
     }
