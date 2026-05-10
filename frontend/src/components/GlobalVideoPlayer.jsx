@@ -13,12 +13,7 @@ export default function GlobalVideoPlayer() {
 
   const isWatchPage = location.pathname.startsWith('/watch/');
 
-  // Auto-maximize if navigating to watch page
-  useEffect(() => {
-    if (isWatchPage && viewMode === 'mini') {
-      maximize();
-    }
-  }, [isWatchPage, viewMode, maximize]);
+
 
   // Animate between full and mini states
   useEffect(() => {

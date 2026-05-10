@@ -86,6 +86,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const durationRef = useRef(null);
   const playBtnRef = useRef(null);
   const durationStateRef = useRef(0); // tracks duration without setState
+  const inputRangeRef = useRef(null);
 
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -429,6 +430,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                   durationStateRef.current = dur;
                   const pct = (cur / dur) * 100;
                   if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
+                  if (inputRangeRef.current) inputRangeRef.current.value = pct;
                   if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(cur);
                   if (durationRef.current) durationRef.current.textContent = formatTime(dur);
                 }
@@ -833,11 +835,11 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               {/* FIX 3: Progress bar — drag input seeks, fill div updated via DOM ref */}
               <div className="mb-3 w-full group relative flex items-center h-4">
                 <input
+                  ref={inputRangeRef}
                   type="range"
                   min="0"
                   max="100"
                   step="0.1"
-                  defaultValue={0}
                   onChange={handleSeek}
                   onMouseDown={(e) => e.stopPropagation()}
                   onTouchStart={(e) => e.stopPropagation()}

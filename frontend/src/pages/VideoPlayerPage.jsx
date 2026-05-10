@@ -128,6 +128,20 @@ export default function VideoPlayerPage() {
     }
   }, [video, loading]);
 
+  // Ensure video is maximized when arriving at watch page
+  useEffect(() => {
+    if (video && viewMode === 'mini') {
+      maximize();
+    }
+  }, [video, viewMode, maximize]);
+
+  // If user minimizes on watch page, navigate back to reveal the global mini player
+  useEffect(() => {
+    if (viewMode === 'mini') {
+      navigate(-1);
+    }
+  }, [viewMode, navigate]);
+
   if (loading) return <Loader />;
   if (!video) return <div className="text-primary p-20 text-center bg-primary min-h-screen">Video Not Found</div>;
 
