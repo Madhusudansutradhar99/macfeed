@@ -159,7 +159,12 @@ export default function Music() {
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.error('No file selected in handleFileUpload');
+      return;
+    }
+
+    console.log(`🎵 Upload started: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
 
     // Supabase free tier typically has a 50MB limit. 
     if (file.size > 45 * 1024 * 1024) {
@@ -171,9 +176,11 @@ export default function Music() {
     try {
       setUploadStatus("Reading file...");
       setUploadProgress(5);
+      console.log('📖 Reading file...');
       
       // Read file into memory first to prevent any stream locks in the browser
       const arrayBuffer = await file.arrayBuffer();
+      console.log(`✅ File read: ${arrayBuffer.byteLength} bytes`);
 
       setUploadStatus("Extracting metadata...");
       setUploadProgress(10);
@@ -186,6 +193,7 @@ export default function Music() {
         const metadata = await musicMetadata.parseBlob(file);
         if (metadata.common.title) title = metadata.common.title;
         if (metadata.common.artist) artist = metadata.common.artist;
+        console.log(`📝 Metadata: ${artist} - ${title}`);
 
         if (metadata.common.picture && metadata.common.picture.length > 0) {
           setUploadStatus("Uploading cover...");
@@ -199,51 +207,44 @@ export default function Music() {
           if (!coverErr) {
             const { data } = supabase.storage.from('thumbnails').getPublicUrl(coverFileName);
             if (data?.publicUrl) thumbnailPublicUrl = data.publicUrl;
+            console.log(`🖼️ Cover uploaded: ${thumbnailPublicUrl}`);
+          } else {
+            console.warn("Cover upload error:", coverErr);
           }
         }
       } catch (metaErr) {
         console.warn("Metadata extraction failed, proceeding with defaults:", metaErr);
       }
 
-      setUploadStatus("Uploading audio... 0%");
-      setUploadProgress(40);
+      setUploadStatus("Uploading audio...");
+      setUploadProgress(50);
+      console.log('⬆️ Starting audio upload to Supabase...');
       
       const audioFileName = `music/${user?.id || 'anon'}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', `${supabaseUrl}/storage/v1/object/thumbnails/${audioFileName}`);
-        xhr.setRequestHeader('Authorization', `Bearer ${anonKey}`);
-        xhr.setRequestHeader('apikey', anonKey);
-        xhr.setRequestHeader('Content-Type', file.type || 'audio/mpeg');
-        xhr.setRequestHeader('x-upsert', 'true');
-
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const percent = 40 + Math.round((e.loaded / e.total) * 50);
-            setUploadProgress(percent);
-            setUploadStatus(`Uploading audio... ${Math.round((e.loaded / e.total) * 100)}%`);
-          }
-        };
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve();
-          else reject(new Error(`Status ${xhr.status}: ${xhr.responseText}`));
-        };
-        xhr.onerror = () => reject(new Error('Network connection dropped. Please check your internet.'));
-        xhr.onabort = () => reject(new Error('Upload was aborted by the browser.'));
-        
-        // Sending the arrayBuffer directly to avoid File stream locks
-        xhr.send(arrayBuffer);
-      });
+      // Use Supabase SDK instead of XHR for consistency and better error handling
+      const audioBlob = new Blob([arrayBuffer], { type: file.type || 'audio/mpeg' });
+      const { data: uploadData, error: uploadErr } = await supabase.storage
+        .from('thumbnails')
+        .upload(audioFileName, audioBlob, { 
+          upsert: true, 
+          contentType: file.type || 'audio/mpeg',
+          duplex: 'half' 
+        });
+      
+      if (uploadErr) {
+        console.error('❌ Audio upload error:', uploadErr);
+        throw uploadErr;
+      }
+      
+      console.log(`✅ Audio uploaded: ${uploadData.path}`);
+      setUploadProgress(85);
 
       const { data: audioData } = supabase.storage.from('thumbnails').getPublicUrl(audioFileName);
       
       setUploadStatus("Saving to database...");
       setUploadProgress(90);
+      console.log('💾 Saving to database...');
 
       const newSong = {
         title: `${artist} - ${title}`,
@@ -256,26 +257,31 @@ export default function Music() {
 
       const { data: insertedData, error: dbErr } = await supabase.from('videos').insert([newSong]).select().single();
       
-      if (dbErr) throw dbErr;
+      if (dbErr) {
+        console.error('❌ Database error:', dbErr);
+        throw dbErr;
+      }
 
+      console.log(`✅ Song saved: ${insertedData.id}`);
       setSongs(prev => [insertedData, ...prev]);
       setFilteredSongs(prev => [insertedData, ...prev]);
       
       setUploadStatus("Done!");
       setUploadProgress(100);
+      console.log('🎉 Upload complete!');
       setTimeout(() => {
         setUploadStatus("");
         setUploadProgress(0);
       }, 3000);
       
     } catch (err) {
-      console.error(err);
+      console.error('❌ Upload failed:', err);
       setUploadStatus("Error: " + err.message);
       setTimeout(() => setUploadStatus(""), 5000);
     }
     
     // Reset file input
-    e.target.value = '';
+    if (e.target) e.target.value = '';
   };
 
   const handleDeleteLocalSong = async (song, e) => {

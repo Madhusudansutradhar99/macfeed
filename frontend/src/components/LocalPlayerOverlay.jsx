@@ -71,8 +71,11 @@ function LocalPlayerOverlay() {
     const seekRafRef = useRef(null);
     const seekPendingRef = useRef(null);
     const isSeekingRef = useRef(false);
+    const seekClientXRef = useRef(null);
     const wheelRafRef = useRef(null);
     const wheelPendingRef = useRef(0);
+    const wheelContainerRef = useRef(null);
+    const wheelRotationRef = useRef(0);
     const [showExtraPanel, setShowExtraPanel] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [showQualityMenu, setShowQualityMenu] = useState(false);
@@ -166,10 +169,14 @@ function LocalPlayerOverlay() {
     const paintSeekPreview = useCallback((clientX) => {
         const nextSeek = resolveSeekPoint(clientX);
         if (!nextSeek) return;
+        
+        // Store current X position for RAF callback
+        seekClientXRef.current = clientX;
         seekPendingRef.current = nextSeek;
 
         if (seekRafRef.current) return;
 
+        // Single RAF callback to update DOM once per frame
         seekRafRef.current = requestAnimationFrame(() => {
             seekRafRef.current = null;
             const pending = seekPendingRef.current;
@@ -200,7 +207,7 @@ function LocalPlayerOverlay() {
     const startSeekDrag = useCallback((clientX) => {
         const nextSeek = resolveSeekPoint(clientX);
         if (!nextSeek) return;
-        setIsSeeking(true);
+        // Don't set isSeeking state - keep it in ref only to prevent rerenders
         isSeekingRef.current = true;
         seekPendingRef.current = nextSeek;
         paintSeekPreview(clientX);
@@ -208,7 +215,6 @@ function LocalPlayerOverlay() {
 
     const endSeekDrag = useCallback((clientX) => {
         if (!isSeekingRef.current) return;
-        setIsSeeking(false);
         isSeekingRef.current = false;
         if (seekRafRef.current) {
             cancelAnimationFrame(seekRafRef.current);
@@ -422,7 +428,20 @@ function LocalPlayerOverlay() {
             const nextDelta = wheelPendingRef.current;
             wheelPendingRef.current = 0;
             const maxRot = (14 - 1) * 18;
-            setWheelRotation(prev => Math.max(0, Math.min(prev + nextDelta, maxRot)));
+            
+            // Update ref with new rotation value
+            const newRotation = Math.max(0, Math.min(wheelRotationRef.current + nextDelta, maxRot));
+            wheelRotationRef.current = newRotation;
+            
+            // Update the wheel state significantly less frequently to prevent component rerenders
+            // This creates smooth drag while keeping the 14 items from recalculating positions constantly
+            // We'll batch state updates every ~100ms instead of every frame
+            if (!wheelRotationRef.batchTimeoutId) {
+                setWheelRotation(newRotation);
+                wheelRotationRef.batchTimeoutId = setTimeout(() => {
+                    wheelRotationRef.batchTimeoutId = null;
+                }, 100);
+            }
         });
     }, []);
 
