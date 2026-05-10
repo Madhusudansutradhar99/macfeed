@@ -448,10 +448,8 @@ export default function Music() {
 
       <div className="relative z-10 w-full h-full">
         {/* Floating Controls */}
-        <motion.div
-          drag dragMomentum={false}
-          className={`fixed right-6 md:right-10 top-[60%] flex flex-col items-center bg-white/10 backdrop-blur-3xl border ${activeBorder} transition-colors duration-500 rounded-full shadow-2xl z-[100] cursor-grab active:cursor-grabbing p-2`}
-        >
+        {/* Floating Controls */}
+        <div className={`fixed right-6 md:right-10 top-[60%] flex flex-col items-center bg-white/10 backdrop-blur-3xl border ${activeBorder} transition-colors duration-500 rounded-full shadow-2xl z-[100] p-2`}>
           <AnimatePresence>
             {showCapsule && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="flex flex-col gap-4 overflow-hidden items-center pb-4">
@@ -461,35 +459,14 @@ export default function Music() {
                 <button onClick={() => setThemeIdx(p => (p + 1) % themes.length)} className="p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all"><Palette className="w-5 h-5" /></button>
                 
                 {user && (
-                  <div className="relative group">
-                    <button 
-                      onClick={() => {
-                        const fileInput = document.getElementById('music-upload-input');
-                        if (fileInput) fileInput.click();
-                      }}
-                      className="w-12 h-12 md:w-10 md:h-10 md:p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer flex items-center justify-center touch-manipulation active:scale-95">
-                      <Upload className="w-5 h-5" />
-                    </button>
-                    <input 
-                      id="music-upload-input"
-                      type="file" 
-                      accept="audio/*,video/*,.mp3,.wav,.m4a,.flac,.aac" 
-                      className="hidden" 
-                      onChange={(e) => {
-                         console.log("File selected via input onChange:", e.target.files);
-                         handleFileUpload(e);
-                      }}
-                      aria-label="Upload audio file"
-                    />
-                    {uploadStatus && (
-                      <div className="absolute top-1/2 -translate-y-1/2 right-14 w-48 bg-[#0F1115] border border-white/10 rounded-xl p-3 shadow-2xl pointer-events-none z-[9999]">
-                        <div className="text-[9px] text-white/70 font-black uppercase tracking-widest mb-2">{uploadStatus}</div>
-                        <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                          <div className="h-full bg-purple-500 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <button 
+                    onClick={() => {
+                      const fileInput = document.getElementById('music-upload-input');
+                      if (fileInput) fileInput.click();
+                    }}
+                    className="w-12 h-12 md:w-10 md:h-10 md:p-2.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer flex items-center justify-center touch-manipulation active:scale-95">
+                    <Upload className="w-5 h-5" />
+                  </button>
                 )}
               </motion.div>
             )}
@@ -497,7 +474,32 @@ export default function Music() {
           <button onClick={() => setShowCapsule(!showCapsule)} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all">
              <Settings className={`w-5 h-5 transition-transform duration-500 ${showCapsule ? 'rotate-90' : ''}`} />
           </button>
-        </motion.div>
+        </div>
+
+        {/* Hidden Input & Progress Bar ALWAYS MOUNTED */}
+        {user && (
+          <>
+            <input 
+              id="music-upload-input"
+              type="file" 
+              accept="audio/*,video/*,.mp3,.wav,.m4a,.flac,.aac" 
+              className="hidden" 
+              onChange={(e) => {
+                 console.log("File selected via input onChange:", e.target.files);
+                 handleFileUpload(e);
+              }}
+              aria-label="Upload audio file"
+            />
+            {uploadStatus && (
+              <div className="fixed top-1/2 right-24 md:right-32 -translate-y-1/2 w-48 bg-[#0F1115] border border-white/10 rounded-xl p-3 shadow-2xl pointer-events-none z-[9999]">
+                <div className="text-[9px] text-white/70 font-black uppercase tracking-widest mb-2">{uploadStatus}</div>
+                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-purple-500 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                </div>
+              </div>
+            )}
+          </>
+        )}
 
         <div className="w-full h-full bg-transparent flex flex-col overflow-hidden pt-8 md:pt-12">
           {/* Header Bar */}
