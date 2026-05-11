@@ -163,6 +163,7 @@ export default function Music() {
       if (response.ok && data?.results?.length > 0) {
         return data.results.map(v => ({
           id: `yt-${v.ytId || v.id}`,
+          youtube_id: v.ytId || v.id, // Add snake_case version
           youtubeId: v.ytId || v.id,
           title: v?.title || 'Untitled Video',
           thumbnail_url: (v.thumbnail || v.thumbnail_url)?.replace('maxresdefault.jpg', 'mqdefault.jpg') || '',
@@ -420,12 +421,20 @@ export default function Music() {
 
       let deleteQuery = supabase.from('videos').delete();
       
-      if (song.youtube_id) {
-        // Delete all instances of this YouTube song
-        deleteQuery = deleteQuery.eq('youtube_id', song.youtube_id);
+      const targetYtId = song.youtube_id || song.youtubeId;
+      
+      if (targetYtId) {
+        // Delete all instances of this YouTube song by its actual YouTube ID
+        deleteQuery = deleteQuery.eq('youtube_id', targetYtId);
       } else if (song.source === 'youtube' && song.video_url?.includes('youtube.com')) {
-        // Fallback: delete by URL if no youtube_id
-        deleteQuery = deleteQuery.eq('video_url', song.video_url);
+        // Fallback: extract ID from URL if possible
+        const match = song.video_url.match(/(?:embed\/|v=)([^&?/\s]+)/);
+        const extractedId = match ? match[1] : null;
+        if (extractedId) {
+          deleteQuery = deleteQuery.eq('youtube_id', extractedId);
+        } else {
+          deleteQuery = deleteQuery.eq('video_url', song.video_url);
+        }
       } else {
         // Local or specific ID
         deleteQuery = deleteQuery.eq('id', song.id);
@@ -434,14 +443,10 @@ export default function Music() {
       const { error: deleteErr } = await deleteQuery;
       if (deleteErr) throw deleteErr;
 
-      // Update Local Cache immediately to prevent "reappearing" on refresh
-      const updatedCache = prevSongs.filter(s => s.id !== song.id);
-      localStorage.setItem('macfeed_music_cache', JSON.stringify(updatedCache));
-
-      // Clear search caches to be safe
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('mf_search_')) localStorage.removeItem(key);
-      });
+      // Global State & Cache Deep-Clean (handles duplicates)
+      if (musicPlayer?.removeOnlineSong) {
+        await musicPlayer.removeOnlineSong(song.id, targetYtId);
+      }
 
       if (audioPath) {
         await supabase.storage.from('music').remove([audioPath]);

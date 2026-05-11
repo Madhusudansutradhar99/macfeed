@@ -583,24 +583,63 @@ export function MusicProvider({ children }) {
       try {
         await deleteTrack(id);
         setDeviceSongs(prev => prev.filter(s => s.id !== id));
-
-        // Clean up from History
+        
         const history = JSON.parse(localStorage.getItem('macfeed_history') || '[]');
-        const newHistory = history.filter(item => item.id !== id);
-        localStorage.setItem('macfeed_history', JSON.stringify(newHistory));
+        localStorage.setItem('macfeed_history', JSON.stringify(history.filter(item => item.id !== id)));
 
-        // Clean up from Likes
         const likes = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
         if (likes[id]) {
           delete likes[id];
           localStorage.setItem('macfeed_likes', JSON.stringify(likes));
         }
 
-        // Clean up from Playlist
         setPlaylist(prev => prev.filter(item => item.id !== id));
-
       } catch (e) {
         console.error('Failed to delete track:', e);
+      }
+    },
+    removeOnlineSong: async (songId, youtubeId = null) => {
+      try {
+        setPlaylist(prev => {
+          const next = prev.filter(item => {
+            if (youtubeId && (item.youtube_id === youtubeId || item.youtubeId === youtubeId)) return false;
+            return item.id !== songId;
+          });
+          localStorage.setItem('macfeed_music_state', JSON.stringify({
+            idx: 0,
+            list: next.slice(0, 50),
+            song: null
+          }));
+          return next;
+        });
+        
+        const history = JSON.parse(localStorage.getItem('macfeed_history') || '[]');
+        localStorage.setItem('macfeed_history', JSON.stringify(history.filter(item => {
+          if (youtubeId && (item.youtube_id === youtubeId || item.youtubeId === youtubeId)) return false;
+          return item.id !== songId;
+        })));
+
+        // Clean up both 'macfeed_liked' (Music page array) and 'macfeed_likes' (Global page object)
+        const likedArr = JSON.parse(localStorage.getItem('macfeed_liked') || '[]');
+        localStorage.setItem('macfeed_liked', JSON.stringify(likedArr.filter(item => {
+          if (youtubeId && (item.youtube_id === youtubeId || item.youtubeId === youtubeId)) return false;
+          return item.id !== songId;
+        })));
+
+        const likesObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
+        if (likesObj[songId]) {
+          delete likesObj[songId];
+          localStorage.setItem('macfeed_likes', JSON.stringify(likesObj));
+        }
+        // Also check by youtubeId for object keys if they are stored that way
+        if (youtubeId && likesObj[youtubeId]) {
+           delete likesObj[youtubeId];
+           localStorage.setItem('macfeed_likes', JSON.stringify(likesObj));
+        }
+
+        localStorage.removeItem('macfeed_music_cache');
+      } catch (e) {
+        console.error('Failed to cleanup online song state:', e);
       }
     },
     refreshDeviceMusic: () => {
