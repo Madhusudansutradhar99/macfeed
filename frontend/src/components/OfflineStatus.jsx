@@ -6,19 +6,19 @@ export default function OfflineStatus() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [show, setShow] = useState(!navigator.onLine);
   const [message, setMessage] = useState('You are offline — showing cached content');
-  const hideTimerRef = React.useRef(null);
-  const refreshTimerRef = React.useRef(null);
 
   const showBanner = (nextMessage, offline) => {
     setIsOffline(offline);
     setMessage(nextMessage);
     setShow(true);
-
-    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-
-    hideTimerRef.current = setTimeout(() => setShow(false), 2000);
   };
+
+  useEffect(() => {
+    if (show) {
+      const timer = setTimeout(() => setShow(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [show]);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -35,8 +35,6 @@ export default function OfflineStatus() {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
     };
   }, []);
 
