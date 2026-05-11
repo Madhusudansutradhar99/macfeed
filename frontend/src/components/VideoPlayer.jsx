@@ -136,6 +136,8 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         const videoDuration = ytPlayerRef.current.getDuration?.() || duration || 0;
         const target = Math.max(0, Math.min(videoDuration || currentTime + seconds, currentTime + seconds));
         ytPlayerRef.current.seekTo(target, true);
+        setCurrentTime(target); // Immediate feedback
+        if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(target);
         return;
       }
 
@@ -448,43 +450,18 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             
             if (ytTimerRef.current) cancelAnimationFrame(ytTimerRef.current);
             ytTimerRef.current = requestAnimationFrame(syncProgress);
-
-          setTimeout(() => {
-            try {
-              const iframe = ytDomContainer.current?.querySelector('iframe');
-              if (iframe) {
-                iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
-                iframe.setAttribute('allowfullscreen', 'true');
-                iframe.setAttribute('playsinline', '1');
-                iframe.style.touchAction = 'manipulation';
-              }
-            } catch (err) {
-              // ignore
-            }
-          }, 100);
-
-            // Fetch qualities
-            if (event.target.getAvailableQualityLevels) {
-              const levels = event.target.getAvailableQualityLevels();
-              setAvailableQualities(levels);
-            }
-
-            if (event.target.getPlaybackQuality) {
-              setCurrentQuality(event.target.getPlaybackQuality() || 'auto');
-            }
           },
           onStateChange: (event) => {
-            // FIX 4: Update play/pause icon via DOM ref — zero re-renders
             const state = event.data;
             const isPlaying = state === window.YT.PlayerState.PLAYING;
-            setPlaying(isPlaying);
-            if (playBtnRef.current) {
-              // We rely on React state 'playing' for the icon swap to avoid 'removeChild' errors
-              // The performance bottleneck was the progress bar, not the play icon.
-            }
+            const isPaused = state === window.YT.PlayerState.PAUSED;
+            const isBuffering = state === window.YT.PlayerState.BUFFERING;
+            
+            if (isPlaying) setPlaying(true);
+            else if (isPaused || state === 0) setPlaying(false);
+            
             if (state === window.YT.PlayerState.ENDED) {
-              setPlaying(false);
-              onNext?.(); // Use the onNext prop for better integration
+              onNext?.();
             }
           },
           onError: () => {
@@ -518,16 +495,35 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
       initYouTube();
     }
 
-    // Dedicated sync interval for state (Backs up the RAF loop)
+    // 4. Start sync loop immediately as a fallback if onReady is delayed
+    const syncProgress = () => {
+      if (ytPlayerRef.current && ytPlayerRef.current.getCurrentTime) {
+        const cur = ytPlayerRef.current.getCurrentTime();
+        const dur = ytPlayerRef.current.getDuration() || durationStateRef.current || 0;
+        
+        // Real-time UI Updates
+        if (dur > 0) {
+          durationStateRef.current = dur;
+          const pct = (cur / dur) * 100;
+          if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
+          if (inputRangeRef.current && document.activeElement !== inputRangeRef.current) {
+             inputRangeRef.current.value = pct;
+          }
+          if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(cur);
+          if (durationRef.current) durationRef.current.textContent = formatTime(dur);
+        }
+      }
+      ytTimerRef.current = requestAnimationFrame(syncProgress);
+    };
+    ytTimerRef.current = requestAnimationFrame(syncProgress);
+
     const stateSyncInterval = setInterval(() => {
       if (ytPlayerRef.current?.getPlayerState) {
         const state = ytPlayerRef.current.getPlayerState();
-        const isPlaying = state === 1; // 1 is PLAYING
-        if (isPlaying !== playingRef.current) {
-          setPlaying(isPlaying);
-        }
+        if (state === 1 && !playingRef.current) setPlaying(true);
+        else if ((state === 2 || state === 0) && playingRef.current) setPlaying(false);
       }
-    }, 200);
+    }, 500);
 
     return () => {
       clearInterval(stateSyncInterval);
