@@ -173,6 +173,25 @@ export default React.memo(function MusicMiniPlayer() {
     }
   }, []);
 
+  useEffect(() => {
+    const handleYTMessage = (e) => {
+      if (typeof e.data !== 'string') return;
+      try {
+        const data = JSON.parse(e.data);
+        if (data.event === 'onStateChange' && data.info === 0) {
+          // Video ended
+          next();
+        }
+        if (data.event === 'infoDelivery' && data.info?.currentTime !== undefined) {
+          setCurrentTime(data.info.currentTime);
+          if (data.info.duration) ctx.setDuration?.(data.info.duration);
+        }
+      } catch (e) {}
+    };
+    window.addEventListener('message', handleYTMessage);
+    return () => window.removeEventListener('message', handleYTMessage);
+  }, [next, setCurrentTime]);
+
   // When song changes while expanded, move new iframe into card
   useEffect(() => {
     if (!videoId || currentSong?.source !== 'youtube') return;

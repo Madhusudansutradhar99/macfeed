@@ -17,7 +17,8 @@ const deduplicate = (arr) => {
   const seen = new Set();
   return arr.filter(item => {
     const cleanUrl = item.video_url?.split('?')[0];
-    const key = item.youtube_id || cleanUrl || item.id;
+    // Check for ID, then Youtube ID, then Title+Artist for device songs
+    const key = item.id || item.youtube_id || (item.source === 'device' ? `${item.title}-${item.duration}` : cleanUrl);
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -91,6 +92,15 @@ export function MusicProvider({ children }) {
           };
         });
         setDeviceSongs(reconstructedSongs);
+        
+        // Repair current playlist with fresh URLs
+        setPlaylist(prev => prev.map(item => {
+          if (item.source === 'device') {
+            const fresh = reconstructedSongs.find(s => s.id === item.id);
+            return fresh || item;
+          }
+          return item;
+        }));
       }
 
       const handle = await getHandle('musicFolder');
@@ -211,7 +221,7 @@ export function MusicProvider({ children }) {
             artworkUrl = URL.createObjectURL(blob);
           }
 
-          const trackId = `device-${crypto.randomUUID()}`;
+          const trackId = `device-${file.name}-${file.size}-${file.lastModified}`;
           const trackData = {
             id: trackId,
             title: metadata.common.title || file.name.replace(/\.[^/.]+$/, ''),
@@ -227,7 +237,11 @@ export function MusicProvider({ children }) {
             category: 'Device Music'
           };
 
-          await saveTrack(trackData);
+          // Check if already exists to avoid duplicates in DB
+          const existing = await getAllTracks();
+          if (!existing.some(t => t.id === trackId)) {
+            await saveTrack(trackData);
+          }
 
           const blob = new Blob([arrayBuffer], { type: file.type });
           const url = URL.createObjectURL(blob);
@@ -512,6 +526,22 @@ export function MusicProvider({ children }) {
       try {
         await deleteTrack(id);
         setDeviceSongs(prev => prev.filter(s => s.id !== id));
+        
+        // Clean up from History
+        const history = JSON.parse(localStorage.getItem('macfeed_history') || '[]');
+        const newHistory = history.filter(item => item.id !== id);
+        localStorage.setItem('macfeed_history', JSON.stringify(newHistory));
+
+        // Clean up from Likes
+        const likes = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
+        if (likes[id]) {
+          delete likes[id];
+          localStorage.setItem('macfeed_likes', JSON.stringify(likes));
+        }
+
+        // Clean up from Playlist
+        setPlaylist(prev => prev.filter(item => item.id !== id));
+        
       } catch (e) {
         console.error('Failed to delete track:', e);
       }
