@@ -388,6 +388,8 @@ export default function Home() {
       transition={{ duration: 0.6 }}
       className="flex flex-col"
     >
+      <HeroBanner videos={heroVideos} />
+
       <div className="px-2 sm:px-4 lg:px-6 xl:px-8 space-y-3 sm:space-y-4 md:space-y-2">
         {/* Row 1: Trending */}
         {trending.length > 0 && <VideoRow title="Trending Now" videos={trending} emoji="🔥" />}
@@ -405,11 +407,6 @@ export default function Home() {
         {/* Banner Ad */}
         <div className="py-2 sm:py-4">
           <AdBanner position="banner" />
-        </div>
-
-        {/* MOVIE HEADER BOX (Repositioned above Explore) */}
-        <div className="mt-16 md:mt-24">
-           <HeroBanner videos={heroVideos.length > 0 ? heroVideos : videos.slice(0, 4)} />
         </div>
 
         {/* Infinite Scroll Grid: More to Explore - Premium Flix.id Style */}
