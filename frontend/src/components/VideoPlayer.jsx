@@ -670,7 +670,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             {/* Smart Gesture Zone: Allows 'Swipe Down to Exit' without blocking the gear icon (top right) */}
             {isFullscreen && (
               <div 
-                className="fixed top-[60px] bottom-[80px] left-0 right-0 z-[60] bg-transparent pointer-events-auto"
+                className="fixed top-[100px] bottom-[80px] left-0 right-0 z-[60] bg-transparent pointer-events-auto"
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
@@ -714,37 +714,40 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
         {viewMode === 'full' && (
           <>
-            <div
-              className={`absolute left-0 top-0 z-40 flex w-full items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 pb-8 pt-3 transition-opacity duration-300 ${isFullscreen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                showControlsTemporarily(); 
-              }}
-              onTouchStart={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => e.stopPropagation()}
-              onMouseEnter={showControlsTemporarily}
-            >
-              <div className="min-w-0 flex-1 pr-3">
-                <p className="truncate text-sm font-medium text-white/90">{video.title}</p>
-              </div>
+            {/* CUSTOM TOP BAR: Removed in fullscreen to avoid any click interference with YT settings */}
+            {!isFullscreen && (
+              <div
+                className="absolute left-0 top-0 z-40 flex w-full items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 pb-8 pt-3 transition-opacity duration-300"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  showControlsTemporarily(); 
+                }}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
+                onMouseEnter={showControlsTemporarily}
+              >
+                <div className="min-w-0 flex-1 pr-3">
+                  <p className="truncate text-sm font-medium text-white/90">{video.title}</p>
+                </div>
 
-              <div className="flex items-center gap-2">
-                <ControlBtn onClick={toggleFullscreen} title="Fullscreen">
-                  {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
-                </ControlBtn>
-                {onClose ? (
-                  <ControlBtn
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onClose();
-                    }}
-                    title="Close"
-                  >
-                    <X className="h-5 w-5" />
+                <div className="flex items-center gap-2">
+                  <ControlBtn onClick={toggleFullscreen} title="Fullscreen">
+                    <Maximize className="h-5 w-5" />
                   </ControlBtn>
-                ) : null}
+                  {onClose ? (
+                    <ControlBtn
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onClose();
+                      }}
+                      title="Close"
+                    >
+                      <X className="h-5 w-5" />
+                    </ControlBtn>
+                  ) : null}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Custom quality button hidden to avoid overlap with native YT quality selector */}
             {false && isFullscreen && isYouTube ? (
