@@ -12,9 +12,11 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { fetchJson } from '../utils/request';
 import { useVideoMiniPlayer } from '../context/VideoPlayerContext';
+import { useMusicPlayer } from '../context/MusicContext';
 
 export default function VideoPlayerPage() {
   const { playVideo, viewMode } = useVideoMiniPlayer();
+  const { deviceSongs } = useMusicPlayer();
   const { user, setAuthModalOpen } = useAuth();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -36,13 +38,24 @@ export default function VideoPlayerPage() {
     async function fetchData() {
       setLoading(true);
       setPlayerError('');
+
+      // 0. Handle Device Music (IndexedDB)
+      if (id?.toString().startsWith('device-')) {
+        const deviceSong = deviceSongs.find(s => s.id === id);
+        if (deviceSong) {
+          setVideo(deviceSong);
+          playVideo(deviceSong);
+          setLoading(false);
+          return;
+        }
+      }
+
       // 1. Handle Dynamic YouTube ID
       if (id?.toString().startsWith('yt-')) {
         const ytId = id.replace('yt-', '');
         let title = searchParams.get('title');
         let thumb = `https://i.ytimg.com/vi/${ytId}/maxresdefault.jpg`;
 
-        // If title is missing, try to fetch it from YouTube or Backend
         if (!title || title === 'YouTube Video') {
           try {
             const { data: d } = await fetchJson(`/api/search?q=${ytId}`, {}, { timeoutMs: 10000, retryTimeoutMs: 5000, retries: 1 });
@@ -50,7 +63,6 @@ export default function VideoPlayerPage() {
               title = d.results[0].title || title;
               thumb = d.results[0].thumbnail || thumb;
             } else {
-              // Use cached backend endpoint instead of direct YouTube API
               try {
                 const { data: ytInfoData } = await fetchJson(`/api/video-info?id=${ytId}`, {}, { timeoutMs: 10000, retryTimeoutMs: 5000, retries: 1 });
                 if (ytInfoData?.video) {
@@ -76,6 +88,7 @@ export default function VideoPlayerPage() {
         setLoading(false);
         return;
       }
+
       // 2. Database fetch
       const { data, error } = await supabase.from('videos').select('*').eq('id', id).single();
       if (!error && data) {
@@ -84,17 +97,15 @@ export default function VideoPlayerPage() {
         const { data: rel } = await supabase.from('videos').select('*').eq('category', data?.category).neq('id', id).limit(10);
         setRelated(rel || []);
         
-        // Check if liked
         const likedObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
         if (likedObj[data.id]) setIsLiked(true);
 
-        // Global Player Sync
         playVideo(data);
       }
       setLoading(false);
     }
     fetchData();
-  }, [id, searchParams, playVideo]);
+  }, [id, searchParams, playVideo, deviceSongs]);
 
   useEffect(() => {
     const retryOnReconnect = () => {
@@ -109,9 +120,7 @@ export default function VideoPlayerPage() {
   useEffect(() => {
     if (video && !loading) {
       const history = JSON.parse(localStorage.getItem('macfeed_history') || '[]');
-      // Remove if already exists (to move to top)
       const filtered = history.filter((item) => item.id !== video.id);
-      // Keep only last 50 items
       const newHistory = [
         {
           id: video.id,
@@ -128,16 +137,12 @@ export default function VideoPlayerPage() {
     }
   }, [video, loading]);
 
-
-
-
   if (loading) return <Loader />;
   if (!video) return <div className="text-primary p-20 text-center bg-primary min-h-screen">Video Not Found</div>;
 
   return (
     <div className="min-h-screen bg-primary text-primary transition-colors duration-500">
       <div className="flex flex-col w-full p-0 sm:p-6 max-w-[1400px] mx-auto">
-        {/* Inline Video Player */}
         <div className="w-full mb-4">
           <VideoPlayer 
             video={video} 
@@ -145,69 +150,81 @@ export default function VideoPlayerPage() {
           />
         </div>
 
-        {/* Back Button - Moved below video */}
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-secondary hover:text-primary mt-4 mb-2 sm:mb-6 p-4 sm:p-0 w-fit transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-[10px] font-black uppercase tracking-widest">Back</span>
-        </button>
+        <div className="px-4 py-6 md:px-0">
+          <div className="flex flex-col gap-4">
+            <h1 className="text-xl md:text-2xl font-bold leading-tight">{video.title}</h1>
+            
+            <div className="flex items-center justify-between border-b border-white/10 pb-6">
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => {
+                    const likedObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
+                    if (isLiked) delete likedObj[video.id];
+                    else likedObj[video.id] = video;
+                    localStorage.setItem('macfeed_likes', JSON.stringify(likedObj));
+                    setIsLiked(!isLiked);
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${isLiked ? 'bg-purple-600 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'}`}
+                >
+                  <ThumbsUp size={18} className={isLiked ? 'fill-white' : ''} />
+                  <span className="text-sm font-bold">{isLiked ? 'Liked' : 'Like'}</span>
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: video.title,
+                        url: window.location.href,
+                      });
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition-all"
+                >
+                  <Share2 size={18} />
+                  <span className="text-sm font-bold">Share</span>
+                </button>
+              </div>
+            </div>
 
-        <div className="mt-4 sm:mt-6 px-4 sm:px-0 flex flex-col md:flex-row justify-between items-start gap-3">
-          <div className="flex-1">
-            <h1 className="text-lg sm:text-2xl font-black text-primary italic uppercase tracking-tighter leading-tight">{video.title}</h1>
-            <div className="flex items-center gap-3 mt-1.5">
-              <span className="px-1.5 py-0.5 bg-accent/20 text-accent text-[7px] font-black rounded-md uppercase border border-accent/20" style={{ color: 'var(--accent-color)', borderColor: 'var(--accent-color)', backgroundColor: 'var(--accent-color)22' }}>Global</span>
-              <span className="text-secondary text-[8px] font-bold uppercase tracking-widest">{video.category}</span>
+            <div className="mt-8">
+              <h2 className="text-lg font-bold mb-6 flex items-center gap-2">
+                <Sparkles size={20} className="text-purple-500" />
+                Recommended For You
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {video.source === 'youtube' ? (
+                  <YouTubeRelatedVideos videoId={video.youtube_id} onVideoSelect={(v) => navigate(`/watch/${v.id}`)} />
+                ) : (
+                  related.map((v) => (
+                    <VideoCard key={v.id} video={v} onClick={() => navigate(`/watch/${v.id}`)} />
+                  ))
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => {
-                if (!video?.id) return;
-                const likedObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
-                if (isLiked) {
-                  delete likedObj[video.id];
-                  setIsLiked(false);
-                } else {
-                  likedObj[video.id] = true;
-                  setIsLiked(true);
-                }
-                localStorage.setItem('macfeed_likes', JSON.stringify(likedObj));
-              }}
-              className={`p-2 rounded-lg transition-colors border ${isLiked ? 'bg-accent/20 border-accent text-accent' : 'bg-secondary hover:bg-primary/10 border-primary text-primary'}`}
-              style={isLiked ? { color: 'var(--accent-color)', borderColor: 'var(--accent-color)', backgroundColor: 'color-mix(in srgb, var(--accent-color) 20%, transparent)' } : {}}
-            >
-              <ThumbsUp className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
-            </button>
-            <button className="p-2 bg-secondary rounded-lg hover:bg-primary/10 transition-colors border border-primary text-primary"><Share2 className="w-3.5 h-3.5" /></button>
-          </div>
-        </div>
-
-        {video.description && (
-          <div className="mt-4 mx-4 sm:mx-0 p-4 bg-secondary/30 rounded-2xl border border-primary transition-colors duration-500">
-            <p className="text-secondary text-[10px] leading-relaxed whitespace-pre-wrap">{video.description}</p>
-          </div>
-        )}
-
-        {/* Related Section at BOTTOM */}
-        <div className="mt-6 px-4 sm:px-0">
-          {video.youtube_id ? (
-            <YouTubeRelatedVideos
-              currentVideoUrl={video.video_url}
-              currentVideoId={video.youtube_id}
-              currentVideoIdRaw={video.youtube_id}
-              currentVideoTitle={video.title}
-              parentCategory={video.category}
-            />
-          ) : related.length > 0 && (
-            <section>
-              <h3 className="text-xl font-black text-primary italic uppercase tracking-widest mb-6">Explore More</h3>
-              <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar no-scrollbar">
-                {related.map(v => <VideoCard key={v.id} video={v} />)}
-              </div>
-            </section>
-          )}
         </div>
       </div>
     </div>
+  );
+}
+
+function Sparkles({ size, className }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={size} 
+      height={size} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={className}
+    >
+      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+      <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
+    </svg>
   );
 }

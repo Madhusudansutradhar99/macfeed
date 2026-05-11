@@ -391,6 +391,12 @@ export default function Music() {
     setSongs((prev) => prev.filter((s) => s.id !== song.id));
     setFilteredSongs((prev) => prev.filter((s) => s.id !== song.id));
 
+    if (song.id?.toString().startsWith('device-')) {
+      await removeDeviceSong(song.id);
+      showToast('Song removed from device');
+      return;
+    }
+
     try {
       const audioPath = parseBucketPathFromUrl(song.video_url, 'music');
       const thumbPath = parseBucketPathFromUrl(song.thumbnail_url, 'thumbnails');
@@ -398,7 +404,7 @@ export default function Music() {
       const { error: deleteErr } = await supabase
         .from('videos')
         .delete()
-        .match({ id: song.id });
+        .eq('id', song.id);
       if (deleteErr) throw deleteErr;
 
       if (audioPath) {

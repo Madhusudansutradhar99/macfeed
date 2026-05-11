@@ -453,8 +453,9 @@ function LocalPlayerOverlay() {
         const calculateAngle = (clientX, clientY) => {
             const rect = el.getBoundingClientRect();
             const isMobile = window.innerWidth < 768;
-            const offset = isMobile ? -70 : -80; // Aligned to Ring Center
-            const centerX = rect.left + offset;
+            // Visual Wheel center is offset to the left of the drag container
+            const offsetX = isMobile ? -70 : -100; 
+            const centerX = rect.left + offsetX;
             const centerY = rect.top + rect.height / 2;
             return Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
         };
@@ -480,10 +481,11 @@ function LocalPlayerOverlay() {
 
             state.startAngle = currentAngle;
             
-            // Use requestAnimationFrame for smooth rotation
+            // Increased sensitivity for faster rotation on mobile
+            const sensitivity = 1.8;
             if (wheelRafRef.current) cancelAnimationFrame(wheelRafRef.current);
             wheelRafRef.current = requestAnimationFrame(() => {
-                scheduleWheelRotation(-deltaAngle);
+                scheduleWheelRotation(-deltaAngle * sensitivity);
             });
         };
 
@@ -1223,6 +1225,7 @@ function LocalPlayerOverlay() {
                                         backfaceVisibility: 'hidden',
                                         WebkitBackfaceVisibility: 'hidden',
                                         willChange: 'transform',
+                                        touchAction: 'none'
                                     }}
                                 />
                                 {/* COMPACT & TIGHT MOBILE WHEEL (Smaller radius and size) */}

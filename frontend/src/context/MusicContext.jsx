@@ -59,7 +59,14 @@ export function MusicProvider({ children }) {
   const [isScanning, setIsScanning] = useState(false);
   
   const audioRef = useRef();
-  const currentSong = (playlist && playlist[currentIdx]) || null;
+  const currentSong = React.useMemo(() => {
+    const raw = (playlist && playlist[currentIdx]) || null;
+    if (raw?.source === 'device') {
+      const fresh = deviceSongs.find(s => s.id === raw.id);
+      if (fresh) return fresh;
+    }
+    return raw;
+  }, [playlist, currentIdx, deviceSongs]);
 
 
 
@@ -105,7 +112,17 @@ export function MusicProvider({ children }) {
     if (saved) {
       try {
         const { idx, list, song } = JSON.parse(saved);
-        if (list?.length) setPlaylist(list);
+        // Repair/Filter dead device links in hydrated list
+        const repairedList = (list || []).map(item => {
+          if (item.source === 'device') {
+            // Keep the metadata but clear the dead blob URL
+            // We'll rely on loadStoredDeviceMusic to provide fresh ones
+            return { ...item, video_url: null };
+          }
+          return item;
+        });
+        
+        if (repairedList.length) setPlaylist(repairedList);
         if (idx !== undefined) setCurrentIdx(idx);
         if (song) setActiveLocalSong(song.source === 'local' ? song : null);
       } catch (e) {}
