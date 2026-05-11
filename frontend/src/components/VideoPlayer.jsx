@@ -199,12 +199,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     }
   }, []);
 
-  const handleMiniPlayer = useCallback(() => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => { });
-    }
-    minimize();
-  }, [minimize]);
 
   const handleTouchStart = useCallback((event) => {
     const touch = event.touches[0];
@@ -252,11 +246,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
       // Tap detection
       if (start.isTap && duration < 300 && absX < 10 && absY < 10) {
-        if (viewMode === 'mini') {
-          maximize();
-        } else {
-          toggleControls();
-        }
+        toggleControls();
       } else if (absY > 80 && absY > absX * 1.5) {
         // Vertical Swipe
         if (document.fullscreenElement || document.webkitFullscreenElement) {
@@ -290,7 +280,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
       touchStartRef.current = { x: 0, y: 0, time: 0, isTap: true };
       isSwipingRef.current = false;
     },
-    [viewMode, maximize, minimize, skip, showControlsTemporarily, toggleControls]
+    [viewMode, skip, showControlsTemporarily, toggleControls]
   );
 
   useEffect(() => {
@@ -632,7 +622,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [handleMiniPlayer, skip, toggleFullscreen, setPlaying, setMuted, setVolume]); // Added missing deps
+  }, [skip, toggleFullscreen, setPlaying, setMuted, setVolume]); // Added missing deps
 
   if (!video) return null;
 
