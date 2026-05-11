@@ -114,6 +114,7 @@ function LocalPlayerOverlay() {
     const [physOrientation, setPhysOrientation] = useState(window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
     const [forceLandscape, setForceLandscape] = useState(false);
     const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+    const [quickMenuData, setQuickMenuData] = useState(null);
 
     useEffect(() => {
         const handleResize = () => setIsMobileView(window.innerWidth < 768);
@@ -1282,22 +1283,63 @@ function LocalPlayerOverlay() {
                                     {[
                                         { icon: <RefreshCcw size={14} />, label: "Rotation", color: "#fbbf24", onClick: toggleROT },
                                         { icon: <Camera size={14} />, label: "Capture", color: "#fbbf24", onClick: handleCapture },
-                                        { icon: <Headphones size={14} />, label: "Audio", color: "#22d3ee", onClick: () => setSettingsTab('AUDIO') || setShowSettings(true) },
+                                        { icon: <Headphones size={14} />, label: "Audio", color: "#22d3ee", onClick: () => setQuickMenuData({
+                                            title: "Audio Tracks",
+                                            items: audioTracks.length > 0 ? audioTracks.map((t, i) => ({ label: t.label, active: t.enabled, action: () => handleAudioTrackChange(i) })) : [{ label: "Default Track", active: true, action: () => {} }]
+                                        }) },
                                         { icon: <Sliders size={14} />, label: "Equalizer", color: "#22d3ee", onClick: () => setSettingsTab('AUDIO') || setShowSettings(true) },
                                         { icon: <ZoomIn size={14} />, label: "Zoom/Fit", color: "#fbbf24", onClick: () => setAspectRatio('Fill') },
                                         { icon: <Settings size={14} />, label: "Settings", color: "#94a3b8", onClick: () => setSettingsTab('PLAYBACK') || setShowSettings(true) },
-                                        { icon: <Monitor size={14} />, label: "Quality", color: "#fbbf24", onClick: () => setShowQualityMenu(true) },
-                                        { icon: <MessageSquare size={14} />, label: "Subtitles", color: "#22d3ee", onClick: () => setSettingsTab('SUBTITLES') || setShowSettings(true) },
+                                        { icon: <Monitor size={14} />, label: "Quality", color: "#fbbf24", onClick: () => setQuickMenuData({
+                                            title: "Video Quality",
+                                            items: ['Auto', '1080p', '2K', '4K', '8K', '16K'].map(q => ({ label: q, active: targetQuality === q, action: () => { setTargetQuality(q); setQuickMenuData(null); } }))
+                                        }) },
+                                        { icon: <MessageSquare size={14} />, label: "Subtitles", color: "#22d3ee", onClick: () => setQuickMenuData({
+                                            title: "Subtitles",
+                                            items: subtitles.length > 0 ? subtitles.map((s, i) => ({ label: `Track ${i+1}`, active: activeSubtitle === s, action: () => setActiveSubtitle(s) })) : [{ label: "No Subtitles", active: false, action: () => {} }]
+                                        }) },
+                                        { icon: <PlayCircle size={14} />, label: "Speed", color: "#fbbf24", onClick: () => setQuickMenuData({
+                                            title: "Playback Speed",
+                                            items: SPEEDS.map(s => ({ label: `${s}x`, active: playbackRate === s, action: () => { setPlaybackRate(s); setQuickMenuData(null); } }))
+                                        }) },
                                         { icon: <Zap size={14} />, label: "Hardware", color: "#fbbf24", onClick: () => setHwAccel(!hwAccel) },
                                         { icon: <PictureInPicture size={14} />, label: "PIP", color: "#22d3ee", onClick: () => videoRef.current?.requestPictureInPicture() },
                                         { icon: isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />, label: "Mute", color: "#22d3ee", onClick: () => setIsMuted(!isMuted) },
                                         { icon: <SkipForward size={14} />, label: "Next", color: "#fbbf24", onClick: () => next() },
-                                        { icon: <SkipBack size={14} />, label: "Prev", color: "#fbbf24", onClick: () => prev() },
                                         { icon: <Repeat size={14} />, label: "Loop", color: "#22d3ee", onClick: () => setLoopVideo(!loopVideo) }
                                     ].map((action, i) => (
                                         <JogPanel key={i} action={action} index={i} wheelRotationMV={wheelRotationMV} isMobileView={isMobileView} />
                                     ))}
                                 </div>
+
+                                {/* QUICK TABLE MENU */}
+                                <AnimatePresence>
+                                    {quickMenuData && (
+                                        <motion.div
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            className="absolute left-[320px] md:left-[450px] z-[500] w-64 bg-black/95 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl"
+                                        >
+                                            <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+                                                <span className="text-white text-[10px] font-black uppercase tracking-widest">{quickMenuData.title}</span>
+                                                <button onClick={() => setQuickMenuData(null)} className="text-white/30 hover:text-white"><X size={14} /></button>
+                                            </div>
+                                            <div className="max-h-60 overflow-y-auto no-scrollbar py-2">
+                                                {quickMenuData.items.map((item, i) => (
+                                                    <button
+                                                        key={i}
+                                                        onClick={() => { item.action(); if(quickMenuData.title !== 'Audio Tracks' && quickMenuData.title !== 'Subtitles') setQuickMenuData(null); }}
+                                                        className={`w-full px-6 py-3 flex items-center justify-between transition-all ${item.active ? 'bg-white/10 text-white' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
+                                                    >
+                                                        <span className="text-[11px] font-bold">{item.label}</span>
+                                                        {item.active && <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(var(--accent-rgb),0.8)]" />}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </motion.div>
                     )}
