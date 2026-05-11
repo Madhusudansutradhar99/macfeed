@@ -1856,22 +1856,19 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
             }}
             animate={isFocused ? { 
                 scale: 1.2,
-                rotate: [0, 3, -3, 0],
-                x: 20,
-                filter: `drop-shadow(0 0 20px ${action.color}) brightness(1.4)`
+                brightness: 1.5,
+                filter: `drop-shadow(0 0 25px ${action.color})`
             } : { 
                 scale: 1, 
-                rotate: 0, 
-                x: 0, 
-                filter: 'drop-shadow(0 0 0px transparent) brightness(1)' 
+                brightness: 1,
+                filter: 'drop-shadow(0 0 0px transparent)' 
             }}
             transition={{ 
                 type: 'spring', 
-                stiffness: 400, 
-                damping: 30,
-                rotate: { repeat: Infinity, duration: 1.5, ease: 'easeInOut' }
+                stiffness: 500, 
+                damping: 30
             }}
-            whileHover={{ scale: 1.3, x: 45 }}
+            whileHover={{ scale: 1.25 }}
             whileTap={{ scale: 0.9 }}
         >
             {/* SVG Wireframe Box - Starting from OUTSIDE the wheel */}
