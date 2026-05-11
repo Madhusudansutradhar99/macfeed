@@ -1706,44 +1706,76 @@ const Shortcut = memo(({ keyLabel, label }) => {
 });
 
 const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
-    const angle = (index * (360 / 14));
-    const rotate = useTransform(wheelRotationMV, r => r + angle);
-    const counterRotate = useTransform(rotate, r => -r);
-    
-    const opacity = useTransform(rotate, r => {
-        const norm = ((r % 360) + 360) % 360;
-        return (norm > 340 || norm < 20) ? 1 : 0.15;
+    const angleStep = 18;
+    const y = useTransform(wheelRotationMV, (rot) => {
+        const rad = ((index * angleStep - rot) * Math.PI) / 180;
+        const panelRadius = isMobileView ? 200 : 300;
+        return Math.sin(rad) * panelRadius;
     });
-    const scale = useTransform(rotate, r => {
-        const norm = ((r % 360) + 360) % 360;
-        return (norm > 340 || norm < 20) ? 1.2 : 0.8;
+    const x = useTransform(wheelRotationMV, (rot) => {
+        const rad = ((index * angleStep - rot) * Math.PI) / 180;
+        const panelRadius = isMobileView ? 200 : 300;
+        const baseOffset = isMobileView ? 40 : 80;
+        return Math.cos(rad) * panelRadius + baseOffset;
     });
+    const scale = useTransform(y, (yVal) => {
+        const panelRadius = isMobileView ? 200 : 300;
+        const normalizedDist = Math.abs(yVal) / (panelRadius * 1.2);
+        return Math.max(0.7, 1.2 - normalizedDist);
+    });
+    const opacity = useTransform(y, (yVal) => {
+        const panelRadius = isMobileView ? 200 : 300;
+        const normalizedDist = Math.abs(yVal) / (panelRadius * 1.2);
+        return Math.max(0.1, 1.1 - normalizedDist);
+    });
+
+    const [isFocused, setIsFocused] = useState(false);
+    useEffect(() => {
+        const unsubscribe = scale.on('change', (s) => {
+            setIsFocused(s > 1.05);
+        });
+        return unsubscribe;
+    }, [scale]);
 
     return (
         <motion.div
-            style={{
-                rotate,
-                opacity,
-                scale,
-                transformOrigin: isMobileView ? '150px center' : '280px center',
-                position: 'absolute',
-                width: isMobileView ? '180px' : '240px',
-                left: isMobileView ? '-30px' : '-40px',
-                willChange: 'transform, opacity'
-            }}
-            className="flex items-center gap-4 cursor-pointer"
+            style={{ y, x, scale, opacity, zIndex: 300, position: 'absolute', left: isMobileView ? '10px' : '40px', willChange: 'transform, opacity' }}
+            className="flex items-center gap-4 cursor-pointer group"
             onClick={action.onClick}
         >
-            <motion.div 
-                className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/10 flex items-center justify-center shadow-xl border border-white/5"
-                style={{ color: action.color, rotate: counterRotate }}
+            {/* SVG Wireframe Box */}
+            <div className="absolute left-[-190px] w-[200px] h-10 pointer-events-none transition-opacity duration-300" style={{ opacity: isFocused ? '1' : '0.2' }}>
+                <svg width="200" height="40" viewBox="0 0 200 40" fill="none">
+                    <path d="M10 20 H120 L150 5 H200" stroke={action.color} strokeWidth="1.5" strokeOpacity="0.7" />
+                    <path d="M10 20 H120 L150 35 H200" stroke={action.color} strokeWidth="1.5" strokeOpacity="0.7" />
+                    <circle cx="10" cy="20" r="3.5" fill={action.color} />
+                </svg>
+            </div>
+
+            {/* Panel Body */}
+            <div
+                className="relative w-32 h-12 bg-black/95 border-l-[6px] border-r-[2px] border-y-[2px] transition-all duration-300 flex items-center justify-between px-3"
+                style={{
+                    clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)',
+                    borderLeftColor: isFocused ? action.color : 'rgba(255,255,255,0.1)',
+                    borderRightColor: 'rgba(255,255,255,0.05)',
+                    borderTopColor: 'rgba(255,255,255,0.05)',
+                    borderBottomColor: 'rgba(255,255,255,0.05)',
+                    boxShadow: isFocused ? `0 0 25px ${action.color}33` : 'none',
+                    transform: isFocused ? 'scale(1.05)' : 'scale(1)',
+                    opacity: isFocused ? '1' : '0.6'
+                }}
             >
-                {action.icon}
-            </motion.div>
-            <motion.div className="flex flex-col" style={{ rotate: counterRotate }}>
-                <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-white">{action.label}</span>
-                <span className="text-[7px] md:text-[8px] font-bold uppercase tracking-tight text-white/30">Select Function</span>
-            </motion.div>
+                <div className="transition-all duration-300" style={{ color: isFocused ? action.color : 'rgba(255,255,255,0.4)', transform: isFocused ? 'scale(1.25)' : 'scale(1)' }}>
+                    {action.icon}
+                </div>
+                <div className="flex flex-col items-end mr-1">
+                    <span className="text-[8.5px] font-black uppercase tracking-tighter transition-all duration-300" style={{ color: isFocused ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>
+                        {action.label}
+                    </span>
+                    <div className="h-[1.5px] w-8 mt-1" style={{ backgroundColor: action.color, display: isFocused ? 'block' : 'none' }} />
+                </div>
+            </div>
         </motion.div>
     );
 });
