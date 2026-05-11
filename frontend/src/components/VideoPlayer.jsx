@@ -455,8 +455,8 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             const state = event.data;
             const isPlaying = state === window.YT.PlayerState.PLAYING;
             const isPaused = state === window.YT.PlayerState.PAUSED;
-            const isBuffering = state === window.YT.PlayerState.BUFFERING;
             
+            // Immediate state update to prevent 'double-click' bug
             if (isPlaying) setPlaying(true);
             else if (isPaused || state === 0) setPlaying(false);
             
@@ -523,7 +523,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         if (state === 1 && !playingRef.current) setPlaying(true);
         else if ((state === 2 || state === 0) && playingRef.current) setPlaying(false);
       }
-    }, 500);
+    }, 100);
 
     return () => {
       clearInterval(stateSyncInterval);
@@ -799,11 +799,11 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
           {/* CUSTOM CONTROLS: Hidden in fullscreen to show Native YT Quality Selector */}
           <div 
-            className={`absolute bottom-0 left-0 right-0 p-2 pt-8 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 z-[100] ${isFullscreen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+            className={`absolute bottom-0 left-0 right-0 p-1.5 pt-6 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 z-[100] ${isFullscreen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
             onClick={(e) => e.stopPropagation()}
           >
               {/* YouTube Style Progress Bar */}
-              <div className="mb-1 w-full group relative flex items-center h-3">
+              <div className="mb-0.5 w-full group relative flex items-center h-2.5">
                 <input
                   ref={inputRangeRef}
                   type="range"
@@ -828,21 +828,23 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-1 text-white">
-                <div className="flex items-center gap-0.5">
+              <div className="flex items-center justify-between gap-0 text-white">
+                <div className="flex items-center gap-0">
                   {/* FIX 4: playBtnRef tracks state for icon swap without extra re-render */}
                   <ControlBtn onClick={(e) => {
                     e.stopPropagation();
                     if (isYouTube && ytPlayerRef.current) {
-                      if (!playing) {
-                        ytPlayerRef.current.playVideo?.();
-                        setPlaying(true);
-                      } else {
+                      const state = ytPlayerRef.current.getPlayerState?.();
+                      // Force correct command based on ACTUAL player state
+                      if (state === 1) {
                         ytPlayerRef.current.pauseVideo?.();
                         setPlaying(false);
+                      } else {
+                        ytPlayerRef.current.playVideo?.();
+                        setPlaying(true);
                       }
                     } else if (nativeVideoRef.current) {
-                      if (!playing) {
+                      if (nativeVideoRef.current.paused) {
                         nativeVideoRef.current.play();
                         setPlaying(true);
                       } else {
