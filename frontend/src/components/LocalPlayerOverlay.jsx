@@ -1003,7 +1003,7 @@ function LocalPlayerOverlay() {
         <motion.div
             ref={containerRef}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className={`fixed -inset-[2px] z-[9999] bg-[#000] flex flex-col items-center justify-center overflow-hidden font-sans select-none touch-none px-2 sm:px-0 rounded-lg sm:rounded-2xl ${forceLandscape ? 'rotate-90 origin-center' : ''}`}
+            className={`fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center overflow-hidden font-sans select-none touch-none px-2 sm:px-0 rounded-lg sm:rounded-2xl ${forceLandscape ? 'rotate-90 origin-center' : ''}`}
             style={forceLandscape ? { width: '100vh', height: '100vw', position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(90deg)' } : {}}
             onMouseMove={resetControlsTimeout}
                 onTouchStart={handleTouchStart}
@@ -1043,8 +1043,8 @@ function LocalPlayerOverlay() {
                         transform: 'translate3d(0,0,0) perspective(1000px)',
                         backfaceVisibility: 'hidden',
                         WebkitBackfaceVisibility: 'hidden',
-                        filter: showExtraPanel ? 'brightness(0.3)' : 'none',
-                        transition: 'filter 0.5s ease',
+                        filter: showExtraPanel ? 'blur(10px) brightness(0.4)' : 'none',
+                        transition: 'filter 0.4s ease',
                         borderRadius: '12px'
                     }}
                     onLoadedMetadata={handleVideoMetadata}
@@ -1115,7 +1115,7 @@ function LocalPlayerOverlay() {
                         <motion.div
                             initial={{ y: -100 }} animate={{ y: 0 }} exit={{ y: -100 }}
                             transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
-                            className="absolute top-0 left-0 right-0 z-[600] p-6 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent backdrop-blur-[4px]"
+                            className="absolute top-0 left-0 right-0 z-[600] p-6 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent backdrop-blur-md"
                             onClick={e => { e.stopPropagation(); resetControlsTimeout(); }}
                         >
                             <div className="flex items-center gap-6">
@@ -1179,7 +1179,7 @@ function LocalPlayerOverlay() {
                         <motion.div
                             initial={{ y: 150 }} animate={{ y: 0 }} exit={{ y: 150 }}
                             transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
-                            className="absolute bottom-0 left-0 right-0 z-[600] p-6 flex flex-col gap-6 bg-gradient-to-t from-black/80 to-transparent backdrop-blur-[4px]"
+                            className="absolute bottom-0 left-0 right-0 z-[600] p-6 flex flex-col gap-6 bg-gradient-to-t from-black/60 to-transparent backdrop-blur-md"
                             onClick={e => { e.stopPropagation(); resetControlsTimeout(); }}
                         >
                             <div className="flex items-center justify-between gap-6">
@@ -1272,7 +1272,7 @@ function LocalPlayerOverlay() {
                             initial={{ opacity: 0, x: -50 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -50 }}
-                            className="absolute inset-0 z-[150] flex items-center justify-start overflow-hidden pointer-events-auto bg-black/40 backdrop-blur-[8px]"
+                            className="absolute inset-0 z-[150] flex items-center justify-start overflow-hidden pointer-events-auto bg-black/30 backdrop-blur-md"
                             onClick={() => setShowExtraPanel(false)}
                         >
                             {/* 
@@ -1378,7 +1378,7 @@ function LocalPlayerOverlay() {
                         >
                             <motion.div
                                 initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-                                className="bg-[#050505] w-full max-w-4xl h-[80vh] rounded-[2rem] border border-white/10 overflow-hidden flex flex-col sm:flex-row shadow-2xl"
+                                className="bg-[#111]/90 w-full max-w-4xl h-[80vh] rounded-[2rem] border border-white/5 backdrop-blur-2xl overflow-hidden flex flex-col sm:flex-row shadow-2xl"
                                 onClick={e => e.stopPropagation()}
                             >
                                 {/* Sidebar Tabs */}
@@ -1613,7 +1613,7 @@ function LocalPlayerOverlay() {
                                 initial={{ scale: 0.8, opacity: 0, y: 20 }}
                                 animate={{ scale: 1, opacity: 1, y: 0 }}
                                 exit={{ scale: 0.8, opacity: 0, y: 20 }}
-                                className="relative w-full max-w-[320px] bg-[#050505] border border-white/10 rounded-[2.5rem] p-8 shadow-[0_30px_100px_rgba(0,0,0,0.9)]"
+                                className="relative w-full max-w-[320px] bg-[#111]/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-8 shadow-[0_30px_100px_rgba(0,0,0,0.8)]"
                             >
                                 <div className="flex flex-col items-center text-center gap-6">
                                     <div className="w-20 h-20 bg-accent/20 rounded-[2rem] flex items-center justify-center text-accent shadow-[0_0_30px_rgba(var(--accent-rgb),0.2)]">
