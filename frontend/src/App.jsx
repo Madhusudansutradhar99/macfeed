@@ -135,7 +135,6 @@ function AppContent() {
             </Routes>
           </Suspense>
           {/* Global persistent overlays */}
-          <GlobalVideoPlayer />
           <MusicMiniPlayer />
           <LocalPlayerOverlay />
           <AdBanner />

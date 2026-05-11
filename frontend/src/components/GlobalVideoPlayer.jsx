@@ -42,20 +42,22 @@ export default function GlobalVideoPlayer() {
       initial={false}
       animate={{ 
         width: isMini ? '180px' : '100vw',
-        height: isMini ? '110px' : (isWatchPage ? '56.25vw' : '100vh'),
+        height: isMini ? '110px' : (isWatchPage ? 'auto' : '100vh'),
         right: isMini ? 16 : 0,
         bottom: isMini ? 80 : 0,
         top: isMini ? 'auto' : 0,
         left: isMini ? 'auto' : 0,
         borderRadius: isMini ? '12px' : 0,
         backgroundColor: isMini ? '#000' : (isWatchPage ? 'transparent' : '#000'),
-        zIndex: isMini ? 9999 : (isWatchPage ? 50 : 9999),
+        zIndex: isMini ? 9999 : (isWatchPage ? 1 : 9999),
       }}
       transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.8 }}
       style={{
-        position: 'fixed',
+        position: isMini ? 'fixed' : (isWatchPage ? 'relative' : 'fixed'),
         overflow: 'hidden',
-        pointerEvents: isMini ? 'auto' : (isWatchPage ? 'none' : 'auto'),
+        pointerEvents: 'auto',
+        display: isWatchPage && !isMini ? 'block' : 'flex',
+        aspectRatio: isWatchPage && !isMini ? '16/9' : 'auto'
       }}
       onClick={() => isMini && handleRestore()}
       onTouchStart={handleTouchStart}

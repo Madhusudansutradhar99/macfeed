@@ -1,6 +1,7 @@
 import React from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import GlobalVideoPlayer from '../components/GlobalVideoPlayer';
 import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -95,6 +96,7 @@ const MainLayout = () => {
       <div className="flex flex-1 relative min-w-0">
         <Sidebar />
         <main className="flex-1 p-2 sm:p-4 pt-4 sm:pt-4 md:p-6 md:pt-6 overflow-y-auto overflow-x-hidden">
+          <GlobalVideoPlayer />
           <ErrorBoundary resetKey={location.pathname}>
             <Outlet />
           </ErrorBoundary>

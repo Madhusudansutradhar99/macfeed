@@ -453,19 +453,19 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             if (ytTimerRef.current) cancelAnimationFrame(ytTimerRef.current);
             ytTimerRef.current = requestAnimationFrame(syncProgress);
 
-            setTimeout(() => {
-              try {
-                const iframe = ytDomContainer.current?.querySelector('iframe');
-                if (iframe) {
-                  iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture; encrypted-media');
-                  iframe.setAttribute('allowfullscreen', '');
-                  iframe.setAttribute('playsinline', '1');
-                  iframe.style.touchAction = 'manipulation';
-                }
-              } catch (err) {
-                // ignore
+          setTimeout(() => {
+            try {
+              const iframe = ytDomContainer.current?.querySelector('iframe');
+              if (iframe) {
+                iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+                iframe.setAttribute('allowfullscreen', 'true');
+                iframe.setAttribute('playsinline', '1');
+                iframe.style.touchAction = 'manipulation';
               }
-            }, 100);
+            } catch (err) {
+              // ignore
+            }
+          }, 100);
 
             // Fetch qualities
             if (event.target.getAvailableQualityLevels) {

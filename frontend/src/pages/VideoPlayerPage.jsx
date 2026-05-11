@@ -143,8 +143,7 @@ export default function VideoPlayerPage() {
   return (
     <div className="min-h-screen bg-primary text-primary transition-colors duration-500">
       <div className="flex flex-col w-full p-0 sm:p-6 max-w-[1400px] mx-auto">
-        {/* Placeholder for Global Player (which is fixed/absolute) */}
-        <div className="w-full aspect-video rounded-2xl sm:rounded-[32px] overflow-hidden bg-black/10 mx-auto" />
+        {/* Global Player is now rendered inline at the top of the main layout */}
 
         {/* Back Button - Moved below video */}
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-secondary hover:text-primary mt-4 mb-2 sm:mb-6 p-4 sm:p-0 w-fit transition-colors">

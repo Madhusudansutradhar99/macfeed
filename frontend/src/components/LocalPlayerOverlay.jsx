@@ -452,7 +452,9 @@ function LocalPlayerOverlay() {
 
         const calculateAngle = (clientX, clientY) => {
             const rect = el.getBoundingClientRect();
-            const centerX = rect.left + 200; // Aligned to Ring Center
+            const isMobile = window.innerWidth < 768;
+            const offset = isMobile ? -70 : -80; // Aligned to Ring Center
+            const centerX = rect.left + offset;
             const centerY = rect.top + rect.height / 2;
             return Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
         };
