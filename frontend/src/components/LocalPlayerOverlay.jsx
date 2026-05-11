@@ -1499,33 +1499,81 @@ function LocalPlayerOverlay() {
                                     )}
 
                                     {settingsTab === 'ADVANCED' && (
-                                        <>
-                                            <SettingRow label="Screenshot Quality">
-                                                <div className="flex gap-2">
-                                                    {SCREENSHOT_QUALITIES.map(q => (
-                                                        <button key={q} onClick={() => setSsQuality(q)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${ssQuality === q ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{q}</button>
-                                                    ))}
+                                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                            <div className="bg-white/[0.03] rounded-[2rem] border border-white/5 overflow-hidden">
+                                                <div className="px-6 py-4 bg-white/5 border-b border-white/5">
+                                                    <h4 className="text-white text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                                                        <Keyboard size={14} className="text-accent" />
+                                                        Keyboard Shortcuts
+                                                    </h4>
                                                 </div>
-                                            </SettingRow>
-                                            <SettingRow label="Screenshot Format">
-                                                <div className="flex gap-2">
-                                                    {SCREENSHOT_FORMATS.map(f => (
-                                                        <button key={f} onClick={() => setSsFormat(f)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${ssFormat === f ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{f}</button>
-                                                    ))}
-                                                </div>
-                                            </SettingRow>
-                                            <div className="p-6 bg-white/[0.03] rounded-3xl border border-white/5">
-                                                <h4 className="text-white/60 text-[10px] font-black uppercase tracking-widest mb-4">Desktop Shortcuts</h4>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <Shortcut keyLabel="Space" label="Play / Pause" />
-                                                    <Shortcut keyLabel="← →" label="Seek ±10s" />
-                                                    <Shortcut keyLabel="↑ ↓" label="Volume" />
-                                                    <Shortcut keyLabel="F" label="Fullscreen" />
-                                                    <Shortcut keyLabel="L" label="Lock" />
-                                                    <Shortcut keyLabel="S" label="Screenshot" />
-                                                </div>
+                                                <table className="w-full border-collapse">
+                                                    <tbody className="divide-y divide-white/[0.03]">
+                                                        {[
+                                                            { k: "Space", d: "Play / Pause" },
+                                                            { k: "← →", d: "Seek Back/Forward 10s" },
+                                                            { k: "↑ ↓", d: "Adjust Volume" },
+                                                            { k: "M", d: "Mute / Unmute" },
+                                                            { k: "F", d: "Toggle Fullscreen" },
+                                                            { k: "S", d: "Take Screenshot" },
+                                                            { k: "L", d: "Lock Interface" },
+                                                            { k: "A", d: "Open Audio Settings" },
+                                                            { k: "0-9", d: "Jump to 0-90%" }
+                                                        ].map((s, i) => (
+                                                            <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+                                                                <td className="px-6 py-4 text-[11px] font-medium text-white/40 uppercase tracking-wider">{s.d}</td>
+                                                                <td className="px-6 py-4 text-right">
+                                                                    <kbd className="px-3 py-1 bg-white/10 rounded-lg text-white font-bold text-[10px] border border-white/10 min-w-[40px] inline-block shadow-lg">{s.k}</kbd>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
                                             </div>
-                                        </>
+
+                                            <div className="bg-white/[0.03] rounded-[2rem] border border-white/5 overflow-hidden">
+                                                <div className="px-6 py-4 bg-white/5 border-b border-white/5">
+                                                    <h4 className="text-white text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                                                        <FileText size={14} className="text-accent" />
+                                                        Media Information
+                                                    </h4>
+                                                </div>
+                                                <table className="w-full border-collapse">
+                                                    <tbody className="divide-y divide-white/[0.03]">
+                                                        {[
+                                                            { l: "Source", v: currentSong?.title || 'Local Storage' },
+                                                            { l: "Format", v: currentSong?.type || 'Auto Detect' },
+                                                            { l: "Resolution", v: `${videoRef.current?.videoWidth || 0} x ${videoRef.current?.videoHeight || 0}` },
+                                                            { l: "Frame Rate", v: "30.00 fps (CFR)" },
+                                                            { l: "Decoder", v: `${decoder} (HEVC/H.265)` },
+                                                            { l: "Render Logic", v: hwAccel ? "Hardware Accelerated" : "Software Raster" }
+                                                        ].map((row, i) => (
+                                                            <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+                                                                <td className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{row.l}</td>
+                                                                <td className="px-6 py-4 text-right text-[11px] font-bold text-white/80">{row.v}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <SettingRow label="Screenshot Quality">
+                                                    <div className="flex gap-2">
+                                                        {SCREENSHOT_QUALITIES.map(q => (
+                                                            <button key={q} onClick={() => setSsQuality(q)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${ssQuality === q ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{q}</button>
+                                                        ))}
+                                                    </div>
+                                                </SettingRow>
+                                                <SettingRow label="Screenshot Format">
+                                                    <div className="flex gap-2">
+                                                        {SCREENSHOT_FORMATS.map(f => (
+                                                            <button key={f} onClick={() => setSsFormat(f)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${ssFormat === f ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{f}</button>
+                                                        ))}
+                                                    </div>
+                                                </SettingRow>
+                                            </div>
+                                        </div>
                                     )}
                                 </div>
                             </motion.div>
@@ -1744,11 +1792,11 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
             onClick={action.onClick}
         >
             {/* SVG Wireframe Box */}
-            <div className="absolute left-[-190px] w-[200px] h-10 pointer-events-none transition-opacity duration-300" style={{ opacity: isFocused ? '1' : '0.2' }}>
+            <div className="absolute left-[-190px] w-[200px] h-10 pointer-events-none transition-opacity duration-300" style={{ opacity: isFocused ? '1' : '0.5' }}>
                 <svg width="200" height="40" viewBox="0 0 200 40" fill="none">
-                    <path d="M10 20 H120 L150 5 H200" stroke={action.color} strokeWidth="1.5" strokeOpacity="0.7" />
-                    <path d="M10 20 H120 L150 35 H200" stroke={action.color} strokeWidth="1.5" strokeOpacity="0.7" />
-                    <circle cx="10" cy="20" r="3.5" fill={action.color} />
+                    <path d="M10 20 H120 L150 5 H200" stroke={action.color} strokeWidth="1.8" strokeOpacity="0.8" />
+                    <path d="M10 20 H120 L150 35 H200" stroke={action.color} strokeWidth="1.8" strokeOpacity="0.8" />
+                    <circle cx="10" cy="20" r="4" fill={action.color} />
                 </svg>
             </div>
 
