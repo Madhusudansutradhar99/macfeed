@@ -1768,12 +1768,13 @@ const Shortcut = memo(({ keyLabel, label }) => {
             <kbd className="px-2 py-1 bg-white/5 rounded-lg text-white/60 text-[10px] font-bold border border-white/5 min-w-[30px] text-center">{keyLabel}</kbd>
         </div>
     );
-
 });
 
 const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
     const angle = (index * (360 / 14));
     const rotate = useTransform(wheelRotationMV, r => r + angle);
+    const counterRotate = useTransform(rotate, r => -r);
+    
     const opacity = useTransform(rotate, r => {
         const norm = ((r % 360) + 360) % 360;
         return (norm > 340 || norm < 20) ? 1 : 0.15;
@@ -1798,16 +1799,16 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
             className="flex items-center gap-4 cursor-pointer"
             onClick={action.onClick}
         >
-            <div 
+            <motion.div 
                 className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/10 flex items-center justify-center shadow-xl border border-white/5"
-                style={{ color: action.color, rotate: useTransform(rotate, r => -r) }}
+                style={{ color: action.color, rotate: counterRotate }}
             >
                 {action.icon}
-            </div>
-            <div className="flex flex-col" style={{ rotate: useTransform(rotate, r => -r) }}>
+            </motion.div>
+            <motion.div className="flex flex-col" style={{ rotate: counterRotate }}>
                 <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-white">{action.label}</span>
                 <span className="text-[7px] md:text-[8px] font-bold uppercase tracking-tight text-white/30">Select Function</span>
-            </div>
+            </motion.div>
         </motion.div>
     );
 });
