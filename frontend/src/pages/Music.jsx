@@ -60,7 +60,7 @@ export default function Music() {
   const { 
     playVideo, setIsExpanded, playlist: contextPlaylist,
     deviceSongs, devicePermission, isScanning, requestDevicePermission, 
-    handleDeviceFiles, refreshDeviceMusic 
+    handleDeviceFiles, refreshDeviceMusic, removeDeviceSong 
   } = useMusicPlayer() || {};
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -907,6 +907,12 @@ export default function Music() {
                         <div key={song.id} onClick={() => handleSongClick(song)} className="w-[180px] md:w-[240px] shrink-0 group cursor-pointer transition-transform active:scale-95">
                           <div className={`aspect-[2/3] rounded-[2.5rem] overflow-hidden mb-4 relative border ${activeBorder} transition-colors duration-500 shadow-2xl bg-white/5`}>
                             <img src={song.thumbnail_url} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); removeDeviceSong(song.id); }}
+                              className="absolute right-3 top-3 z-20 rounded-full bg-red-500/20 p-2 text-red-300 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white"
+                            >
+                              <Trash className="w-3.5 h-3.5" />
+                            </button>
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-6">
                               <h5 className="text-[10px] font-black uppercase italic line-clamp-2 leading-tight mb-1">{song.title}</h5>
                               <p className="text-[8px] font-bold text-white/40 uppercase mb-3 truncate">{song.artist}</p>

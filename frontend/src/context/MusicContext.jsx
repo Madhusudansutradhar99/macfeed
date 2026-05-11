@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import * as musicMetadata from 'music-metadata-browser';
-import { getHandle, setHandle } from '../utils/db';
+import { getHandle, setHandle, saveTrack, getAllTracks, deleteTrack } from '../utils/db';
 import { Buffer } from 'buffer';
 
 if (typeof window !== 'undefined') window.Buffer = window.Buffer || Buffer;
@@ -65,19 +65,33 @@ export function MusicProvider({ children }) {
 
   const loadStoredDeviceMusic = async () => {
     try {
-      const iosFiles = await getHandle('ios_files');
-      if (iosFiles && iosFiles.length > 0) {
-        handleDeviceFiles(iosFiles, true); // true to skip re-saving to IDB
+      const storedTracks = await getAllTracks();
+      if (storedTracks && storedTracks.length > 0) {
+        const reconstructedSongs = storedTracks.map(track => {
+          const blob = new Blob([track.audioData], { type: track.type || 'audio/mpeg' });
+          const url = URL.createObjectURL(blob);
+          
+          let thumbnail_url = track.thumbnail_url;
+          // If thumbnail was a blob URL, it's dead. Use default if so.
+          if (thumbnail_url?.startsWith('blob:')) {
+             thumbnail_url = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800';
+          }
+
+          return {
+            ...track,
+            video_url: url,
+            thumbnail_url: thumbnail_url || 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800'
+          };
+        });
+        setDeviceSongs(reconstructedSongs);
       }
 
       const handle = await getHandle('musicFolder');
       if (handle) {
-        // Use queryPermission to check silently without prompting
         const status = await handle.queryPermission({ mode: 'read' });
         if (status === 'granted') {
           await scanDirectory(handle);
         } else {
-          // Permission needed. We set permission state to false so the user can be prompted via a button click.
           setDevicePermission(false);
         }
       }
@@ -167,54 +181,54 @@ export function MusicProvider({ children }) {
     const songs = [];
     const fileList = Array.from(files);
 
-    if (!isRestore) {
-      try {
-        await setHandle('ios_files', fileList);
-      } catch (e) {
-        console.error('Failed to save iOS files to IDB:', e);
-      }
-    }
-
     try {
       for (const file of fileList) {
         try {
+          const arrayBuffer = await file.arrayBuffer();
           const metadata = await musicMetadata.parseBlob(file);
           let artworkUrl = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800';
+          
           if (metadata.common.picture && metadata.common.picture[0]) {
             const pic = metadata.common.picture[0];
             const blob = new Blob([pic.data], { type: pic.format });
             artworkUrl = URL.createObjectURL(blob);
           }
 
-          songs.push({
-            id: `device-${file.name}-${file.lastModified}`,
+          const trackId = `device-${crypto.randomUUID()}`;
+          const trackData = {
+            id: trackId,
             title: metadata.common.title || file.name.replace(/\.[^/.]+$/, ''),
             artist: metadata.common.artist || 'Unknown Artist',
             album: metadata.common.album || 'Unknown Album',
             duration: metadata.common.duration || 0,
             thumbnail_url: artworkUrl,
-            video_url: URL.createObjectURL(file),
+            type: file.type,
+            size: file.size,
+            dateAdded: Date.now(),
+            audioData: arrayBuffer,
             source: 'device',
-            category: 'Device Music',
-            file: file
+            category: 'Device Music'
+          };
+
+          await saveTrack(trackData);
+
+          const blob = new Blob([arrayBuffer], { type: file.type });
+          const url = URL.createObjectURL(blob);
+
+          songs.push({
+            ...trackData,
+            video_url: url
           });
         } catch (err) {
-          songs.push({
-            id: `device-${file.name}-${file.lastModified}`,
-            title: file.name.replace(/\.[^/.]+$/, ''),
-            artist: 'Unknown Artist',
-            duration: 0,
-            thumbnail_url: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800',
-            video_url: URL.createObjectURL(file),
-            source: 'device',
-            category: 'Device Music',
-            file: file
-          });
+          console.error('Error processing file:', file.name, err);
         }
       }
       setDeviceSongs(prev => deduplicate([...prev, ...songs]));
     } catch (e) {
       console.error('File processing failed:', e);
+      if (e.name === 'QuotaExceededError') {
+        alert('Storage quota exceeded. Please remove some tracks to add more.');
+      }
     } finally {
       setIsScanning(false);
     }
@@ -477,6 +491,14 @@ export function MusicProvider({ children }) {
       }
     },
     handleDeviceFiles,
+    removeDeviceSong: async (id) => {
+      try {
+        await deleteTrack(id);
+        setDeviceSongs(prev => prev.filter(s => s.id !== id));
+      } catch (e) {
+        console.error('Failed to delete track:', e);
+      }
+    },
     refreshDeviceMusic: () => {
       if (devicePermission) {
         loadStoredDeviceMusic();
