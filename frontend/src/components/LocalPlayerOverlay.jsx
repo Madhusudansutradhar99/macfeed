@@ -37,23 +37,24 @@ const SCREENSHOT_FORMATS = ['PNG', 'JPG'];
 // --- SUB-COMPONENT FOR HIGH PERFORMANCE ROTATION ---
 const JogPanel = ({ action, index, wheelRotationMV, isMobileView }) => {
     const angleStep = 18;
-    const x = useTransform(wheelRotationMV, (rot) => {
-        const rad = ((index * angleStep - rot) * Math.PI) / 180;
-        const panelRadius = isMobileView ? 160 : 240;
-        return Math.cos(rad) * panelRadius;
-    });
     const y = useTransform(wheelRotationMV, (rot) => {
         const rad = ((index * angleStep - rot) * Math.PI) / 180;
-        const panelRadius = isMobileView ? 160 : 240;
+        const panelRadius = isMobileView ? 200 : 300;
         return Math.sin(rad) * panelRadius;
     });
+    const x = useTransform(wheelRotationMV, (rot) => {
+        const rad = ((index * angleStep - rot) * Math.PI) / 180;
+        const panelRadius = isMobileView ? 200 : 300;
+        const baseOffset = isMobileView ? 40 : 80; // Extra shift to the right
+        return Math.cos(rad) * panelRadius + baseOffset;
+    });
     const scale = useTransform(y, (yVal) => {
-        const panelRadius = isMobileView ? 160 : 240;
+        const panelRadius = isMobileView ? 200 : 300;
         const normalizedDist = Math.abs(yVal) / (panelRadius * 1.2);
         return Math.max(0.7, 1.2 - normalizedDist);
     });
     const opacity = useTransform(y, (yVal) => {
-        const panelRadius = isMobileView ? 160 : 240;
+        const panelRadius = isMobileView ? 200 : 300;
         const normalizedDist = Math.abs(yVal) / (panelRadius * 1.2);
         return Math.max(0.2, 1.1 - normalizedDist);
     });
@@ -529,8 +530,7 @@ function LocalPlayerOverlay() {
 
         const calculateAngle = (clientX, clientY) => {
             const rect = el.getBoundingClientRect();
-            // Visual Wheel center is offset to the left of the drag container
-            const offsetX = isMobileView ? -70 : -100; 
+            const offsetX = isMobileView ? -60 : -100; // Matches visual center shift
             const centerX = rect.left + offsetX;
             const centerY = rect.top + rect.height / 2;
             return Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
@@ -551,7 +551,7 @@ function LocalPlayerOverlay() {
             if (deltaAngle > 180) deltaAngle -= 360;
             if (deltaAngle < -180) deltaAngle += 360;
             state.startAngle = currentAngle;
-            const sensitivity = 2.4; // Increased for faster rotation
+            const sensitivity = 1.0; // 1:1 Real-time direct tracking
             if (wheelRafRef.current) cancelAnimationFrame(wheelRafRef.current);
             wheelRafRef.current = requestAnimationFrame(() => {
                 scheduleWheelRotation(-deltaAngle * sensitivity);
