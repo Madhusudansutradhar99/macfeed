@@ -71,6 +71,23 @@ export default React.memo(function MusicMiniPlayer() {
     setCurrentTime = () => { }, audioRef
   } = ctx || {};
 
+  // Filter playlist based on current song source (Online vs Offline)
+  const displayPlaylist = useMemo(() => {
+    if (!currentSong) return playlist;
+    const isOffline = currentSong.source === 'local' || currentSong.source === 'device' || currentSong.source === 'local_device';
+    if (isOffline) {
+      // Only show offline songs when playing offline
+      return playlist.filter(s => s.source === 'local' || s.source === 'device' || s.source === 'local_device');
+    }
+    // Only show online songs when playing online (YouTube)
+    return playlist.filter(s => s.source === 'youtube' || !s.source);
+  }, [playlist, currentSong?.id]);
+
+  const displayIdx = useMemo(() => {
+    const idx = displayPlaylist.findIndex(s => s.id === currentSong?.id);
+    return idx >= 0 ? idx : 0;
+  }, [displayPlaylist, currentSong?.id]);
+
   const videoId = useMemo(() => {
     if (!currentSong) return '';
     if (currentSong.youtube_id) return currentSong.youtube_id;
@@ -240,10 +257,10 @@ export default React.memo(function MusicMiniPlayer() {
 
   // Swiper sync
   useEffect(() => {
-    if (swiperRef.current?.swiper && swiperRef.current.swiper.activeIndex !== currentIdx) {
-      swiperRef.current.swiper.slideTo(currentIdx, 600);
+    if (swiperRef.current?.swiper && swiperRef.current.swiper.activeIndex !== displayIdx) {
+      swiperRef.current.swiper.slideTo(displayIdx, 600);
     }
-  }, [currentIdx]);
+  }, [displayIdx]);
 
   const handleSeek = (targetTime) => {
     const t = Math.max(0, Math.min(duration || 1000, targetTime));
@@ -351,25 +368,25 @@ export default React.memo(function MusicMiniPlayer() {
               effect="coverflow"
               centeredSlides={true}
               slidesPerView="auto"
-              initialSlide={currentIdx}
+              initialSlide={displayIdx}
               speed={800}
               touchRatio={1.5}
               mousewheel={{ forceToAxis: true }}
               coverflowEffect={{ rotate: 0, stretch: 0, depth: 100, modifier: 2.5, slideShadows: false }}
               modules={[EffectCoverflow, Mousewheel]}
-              onSlideChange={(sw) => playlist[sw.activeIndex] && playVideo(playlist[sw.activeIndex])}
+              onSlideChange={(sw) => displayPlaylist[sw.activeIndex] && playVideo(displayPlaylist[sw.activeIndex])}
               className="w-full !pb-32 !pt-4 md:!py-20"
             >
-              {playlist.map((song, i) => (
+              {displayPlaylist.map((song, i) => (
                 <SwiperSlide key={song.id} className="w-[94vw] md:w-[320px] outline-none select-none">
                   <div className={`relative w-full aspect-[2/3] md:aspect-[4/5] rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 transition-all duration-1000 bg-black
-                    ${currentIdx === i ? 'scale-100 border-white/20' : 'scale-[0.8] opacity-30 grayscale border-white/5'}`}>
+                    ${displayIdx === i ? 'scale-100 border-white/20' : 'scale-[0.8] opacity-30 grayscale border-white/5'}`}>
 
                     {/* Thumbnail always visible as fallback — prevents black flash during swipe */}
                     <img src={song.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" alt="" />
 
                     {/* Active slide: iframe teleport target sits on top of thumbnail */}
-                    {currentIdx === i && (
+                    {displayIdx === i && (
                       <div ref={cardTargetRef} className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none" style={{ zIndex: 1 }} />
                     )}
 
