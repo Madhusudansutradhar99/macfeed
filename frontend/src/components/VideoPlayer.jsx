@@ -667,7 +667,19 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             ) : null}
 
             {/* Fullscreen Swipe Overlay - FIX 1 & 3 */}
-            {/* Fullscreen Overlay removed to allow native YT interaction */}
+            {/* Smart Gesture Zone: Allows 'Swipe Down to Exit' without blocking the gear icon (top right) */}
+            {isFullscreen && (
+              <div 
+                className="fixed top-[60px] bottom-[80px] left-0 right-0 z-[60] bg-transparent pointer-events-auto"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleControls();
+                }}
+              />
+            )}
 
             <div ref={ytDomContainer} className="absolute inset-0 h-full w-full" />
             
