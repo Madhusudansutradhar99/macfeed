@@ -1037,14 +1037,13 @@ function LocalPlayerOverlay() {
                         maxHeight: '100%',
                         objectFit: aspectRatio === 'Fit' ? 'contain' : aspectRatio === 'Fill' ? 'cover' : aspectRatio === 'Stretch' ? 'fill' : 'contain',
                         aspectRatio: (aspectRatio === '16:9' || aspectRatio === '4:3') ? aspectRatio.replace(':', '/') : 'auto',
-                        /* REMOVED EXPENSIVE FILTERS FOR BATTERY SAVING */
                         contain: 'strict',
                         imageRendering: 'optimizeQuality',
                         willChange: 'transform, contents',
                         transform: 'translate3d(0,0,0) perspective(1000px)',
                         backfaceVisibility: 'hidden',
                         WebkitBackfaceVisibility: 'hidden',
-                        filter: showExtraPanel ? 'blur(8px) brightness(0.5)' : 'none',
+                        filter: showExtraPanel ? 'brightness(0.3)' : 'none',
                         transition: 'filter 0.5s ease',
                         borderRadius: '12px'
                     }}
@@ -1116,7 +1115,7 @@ function LocalPlayerOverlay() {
                         <motion.div
                             initial={{ y: -100 }} animate={{ y: 0 }} exit={{ y: -100 }}
                             transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
-                            className="absolute top-0 left-0 right-0 z-50 p-6 flex items-center justify-between bg-gradient-to-b from-black to-transparent"
+                            className="absolute top-0 left-0 right-0 z-[600] p-6 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent backdrop-blur-[4px]"
                             onClick={e => { e.stopPropagation(); resetControlsTimeout(); }}
                         >
                             <div className="flex items-center gap-6">
@@ -1159,7 +1158,7 @@ function LocalPlayerOverlay() {
                         <motion.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             transition={{ duration: 0.15 }}
-                            className="absolute inset-0 flex items-center justify-center gap-16 z-40 pointer-events-none"
+                            className="absolute inset-0 flex items-center justify-center gap-16 z-[500] pointer-events-none"
                         >
                             <button onClick={e => { e.stopPropagation(); if (videoRef.current) videoRef.current.currentTime -= 10; }} className="pointer-events-auto text-white p-4">
                                 <ChevronsLeft size={32} />
@@ -1180,7 +1179,7 @@ function LocalPlayerOverlay() {
                         <motion.div
                             initial={{ y: 150 }} animate={{ y: 0 }} exit={{ y: 150 }}
                             transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
-                            className="absolute bottom-0 left-0 right-0 z-50 p-6 flex flex-col gap-6 bg-gradient-to-t from-black to-transparent"
+                            className="absolute bottom-0 left-0 right-0 z-[600] p-6 flex flex-col gap-6 bg-gradient-to-t from-black/80 to-transparent backdrop-blur-[4px]"
                             onClick={e => { e.stopPropagation(); resetControlsTimeout(); }}
                         >
                             <div className="flex items-center justify-between gap-6">
@@ -1273,7 +1272,7 @@ function LocalPlayerOverlay() {
                             initial={{ opacity: 0, x: -50 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -50 }}
-                            className="absolute inset-0 z-[150] flex items-center justify-start overflow-hidden pointer-events-auto bg-black/20 backdrop-blur-[2px]"
+                            className="absolute inset-0 z-[150] flex items-center justify-start overflow-hidden pointer-events-auto bg-black/40 backdrop-blur-[8px]"
                             onClick={() => setShowExtraPanel(false)}
                         >
                             {/* 
