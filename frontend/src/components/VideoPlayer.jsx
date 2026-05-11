@@ -667,10 +667,10 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             ) : null}
 
             {/* Fullscreen Swipe Overlay - FIX 1 & 3 */}
-            {/* Smart Gesture Zone: Focused on Left/Center to leave the Right Side (Gear/Sound icons) completely open for direct interaction */}
+            {/* Smart Gesture Zone: Uses absolute positioning relative to player container for perfect touch alignment */}
             {isFullscreen && (
               <div 
-                className="fixed top-[100px] bottom-[100px] left-0 right-[120px] z-[60] bg-transparent pointer-events-auto"
+                className="absolute top-[120px] bottom-[120px] left-0 right-[150px] z-[60] bg-transparent pointer-events-auto"
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
