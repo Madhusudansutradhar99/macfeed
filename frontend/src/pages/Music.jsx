@@ -614,18 +614,18 @@ export default function Music() {
               </form>
               <AnimatePresence>
                 {isSearchFocused && searchQuery.trim().length > 0 && (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 5 }} exit={{ opacity: 0, y: 10 }} className="absolute top-full left-0 right-0 bg-[#0F1115]/95 backdrop-blur-3xl border border-red-500/30 rounded-2xl shadow-2xl mt-2 overflow-hidden z-[5000]">
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 5 }} exit={{ opacity: 0, y: 10 }} className="absolute top-full left-0 right-0 bg-[#0F1115]/95 backdrop-blur-3xl border border-red-500/30 rounded-xl md:rounded-2xl shadow-2xl mt-2 overflow-hidden z-[5000]">
                     <div className="max-h-[60vh] overflow-y-auto pb-4 custom-scrollbar">
-                      <div className="px-6 py-3 text-[10px] font-black text-white/50 uppercase tracking-[0.3em] border-b border-white/5">Results for "{searchQuery}"</div>
+                      <div className="px-4 md:px-6 py-3 text-[10px] font-black text-white/50 uppercase tracking-[0.3em] border-b border-white/5">Results for "{searchQuery}"</div>
                       
                       {filteredSongs.slice(0, 3).map((r) => (
-                        <div key={'loc-'+r.id} onClick={() => { handleSongClick(r); setIsSearchFocused(false); setSearchQuery(''); }} className="flex items-center gap-4 px-6 py-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 group transition-all">
-                          <div className="relative w-16 h-10 rounded overflow-hidden shrink-0 bg-white/5">
+                        <div key={'loc-'+r.id} onClick={() => { handleSongClick(r); setIsSearchFocused(false); setSearchQuery(''); }} className="flex items-center gap-3 md:gap-4 px-4 md:px-6 py-2 md:py-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 group transition-all">
+                          <div className="relative w-12 md:w-16 h-8 md:h-10 rounded-lg overflow-hidden shrink-0 bg-white/5">
                             <img src={r.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-white text-xs font-black truncate group-hover:text-red-400 transition-colors uppercase italic">{r.title}</p>
-                            <span className="text-[8px] text-purple-400 font-black uppercase mt-0.5 inline-block bg-purple-500/10 px-1 rounded">MacFeed</span>
+                            <p className="text-white text-[10px] md:text-xs font-black truncate group-hover:text-red-400 transition-colors uppercase italic">{r.title}</p>
+                            <span className="text-[7px] md:text-[8px] text-purple-400 font-black uppercase mt-0.5 inline-block bg-purple-500/10 px-1.5 py-0.5 rounded">MacFeed</span>
                           </div>
                           {canDeleteSong(r) && (
                             <button onClick={(e) => handleDeleteLocalSong(r, e)} className="p-2 bg-red-500/10 hover:bg-red-500/30 rounded text-red-500 transition-colors">
@@ -636,13 +636,13 @@ export default function Music() {
                       ))}
                       
                       {ytResults.map((r, idx) => (
-                        <div key={'yt-'+r.id+idx} onClick={() => { handleSongClick(r); setIsSearchFocused(false); setSearchQuery(''); }} className="flex items-center gap-4 px-6 py-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 group transition-all">
-                          <div className="relative w-16 h-10 rounded overflow-hidden shrink-0 bg-white/5">
+                        <div key={'yt-'+r.id+idx} onClick={() => { handleSongClick(r); setIsSearchFocused(false); setSearchQuery(''); }} className="flex items-center gap-3 md:gap-4 px-4 md:px-6 py-2 md:py-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 group transition-all">
+                          <div className="relative w-12 md:w-16 h-8 md:h-10 rounded-lg overflow-hidden shrink-0 bg-white/5">
                             <img src={r.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-white text-xs font-black truncate group-hover:text-red-400 transition-colors uppercase italic">{r.title}</p>
-                            <span className="text-[8px] text-red-500 font-black uppercase mt-0.5 inline-block bg-red-500/10 px-1 rounded">YouTube</span>
+                            <p className="text-white text-[10px] md:text-xs font-black truncate group-hover:text-red-400 transition-colors uppercase italic">{r.title}</p>
+                            <span className="text-[7px] md:text-[8px] text-red-500 font-black uppercase mt-0.5 inline-block bg-red-500/10 px-1.5 py-0.5 rounded">YouTube</span>
                           </div>
                         </div>
                       ))}

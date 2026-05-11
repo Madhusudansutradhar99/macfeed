@@ -936,7 +936,7 @@ function LocalPlayerOverlay() {
         <motion.div
             ref={containerRef}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className={`fixed -inset-[2px] z-[9999] bg-[#000] flex flex-col items-center justify-center overflow-hidden font-sans select-none touch-none px-2 sm:px-0 ${forceLandscape ? 'rotate-90 origin-center' : ''}`}
+            className={`fixed -inset-[2px] z-[9999] bg-[#000] flex flex-col items-center justify-center overflow-hidden font-sans select-none touch-none px-2 sm:px-0 rounded-lg sm:rounded-2xl ${forceLandscape ? 'rotate-90 origin-center' : ''}`}
             style={forceLandscape ? { width: '100vh', height: '100vw', position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(90deg)' } : {}}
             onMouseMove={resetControlsTimeout}
                 onTouchStart={handleTouchStart}
@@ -959,7 +959,7 @@ function LocalPlayerOverlay() {
                 }}
             >
                 {/* Real-time Brightness Overlay (Must be ABOVE video z-10) */}
-                <div className="fixed inset-0 pointer-events-none z-[15]" style={{ backgroundColor: 'black', opacity: Math.max(0, 1 - (brightness / 100)) }} />
+                <div className="fixed inset-0 pointer-events-none z-[15] rounded-lg sm:rounded-2xl" style={{ backgroundColor: 'black', opacity: Math.max(0, 1 - (brightness / 100)) }} />
 
                 <video
                     ref={videoRef}
@@ -978,7 +978,8 @@ function LocalPlayerOverlay() {
                         backfaceVisibility: 'hidden',
                         WebkitBackfaceVisibility: 'hidden',
                         filter: showExtraPanel ? 'blur(8px) brightness(0.5)' : 'none',
-                        transition: 'filter 0.5s ease'
+                        transition: 'filter 0.5s ease',
+                        borderRadius: '12px'
                     }}
                     onLoadedMetadata={handleVideoMetadata}
                     onCanPlay={() => setIsLoading(false)}
