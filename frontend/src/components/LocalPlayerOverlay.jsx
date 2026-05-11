@@ -119,11 +119,10 @@ function LocalPlayerOverlay() {
     // Core UI States
     const [showControls, setShowControls] = useState(true);
     const [isLocked, setIsLocked] = useState(false);
-    const [isSeeking, setIsSeeking] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
+    // Core UI States
+    const [showControls, setShowControls] = useState(true);
+    const [isLocked, setIsLocked] = useState(false);
     const [duration, setDuration] = useState(0);
-    const [progress, setProgress] = useState(0);
-    const [bufferProgress, setBufferProgress] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [brightness, setBrightness] = useState(100);
 
@@ -142,10 +141,6 @@ function LocalPlayerOverlay() {
     const wheelPendingRef = useRef(0);
     const wheelContainerRef = useRef(null);
     const wheelRotationMV = useMotionValue(0);
-    const [wheelRotation, setWheelRotation] = useState(0);
-    useEffect(() => {
-        return wheelRotationMV.on('change', (v) => setWheelRotation(v));
-    }, [wheelRotationMV]);
     const wheelDragRef = useRef(null);
     const wheelTouchStartYRef = useRef(0);
     const panelRefs = useRef([]);
@@ -1571,12 +1566,12 @@ function LocalPlayerOverlay() {
                                             <div className="p-6 bg-white/[0.03] rounded-3xl border border-white/5">
                                                 <h4 className="text-white/60 text-[10px] font-black uppercase tracking-widest mb-4">Desktop Shortcuts</h4>
                                                 <div className="grid grid-cols-2 gap-4">
-                                                    <Shortcut key="Space" label="Play / Pause" />
-                                                    <Shortcut key="← →" label="Seek ±10s" />
-                                                    <Shortcut key="↑ ↓" label="Volume" />
-                                                    <Shortcut key="F" label="Fullscreen" />
-                                                    <Shortcut key="L" label="Lock" />
-                                                    <Shortcut key="S" label="Screenshot" />
+                                                    <Shortcut keyLabel="Space" label="Play / Pause" />
+                                                    <Shortcut keyLabel="← →" label="Seek ±10s" />
+                                                    <Shortcut keyLabel="↑ ↓" label="Volume" />
+                                                    <Shortcut keyLabel="F" label="Fullscreen" />
+                                                    <Shortcut keyLabel="L" label="Lock" />
+                                                    <Shortcut keyLabel="S" label="Screenshot" />
                                                 </div>
                                             </div>
                                         </>
@@ -1682,64 +1677,64 @@ function LocalPlayerOverlay() {
 
 export default memo(LocalPlayerOverlay);
 
-function BottomAction({ icon, label, subLabel, onClick }) {
+const BottomAction = memo(({ icon, label, subLabel, onClick }) => {
     return (
-        <button onClick={onClick} className="flex flex-col items-center gap-1 group">
-            <div className="text-white/90 group-hover:text-white transition-colors">{icon}</div>
+        <button onClick={onClick} className="flex flex-col items-center gap-1 group outline-none">
+            <div className="text-white/90 group-hover:text-white transition-colors" style={{ willChange: 'transform' }}>{icon}</div>
             <div className="flex items-center gap-1.5">
                 <span className="text-white text-[11px] font-medium opacity-90">{label}</span>
                 {subLabel && <span className="text-white/40 text-[10px] font-bold">{subLabel}</span>}
             </div>
         </button>
     );
-}
+});
 
-function ExtraAction({ icon, color, label, onClick }) {
+const ExtraAction = memo(({ icon, color, label, onClick }) => {
     return (
         <button
             onClick={onClick}
-            className="flex flex-col items-center gap-2 group transition-all"
+            className="flex flex-col items-center gap-2 group transition-all outline-none"
         >
             <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110"
-                style={{ color: color }}
+                style={{ color: color, willChange: 'transform' }}
             >
                 {icon}
             </div>
             <span className="text-white/50 text-[10px] font-black uppercase tracking-widest group-hover:text-white transition-colors">{label}</span>
         </button>
     );
-}
+});
 
-function SettingsTab({ id, label, icon, active, set }) {
+const SettingsTab = memo(({ id, label, icon, active, set }) => {
     const isActive = active === id;
     return (
         <button
             onClick={() => set(id)}
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all whitespace-nowrap ${isActive ? 'bg-white text-black' : 'text-white/40 hover:bg-white/5'}`}
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all whitespace-nowrap outline-none ${isActive ? 'bg-white text-black' : 'text-white/40 hover:bg-white/5'}`}
         >
             {icon}
             <span className="text-xs font-bold">{label}</span>
         </button>
     );
-}
+});
 
-function SettingRow({ label, children }) {
+const SettingRow = memo(({ label, children }) => {
     return (
         <div className="space-y-4">
             <h4 className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">{label}</h4>
             {children}
         </div>
     );
-}
+});
 
-function SettingToggle({ label, active, onToggle }) {
+const SettingToggle = memo(({ label, active, onToggle }) => {
     return (
         <div className="flex items-center justify-between py-2">
             <span className="text-white/80 text-sm font-medium">{label}</span>
             <button
                 onClick={onToggle}
-                className={`w-12 h-6 rounded-full relative transition-colors ${active ? 'bg-white' : 'bg-white/10'}`}
+                className={`w-12 h-6 rounded-full relative transition-colors outline-none ${active ? 'bg-white' : 'bg-white/10'}`}
             >
                 <motion.div
                     animate={{ x: active ? 26 : 2 }}
@@ -1748,13 +1743,13 @@ function SettingToggle({ label, active, onToggle }) {
             </button>
         </div>
     );
-}
+});
 
-function Shortcut({ key, label }) {
+const Shortcut = memo(({ keyLabel, label }) => {
     return (
         <div className="flex items-center justify-between">
             <span className="text-white/40 text-[11px] font-medium">{label}</span>
-            <kbd className="px-2 py-1 bg-white/5 rounded-lg text-white/60 text-[10px] font-bold border border-white/5 min-w-[30px] text-center">{key}</kbd>
+            <kbd className="px-2 py-1 bg-white/5 rounded-lg text-white/60 text-[10px] font-bold border border-white/5 min-w-[30px] text-center">{keyLabel}</kbd>
         </div>
     );
-}
+});
