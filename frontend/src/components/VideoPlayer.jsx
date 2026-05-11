@@ -710,7 +710,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             onLoadedMetadata={(event) => setDuration(event.target.duration)}
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
-            onEnded={() => setPlaying(false)}
+            onEnded={() => { setPlaying(false); onNext?.(); }}
             onError={() => onError?.('This video could not be loaded.')}
           />
         )}

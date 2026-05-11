@@ -479,42 +479,52 @@ export default function Music() {
     }
   };
 
-  const handleSongClick = async (song) => {
+  const handleSongClick = async (song, list = displaySongs) => {
     if (isProcessing) return;
-      if (song?.id?.toString().startsWith('yt-')) {
+
+    // Repair device song URL if stale (e.g. from history/likes)
+    let songToPlay = song;
+    if (song?.source === 'device') {
+      const fresh = deviceSongs.find(s => s.id === song.id);
+      if (fresh) {
+        songToPlay = fresh;
+      }
+    }
+
+    if (songToPlay?.id?.toString().startsWith('yt-')) {
       setIsProcessing(true);
       const ytId = song.youtubeId || song.id.replace('yt-', '');
       try {
         const { data: existing } = await supabase.from('videos').select('*').eq('youtube_id', ytId).limit(1);
         if (existing && existing.length > 0) {
-          playVideo(existing[0]);
+          playVideo(existing[0], list);
           addToHistory(existing[0]);
           setIsExpanded(true);
         } else {
           const { data: inserted } = await supabase.from('videos').insert([{
-            title: song?.title || 'Untitled Video', video_url: song.video_url, youtube_id: ytId,
-            thumbnail_url: song.thumbnail_url, source: 'youtube', category: 'Music', views: 0
+            title: songToPlay?.title || 'Untitled Video', video_url: songToPlay.video_url, youtube_id: ytId,
+            thumbnail_url: songToPlay.thumbnail_url, source: 'youtube', category: 'Music', views: 0
           }]).select('*');
           if (inserted && inserted.length > 0) {
-            playVideo(inserted[0]);
+            playVideo(inserted[0], list);
             addToHistory(inserted[0]);
             setIsExpanded(true);
           } else {
-            playVideo(song);
-            addToHistory(song);
+            playVideo(songToPlay, list);
+            addToHistory(songToPlay);
             setIsExpanded(true);
           }
         }
       } catch (e) {
-        playVideo(song);
-        addToHistory(song);
+        playVideo(songToPlay, list);
+        addToHistory(songToPlay);
         setIsExpanded(true);
       } finally {
         setIsProcessing(false);
       }
     } else {
-      playVideo(song);
-      addToHistory(song);
+      playVideo(songToPlay, list);
+      addToHistory(songToPlay);
       setIsExpanded(true);
     }
   };
@@ -904,7 +914,7 @@ export default function Music() {
                   ) : (
                     <div className="flex gap-6 overflow-x-auto no-scrollbar pb-10">
                       {deviceSongs.map((song) => (
-                        <div key={song.id} onClick={() => handleSongClick(song)} className="w-[180px] md:w-[240px] shrink-0 group cursor-pointer transition-transform active:scale-95">
+                        <div key={song.id} onClick={() => handleSongClick(song, deviceSongs)} className="w-[180px] md:w-[240px] shrink-0 group cursor-pointer transition-transform active:scale-95">
                           <div className={`aspect-[2/3] rounded-[2.5rem] overflow-hidden mb-4 relative border ${activeBorder} transition-colors duration-500 shadow-2xl bg-white/5`}>
                             <img src={song.thumbnail_url} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
                             <button 

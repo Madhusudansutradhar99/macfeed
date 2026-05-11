@@ -506,5 +506,15 @@ export function MusicProvider({ children }) {
     }
   };
 
+  useEffect(() => {
+    // Request persistent storage
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().then(granted => {
+        if (granted) console.log('[Storage] Persistent storage granted');
+      });
+    }
+    loadStoredDeviceMusic();
+  }, []);
+
   return <MusicContext.Provider value={value}>{children}</MusicContext.Provider>;
 }

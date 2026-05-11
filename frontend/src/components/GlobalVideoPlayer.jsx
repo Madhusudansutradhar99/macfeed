@@ -5,7 +5,7 @@ import { useVideoMiniPlayer } from '../context/VideoPlayerContext';
 import VideoPlayer from './VideoPlayer';
 
 export default function GlobalVideoPlayer() {
-  const { activeVideo, viewMode, minimize, maximize, closePlayer } = useVideoMiniPlayer();
+  const { activeVideo, viewMode, minimize, maximize, closePlayer, playNext } = useVideoMiniPlayer();
   const navigate = useNavigate();
   const location = useLocation();
   const watchMatch = useMatch('/watch/:id');
@@ -74,6 +74,7 @@ export default function GlobalVideoPlayer() {
           video={activeVideo} 
           viewMode={viewMode}
           onClose={closePlayer}
+          onNext={playNext}
         />
       </div>
     </motion.div>
