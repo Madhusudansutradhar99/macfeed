@@ -1327,7 +1327,7 @@ function LocalPlayerOverlay() {
                                             initial={{ opacity: 0, x: -20 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: -20 }}
-                                            className="absolute left-[320px] md:left-[450px] z-[500] w-64 bg-black/95 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl"
+                                            className="absolute left-[450px] md:left-[600px] z-[700] w-72 bg-black/95 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.8)]"
                                         >
                                             <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
                                                 <span className="text-white text-[10px] font-black uppercase tracking-widest">{quickMenuData.title}</span>
@@ -1813,7 +1813,7 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
     const x = useTransform(wheelRotationMV, (rot) => {
         const rad = ((index * angleStep - rot) * Math.PI) / 180;
         const panelRadius = isMobileView ? 200 : 300;
-        const baseOffset = isMobileView ? 70 : 130;
+        const baseOffset = isMobileView ? 110 : 210;
         return Math.cos(rad) * panelRadius + baseOffset;
     });
     const scale = useTransform(y, (yVal) => {
@@ -1837,16 +1837,19 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
 
     return (
         <motion.div
-            style={{ y, x, scale, opacity, zIndex: 300, position: 'absolute', left: isMobileView ? '10px' : '40px', willChange: 'transform, opacity' }}
-            className="flex items-center gap-4 cursor-pointer group"
-            onClick={action.onClick}
+            style={{ y, x, scale, opacity, zIndex: 600, position: 'absolute', left: isMobileView ? '10px' : '40px', willChange: 'transform, opacity' }}
+            className="flex items-center gap-4 cursor-pointer group pointer-events-auto"
+            onClick={(e) => {
+                e.stopPropagation();
+                action.onClick();
+            }}
         >
             {/* SVG Wireframe Box */}
-            <div className="absolute left-[-230px] w-[240px] h-10 pointer-events-none transition-opacity duration-300" style={{ opacity: isFocused ? '1' : '0.5' }}>
-                <svg width="240" height="40" viewBox="0 0 240 40" fill="none">
-                    <path d="M10 20 H160 L190 5 H240" stroke={action.color} strokeWidth="1.8" strokeOpacity="0.8" />
-                    <path d="M10 20 H160 L190 35 H240" stroke={action.color} strokeWidth="1.8" strokeOpacity="0.8" />
-                    <circle cx="10" cy="20" r="4" fill={action.color} />
+            <div className="absolute left-[-310px] w-[320px] h-10 pointer-events-none transition-opacity duration-300" style={{ opacity: isFocused ? '1' : '0.5' }}>
+                <svg width="320" height="40" viewBox="0 0 320 40" fill="none">
+                    <path d="M10 20 H240 L270 5 H320" stroke={action.color} strokeWidth="2" strokeOpacity="0.8" />
+                    <path d="M10 20 H240 L270 35 H320" stroke={action.color} strokeWidth="2" strokeOpacity="0.8" />
+                    <circle cx="10" cy="20" r="4.5" fill={action.color} />
                 </svg>
             </div>
 
