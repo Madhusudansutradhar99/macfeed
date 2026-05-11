@@ -520,7 +520,7 @@ function LocalPlayerOverlay() {
 
     useEffect(() => {
         const el = wheelDragRef.current;
-        if (!el) return;
+        if (!el || !showExtraPanel) return;
 
         const state = {
             isDragging: false,
@@ -530,7 +530,7 @@ function LocalPlayerOverlay() {
 
         const calculateAngle = (clientX, clientY) => {
             const rect = el.getBoundingClientRect();
-            const offsetX = isMobileView ? -60 : -100; // Matches visual center shift
+            const offsetX = isMobileView ? -60 : -100; 
             const centerX = rect.left + offsetX;
             const centerY = rect.top + rect.height / 2;
             return Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
@@ -551,7 +551,7 @@ function LocalPlayerOverlay() {
             if (deltaAngle > 180) deltaAngle -= 360;
             if (deltaAngle < -180) deltaAngle += 360;
             state.startAngle = currentAngle;
-            const sensitivity = 1.0; // 1:1 Real-time direct tracking
+            const sensitivity = 1.0; 
             if (wheelRafRef.current) cancelAnimationFrame(wheelRafRef.current);
             wheelRafRef.current = requestAnimationFrame(() => {
                 scheduleWheelRotation(-deltaAngle * sensitivity);
@@ -570,17 +570,16 @@ function LocalPlayerOverlay() {
         window.addEventListener('pointerup', handlePointerUp);
         window.addEventListener('pointercancel', handlePointerUp);
         
-        // Ensure touch-action is none to prevent browser scroll interference
         el.style.touchAction = 'none';
 
         return () => {
             if (wheelRafRef.current) cancelAnimationFrame(wheelRafRef.current);
             el.removeEventListener('pointerdown', handlePointerDown);
-            el.removeEventListener('pointermove', handlePointerMove);
-            el.removeEventListener('pointerup', handlePointerUp);
-            el.removeEventListener('pointercancel', handlePointerUp);
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+            window.removeEventListener('pointercancel', handlePointerUp);
         };
-    }, [scheduleWheelRotation]);
+    }, [scheduleWheelRotation, showExtraPanel, isMobileView]);
 
     useEffect(() => {
         const video = videoRef.current;
