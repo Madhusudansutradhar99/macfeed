@@ -26,10 +26,10 @@ const deduplicate = (arr) => {
 };
 
 const parseDuration = (duration) => {
-  if (!duration) return 300; 
+  if (!duration) return 300;
   if (typeof duration === 'number') return duration;
   if (typeof duration !== 'string') return 300;
-  
+
   const parts = duration.split(':').map(p => parseInt(p, 10));
   if (parts.length === 2) return parts[0] * 60 + parts[1];
   if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
@@ -41,13 +41,13 @@ export function MusicProvider({ children }) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [playing, setPlaying] = useState(false); 
+  const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.8);
   const [muted, setMuted] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(300);
-  
+
   const [activeLocalSong, setActiveLocalSong] = useState(null);
   const [isLocalPlayerOpen, setIsLocalPlayerOpen] = useState(false);
   const [playingLocal, setPlayingLocal] = useState(false);
@@ -58,7 +58,7 @@ export function MusicProvider({ children }) {
   const [deviceSongs, setDeviceSongs] = useState([]);
   const [devicePermission, setDevicePermission] = useState(localStorage.getItem('macfeed_device_permission') === 'granted');
   const [isScanning, setIsScanning] = useState(false);
-  
+
   const audioRef = useRef();
   const currentSong = React.useMemo(() => {
     const raw = (playlist && playlist[currentIdx]) || null;
@@ -78,9 +78,9 @@ export function MusicProvider({ children }) {
         const reconstructedSongs = storedTracks.map(track => {
           const blob = new Blob([track.audioData], { type: track.type || 'audio/mpeg' });
           const url = URL.createObjectURL(blob);
-          
+
           let thumbnail_url = track.thumbnail_url;
-          
+
           // Reconstruct thumbnail from stored binary data if it exists
           if (track.thumbnailData) {
             const thumbBlob = new Blob([track.thumbnailData], { type: 'image/jpeg' });
@@ -98,7 +98,7 @@ export function MusicProvider({ children }) {
         });
         setDeviceSongs(reconstructedSongs);
         if (reconstructedSongs.length > 0) setDevicePermission(true);
-        
+
         // Repair current playlist with fresh URLs
         setPlaylist(prev => prev.map(item => {
           if (item.source === 'device') {
@@ -129,7 +129,7 @@ export function MusicProvider({ children }) {
             // Don't set false if we already have songs from IDB
             if (reconstructedSongs.length === 0) setDevicePermission(false);
           }
-        } catch(e) {
+        } catch (e) {
           if (reconstructedSongs.length === 0) setDevicePermission(false);
         }
       }
@@ -152,11 +152,11 @@ export function MusicProvider({ children }) {
           }
           return item;
         });
-        
+
         if (repairedList.length) setPlaylist(repairedList);
         if (idx !== undefined) setCurrentIdx(idx);
         if (song) setActiveLocalSong(song.source === 'local' ? song : null);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     supabase.from('videos').select('*').eq('category', 'Music').order('created_at', { ascending: false }).then(({ data }) => {
@@ -230,7 +230,7 @@ export function MusicProvider({ children }) {
     setIsScanning(true);
     const songsToAdd = [];
     const fileList = Array.from(files);
-    
+
     try {
       // Get all existing tracks once to avoid loop overhead
       const existingTracks = await getAllTracks();
@@ -245,7 +245,7 @@ export function MusicProvider({ children }) {
           const metadata = await musicMetadata.parseBlob(file);
           let artworkUrl = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800';
           let thumbnailData = null;
-          
+
           if (metadata.common.picture && metadata.common.picture[0]) {
             const pic = metadata.common.picture[0];
             thumbnailData = pic.data;
@@ -261,7 +261,7 @@ export function MusicProvider({ children }) {
               const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('music_thumbnails')
                 .upload(fileName, thumbnailData, { upsert: true, contentType: 'image/jpeg' });
-              
+
               if (!uploadError) {
                 const { data: { publicUrl } } = supabase.storage
                   .from('music_thumbnails')
@@ -385,7 +385,7 @@ export function MusicProvider({ children }) {
           if (d.info === 2) setPlaying(false);
           if (d.info === 0) next();
         }
-      } catch (_) {}
+      } catch (_) { }
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
@@ -420,16 +420,16 @@ export function MusicProvider({ children }) {
       ['nexttrack', () => next()],
       ['seekto', (details) => {
         if (details.seekTime !== undefined) {
-           const targetTime = details.seekTime;
-           if (currentSong?.source === 'youtube') {
-             document.querySelectorAll('iframe').forEach(f => {
-               f.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [targetTime, true] }), '*');
-             });
-             setCurrentTime(targetTime);
-           } else if (audioRef.current) {
-             audioRef.current.currentTime = targetTime;
-             setCurrentTime(targetTime);
-           }
+          const targetTime = details.seekTime;
+          if (currentSong?.source === 'youtube') {
+            document.querySelectorAll('iframe').forEach(f => {
+              f.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [targetTime, true] }), '*');
+            });
+            setCurrentTime(targetTime);
+          } else if (audioRef.current) {
+            audioRef.current.currentTime = targetTime;
+            setCurrentTime(targetTime);
+          }
         }
       }]
     ];
@@ -447,7 +447,7 @@ export function MusicProvider({ children }) {
 
     return () => {
       ['play', 'pause', 'previoustrack', 'nexttrack', 'seekto'].forEach(action => {
-        try { navigator.mediaSession.setActionHandler(action, null); } catch(e) {}
+        try { navigator.mediaSession.setActionHandler(action, null); } catch (e) { }
       });
     };
   }, [currentSong?.id, currentSong?.title, currentSong?.thumbnail_url, playing]);
@@ -460,7 +460,7 @@ export function MusicProvider({ children }) {
         playbackRate: 1,
         position: Math.min(duration, currentTime)
       });
-    } catch (e) {}
+    } catch (e) { }
   }, [currentTime, duration]);
 
   // Fallback for local (non-YouTube) audio
@@ -554,17 +554,17 @@ export function MusicProvider({ children }) {
     requestDevicePermission: async () => {
       localStorage.setItem('macfeed_device_permission', 'granted');
       setDevicePermission(true);
-      
+
       try {
         const existingHandle = await getHandle('musicFolder');
         if (existingHandle) {
-           const status = await existingHandle.requestPermission({ mode: 'read' });
-           if (status === 'granted') {
-               await scanDirectory(existingHandle);
-               return;
-           }
+          const status = await existingHandle.requestPermission({ mode: 'read' });
+          if (status === 'granted') {
+            await scanDirectory(existingHandle);
+            return;
+          }
         }
-      } catch(e) {}
+      } catch (e) { }
 
       if ('showDirectoryPicker' in window) {
         try {
@@ -583,7 +583,7 @@ export function MusicProvider({ children }) {
       try {
         await deleteTrack(id);
         setDeviceSongs(prev => prev.filter(s => s.id !== id));
-        
+
         // Clean up from History
         const history = JSON.parse(localStorage.getItem('macfeed_history') || '[]');
         const newHistory = history.filter(item => item.id !== id);
@@ -598,7 +598,7 @@ export function MusicProvider({ children }) {
 
         // Clean up from Playlist
         setPlaylist(prev => prev.filter(item => item.id !== id));
-        
+
       } catch (e) {
         console.error('Failed to delete track:', e);
       }
