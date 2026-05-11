@@ -82,6 +82,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const fullscreenOverlayRef = useRef(null);
   // FIX 3/4: DOM refs for zero-re-render realtime updates
   const progressBarRef = useRef(null);
+  const bufferBarRef = useRef(null);
   const currentTimeRef = useRef(null);
   const durationRef = useRef(null);
   const playBtnRef = useRef(null);
@@ -417,9 +418,15 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             setVolume((event.target.getVolume?.() || 100) / 100);
 
             const syncProgress = () => {
-              if (ytPlayerRef.current) {
-                const cur = ytPlayerRef.current.getCurrentTime?.() || 0;
-                const dur = ytPlayerRef.current.getDuration?.() || durationStateRef.current || 0;
+              if (ytPlayerRef.current && ytPlayerRef.current.getCurrentTime) {
+                const cur = ytPlayerRef.current.getCurrentTime();
+                const dur = ytPlayerRef.current.getDuration() || durationStateRef.current || 0;
+                
+                // Buffer sync
+                let bufferPct = 0;
+                if (ytPlayerRef.current.getVideoLoadedFraction) {
+                  bufferPct = ytPlayerRef.current.getVideoLoadedFraction() * 100;
+                }
                 
                 // Real-time State Sync
                 const ytState = ytPlayerRef.current.getPlayerState?.();
@@ -430,6 +437,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                   durationStateRef.current = dur;
                   const pct = (cur / dur) * 100;
                   if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
+                  if (bufferBarRef.current) bufferBarRef.current.style.width = `${bufferPct}%`;
                   if (inputRangeRef.current) inputRangeRef.current.value = pct;
                   if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(cur);
                   if (durationRef.current) durationRef.current.textContent = formatTime(dur);
@@ -786,7 +794,8 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             onClick={(e) => e.stopPropagation()}
           >
               {/* FIX 3: Progress bar — drag input seeks, fill div updated via DOM ref */}
-              <div className="mb-3 w-full group relative flex items-center h-4">
+              {/* YouTube Style Progress Bar */}
+              <div className="mb-4 w-full group relative flex items-center h-4">
                 <input
                   ref={inputRangeRef}
                   type="range"
@@ -796,11 +805,19 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                   onChange={handleSeek}
                   onMouseDown={(e) => e.stopPropagation()}
                   onTouchStart={(e) => e.stopPropagation()}
-                  className="absolute w-full h-1.5 opacity-0 cursor-pointer z-10"
+                  className="absolute w-full h-1.5 opacity-0 cursor-pointer z-20"
                 />
-                <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden pointer-events-none">
-                  <div ref={progressBarRef} className="h-full" style={{ width: '0%', backgroundColor: 'var(--accent-color, #facc15)' }} />
+                <div className="w-full h-1 bg-white/20 rounded-full relative overflow-hidden pointer-events-none">
+                  {/* Buffer Bar */}
+                  <div ref={bufferBarRef} className="absolute inset-y-0 left-0 bg-white/30 transition-all duration-300" style={{ width: '0%' }} />
+                  {/* Progress Bar (Red) */}
+                  <div ref={progressBarRef} className="absolute inset-y-0 left-0 bg-[#FF0000] shadow-[0_0_10px_rgba(255,0,0,0.5)]" style={{ width: '0%' }} />
                 </div>
+                {/* Scrubber Knob */}
+                <div 
+                  className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-[#FF0000] rounded-full scale-0 group-hover:scale-100 transition-transform pointer-events-none z-10 shadow-lg"
+                  style={{ left: inputRangeRef.current?.value ? `${inputRangeRef.current.value}%` : '0%', transform: 'translate(-50%, -50%)' }}
+                />
               </div>
 
               <div className="flex items-center justify-between gap-1 text-white">
