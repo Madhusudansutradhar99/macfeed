@@ -444,6 +444,9 @@ function LocalPlayerOverlay() {
         const el = wheelDragRef.current;
         if (!el) return;
 
+        const wheelTouchStartYRef_local = { current: 0 };
+        const wheelMouseStartRef = { current: { isDragging: false, startAngle: 0 } };
+
         const handleTouchStart = (e) => {
             e.preventDefault();
             const touch = e.touches[0];
@@ -451,7 +454,7 @@ function LocalPlayerOverlay() {
             const centerX = rect.left + 200;
             const centerY = rect.top + rect.height / 2;
             const angle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
-            wheelTouchStartYRef.current = angle;
+            wheelTouchStartYRef_local.current = angle;
         };
 
         const handleTouchMove = (e) => {
@@ -462,22 +465,64 @@ function LocalPlayerOverlay() {
             const centerY = rect.top + rect.height / 2;
             
             const currentAngle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * 180 / Math.PI;
-            let deltaAngle = currentAngle - wheelTouchStartYRef.current;
+            let deltaAngle = currentAngle - wheelTouchStartYRef_local.current;
             
             if (deltaAngle > 180) deltaAngle -= 360;
             if (deltaAngle < -180) deltaAngle += 360;
             
-            wheelTouchStartYRef.current = currentAngle;
+            wheelTouchStartYRef_local.current = currentAngle;
             scheduleWheelRotation(-deltaAngle);
+        };
+
+        // Desktop mouse drag rotation support
+        const handleMouseDown = (e) => {
+            if (e.button !== 0) return; // Only left mouse button
+            wheelMouseStartRef.current.isDragging = true;
+            const rect = el.getBoundingClientRect();
+            const centerX = rect.left + 200;
+            const centerY = rect.top + rect.height / 2;
+            const startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
+            wheelMouseStartRef.current.startAngle = startAngle;
+            el.style.cursor = 'grabbing';
+        };
+
+        const handleMouseMove = (e) => {
+            if (!wheelMouseStartRef.current.isDragging) return;
+            const rect = el.getBoundingClientRect();
+            const centerX = rect.left + 200;
+            const centerY = rect.top + rect.height / 2;
+            const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
+            let deltaAngle = currentAngle - wheelMouseStartRef.current.startAngle;
+            
+            if (deltaAngle > 180) deltaAngle -= 360;
+            if (deltaAngle < -180) deltaAngle += 360;
+            
+            wheelMouseStartRef.current.startAngle = currentAngle;
+            scheduleWheelRotation(-deltaAngle);
+        };
+
+        const handleMouseUp = () => {
+            wheelMouseStartRef.current.isDragging = false;
+            el.style.cursor = 'grab';
         };
 
         el.addEventListener('touchstart', handleTouchStart, { passive: false });
         el.addEventListener('touchmove', handleTouchMove, { passive: false });
+        el.addEventListener('mousedown', handleMouseDown);
+        el.addEventListener('mousemove', handleMouseMove);
+        el.addEventListener('mouseup', handleMouseUp);
+        el.addEventListener('mouseleave', handleMouseUp);
+        // Set touch-action to none to prevent browser default gestures
+        el.style.touchAction = 'none';
 
         return () => {
             if (wheelRafRef.current) cancelAnimationFrame(wheelRafRef.current);
             el.removeEventListener('touchstart', handleTouchStart);
             el.removeEventListener('touchmove', handleTouchMove);
+            el.removeEventListener('mousedown', handleMouseDown);
+            el.removeEventListener('mousemove', handleMouseMove);
+            el.removeEventListener('mouseup', handleMouseUp);
+            el.removeEventListener('mouseleave', handleMouseUp);
         };
     }, [scheduleWheelRotation]);
 

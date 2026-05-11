@@ -54,9 +54,12 @@ export default React.memo(function MusicMiniPlayer() {
   const swiperRef = useRef(null);
   const cardTargetRef = useRef(null);
   const offscreenRef = useRef(null);
+  const miniPlayerRef = useRef(null);
   const [showTopBar, setShowTopBar] = useState(false);
   const [showBottomBar, setShowBottomBar] = useState(false);
   const [themeIdx, setThemeIdx] = useState(0);
+  const [miniPos, setMiniPos] = useState({ x: 24, y: 0 });
+  const dragStateRef = useRef({ isDragging: false, startX: 0, startY: 0, startPosX: 0, startPosY: 0 });
   const currentTheme = themes[themeIdx] || themes[0];
 
   const {
@@ -86,10 +89,29 @@ export default React.memo(function MusicMiniPlayer() {
     // Wait 2 frames: React renders card → ref assigned → we move iframe in
     requestAnimationFrame(() => requestAnimationFrame(() => {
       if (videoId && currentSong?.source === 'youtube') {
-        moveIframeTo(cardTargetRef.current);
+        try {
+          // Re-attach video source if lost during state change
+          const iframe = getIframe(videoId);
+          if (!iframe.src || iframe.src.includes('about:blank')) {
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0&enablejsapi=1&origin=${window.location.origin}&rel=0&modestbranding=1&iv_load_policy=3`;
+          }
+          moveIframeTo(cardTargetRef.current);
+          // Wait for loadeddata event before playing
+          if (playing) {
+            iframe.addEventListener('load', () => {
+              try {
+                ytCmd('playVideo');
+              } catch (e) {
+                console.warn('Error playing video on expand:', e);
+              }
+            }, { once: true });
+          }
+        } catch (e) {
+          console.warn('Error during expand:', e);
+        }
       }
     }));
-  }, [videoId, currentSong?.source, setIsExpanded]);
+  }, [videoId, currentSong?.source, setIsExpanded, playing]);
 
   const handleMinimize = useCallback(() => {
     // Step 1: Move iframe to offscreen BEFORE React unmounts the card
@@ -104,6 +126,52 @@ export default React.memo(function MusicMiniPlayer() {
     if (currentSong?.source === 'youtube') moveIframeTo(offscreenRef.current);
     close();
   }, [currentSong?.source, close]);
+
+  // ── MINI PLAYER DRAGGING WITH POINTER EVENTS ────────────────────────────
+  const handleMiniPlayerPointerDown = useCallback((e) => {
+    if (e.button !== 0) return; // Only left mouse button
+    dragStateRef.current.isDragging = true;
+    dragStateRef.current.startX = e.clientX;
+    dragStateRef.current.startY = e.clientY;
+    dragStateRef.current.startPosX = miniPos.x;
+    dragStateRef.current.startPosY = miniPos.y;
+    miniPlayerRef.current?.setPointerCapture(e.pointerId);
+  }, [miniPos]);
+
+  const handleMiniPlayerPointerMove = useCallback((e) => {
+    if (!dragStateRef.current.isDragging) return;
+    const deltaX = e.clientX - dragStateRef.current.startX;
+    const deltaY = e.clientY - dragStateRef.current.startY;
+    let newX = dragStateRef.current.startPosX + deltaX;
+    let newY = dragStateRef.current.startPosY + deltaY;
+
+    // Clamp to viewport
+    const element = miniPlayerRef.current;
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      const minX = 0;
+      const maxX = window.innerWidth - rect.width;
+      const minY = 0;
+      const maxY = window.innerHeight - rect.height;
+      newX = Math.max(minX, Math.min(newX, maxX));
+      newY = Math.max(minY, Math.min(newY, maxY));
+    }
+    setMiniPos({ x: newX, y: newY });
+  }, []);
+
+  const handleMiniPlayerPointerUp = useCallback((e) => {
+    if (dragStateRef.current.isDragging && miniPlayerRef.current) {
+      miniPlayerRef.current.releasePointerCapture(e.pointerId);
+    }
+    dragStateRef.current.isDragging = false;
+  }, []);
+
+  useEffect(() => {
+    // Initialize mini player position on mount
+    if (miniPlayerRef.current) {
+      setMiniPos({ x: 24, y: window.innerHeight - 120 });
+    }
+  }, []);
 
   // When song changes while expanded, move new iframe into card
   useEffect(() => {
@@ -370,11 +438,20 @@ export default React.memo(function MusicMiniPlayer() {
 
       {/* ══ MINI CAPSULE — individually fixed, isolated from expanded player ══ */}
       {!isExpanded && (
-        <motion.div
-          drag dragMomentum={false}
-          initial={{ x: 24, y: window.innerHeight - 120 }}
-          className="fixed z-[300] pointer-events-auto bg-secondary backdrop-blur-3xl border border-primary rounded-[20px] md:rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 md:p-4 flex items-center gap-2 md:gap-4 cursor-grab active:cursor-grabbing w-[280px] md:w-[340px] transition-colors duration-500"
-          style={{ willChange: 'transform' }}
+        <div
+          ref={miniPlayerRef}
+          onPointerDown={handleMiniPlayerPointerDown}
+          onPointerMove={handleMiniPlayerPointerMove}
+          onPointerUp={handleMiniPlayerPointerUp}
+          onPointerCancel={handleMiniPlayerPointerUp}
+          className="fixed z-[300] pointer-events-auto bg-secondary backdrop-blur-3xl border border-primary rounded-[20px] md:rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 md:p-4 flex items-center gap-2 md:gap-4 cursor-grab active:cursor-grabbing w-[280px] md:w-[340px] transition-colors duration-500 touch-none"
+          style={{ 
+            willChange: 'transform',
+            transform: `translate3d(${miniPos.x}px, ${miniPos.y}px, 0)`,
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            touchAction: 'none'
+          }}
         >
           <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl overflow-hidden cursor-pointer shadow-xl shrink-0 border border-primary" onClick={handleExpand}>
             <img src={currentSong?.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover" alt="" />
@@ -401,7 +478,7 @@ export default React.memo(function MusicMiniPlayer() {
               <X className="w-3.5 h-3.5 md:w-4 md:h-4" />
             </button>
           </div>
-        </motion.div>
+        </div>
       )}
     </>
   );
