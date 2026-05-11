@@ -879,7 +879,7 @@ export default function Music() {
                 )}
               </div>
 
-              {!devicePermission ? (
+              {(!devicePermission && deviceSongs.length === 0) ? (
                 <div className={`p-10 rounded-[3rem] border-2 border-dashed ${activeBorder} bg-white/5 flex flex-col items-center justify-center text-center gap-6 group hover:bg-white/10 transition-all duration-500`}>
                   <div className="w-20 h-20 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
                     <MusicIcon className="w-10 h-10 text-purple-400" />

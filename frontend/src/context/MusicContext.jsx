@@ -92,6 +92,7 @@ export function MusicProvider({ children }) {
           };
         });
         setDeviceSongs(reconstructedSongs);
+        if (reconstructedSongs.length > 0) setDevicePermission(true);
         
         // Repair current playlist with fresh URLs
         setPlaylist(prev => prev.map(item => {
@@ -101,15 +102,30 @@ export function MusicProvider({ children }) {
           }
           return item;
         }));
+
+        // Repair active local song if it's from device
+        setActiveLocalSong(prev => {
+          if (prev?.source === 'device') {
+            const fresh = reconstructedSongs.find(s => s.id === prev.id);
+            return fresh || prev;
+          }
+          return prev;
+        });
       }
 
       const handle = await getHandle('musicFolder');
       if (handle) {
-        const status = await handle.queryPermission({ mode: 'read' });
-        if (status === 'granted') {
-          await scanDirectory(handle);
-        } else {
-          setDevicePermission(false);
+        try {
+          const status = await handle.queryPermission({ mode: 'read' });
+          if (status === 'granted') {
+            await scanDirectory(handle);
+            setDevicePermission(true);
+          } else {
+            // Don't set false if we already have songs from IDB
+            if (reconstructedSongs.length === 0) setDevicePermission(false);
+          }
+        } catch(e) {
+          if (reconstructedSongs.length === 0) setDevicePermission(false);
         }
       }
     } catch (e) {
