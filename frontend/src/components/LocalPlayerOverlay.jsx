@@ -1113,9 +1113,8 @@ function LocalPlayerOverlay() {
                 <AnimatePresence>
                     {showControls && !isLocked && (
                         <motion.div
-                            initial={{ y: 150 }} animate={{ y: 0 }} exit={{ y: 150 }}
-                            transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
-                            className="absolute bottom-0 left-0 right-0 z-[600] p-6 flex flex-col gap-6 bg-gradient-to-t from-black/60 to-transparent backdrop-blur-md"
+                            transition={{ type: 'tween', ease: 'circOut', duration: 0.15 }}
+                            className="absolute bottom-0 left-0 right-0 z-[600] p-6 flex flex-col gap-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent"
                             onClick={e => { e.stopPropagation(); resetControlsTimeout(); }}
                         >
                             <div className="flex items-center justify-between gap-6">
@@ -1366,12 +1365,14 @@ function LocalPlayerOverlay() {
                     {showSettings && (
                         <motion.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/85 flex items-center justify-center p-4 sm:p-20 z-[2000]"
+                            transition={{ duration: 0.15 }}
+                            className="absolute inset-0 bg-black/60 flex items-center justify-center p-4 sm:p-20 z-[2000]"
                             onClick={() => setShowSettings(false)}
                         >
                             <motion.div
-                                initial={{ scale: 0.95, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 30 }}
-                                className="bg-[#111] w-full max-w-[1000px] h-[600px] rounded-[3rem] border border-white/5 overflow-hidden flex flex-col sm:flex-row shadow-[0_50px_150px_rgba(0,0,0,0.9)]"
+                                initial={{ scale: 0.98, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.98, y: 10 }}
+                                transition={{ type: 'spring', damping: 25, stiffness: 400 }}
+                                className="bg-[#111]/90 w-full max-w-[850px] h-[550px] rounded-[3rem] border border-white/10 backdrop-blur-3xl overflow-hidden flex flex-col sm:flex-row shadow-[0_50px_150px_rgba(0,0,0,0.8)]"
                                 onClick={e => e.stopPropagation()}
                             >
                                 {/* Sidebar Tabs */}
@@ -1823,7 +1824,7 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
     const x = useTransform(wheelRotationMV, (rot) => {
         const rad = ((index * angleStep - rot) * Math.PI) / 180;
         const panelRadius = isMobileView ? 200 : 300;
-        const baseOffset = isMobileView ? 110 : 210;
+        const baseOffset = isMobileView ? 150 : 250;
         return Math.cos(rad) * panelRadius + baseOffset;
     });
     const scale = useTransform(y, (yVal) => {
@@ -1853,12 +1854,14 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
                 e.stopPropagation();
                 action.onClick();
             }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
         >
             {/* SVG Wireframe Box */}
-            <div className="absolute left-[-310px] w-[320px] h-10 pointer-events-none transition-opacity duration-300" style={{ opacity: isFocused ? '1' : '0.5' }}>
-                <svg width="320" height="40" viewBox="0 0 320 40" fill="none">
-                    <path d="M10 20 H240 L270 5 H320" stroke={action.color} strokeWidth="2" strokeOpacity="0.8" />
-                    <path d="M10 20 H240 L270 35 H320" stroke={action.color} strokeWidth="2" strokeOpacity="0.8" />
+            <div className="absolute left-[-350px] w-[360px] h-10 pointer-events-none transition-opacity duration-300" style={{ opacity: isFocused ? '1' : '0.5' }}>
+                <svg width="360" height="40" viewBox="0 0 360 40" fill="none">
+                    <path d="M10 20 H280 L310 5 H360" stroke={action.color} strokeWidth="2" strokeOpacity="0.8" />
+                    <path d="M10 20 H280 L310 35 H360" stroke={action.color} strokeWidth="2" strokeOpacity="0.8" />
                     <circle cx="10" cy="20" r="4.5" fill={action.color} />
                 </svg>
             </div>
