@@ -667,17 +667,13 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             ) : null}
 
             {/* Fullscreen Swipe Overlay - FIX 1 & 3 */}
-            {/* Smart Gesture Zone: Restricted to the BOTTOM 50% of the screen to ensure the TOP half (where Gear/Sound icons are) is 100% direct IFrame interaction */}
+            {/* Left-Side Swipe Zone: Allows 'Swipe Down to Exit' without blocking ANY YouTube controls (since they are in the center/right) */}
             {isFullscreen && (
               <div 
-                className="absolute top-[50%] bottom-[120px] left-0 right-[150px] z-[60] bg-transparent pointer-events-auto"
+                className="absolute top-0 bottom-0 left-0 w-[100px] z-[60] bg-transparent pointer-events-auto"
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleControls();
-                }}
               />
             )}
 
