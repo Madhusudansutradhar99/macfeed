@@ -188,19 +188,25 @@ export default function VideoPlayerPage() {
             </div>
 
             <div className="mt-8">
-              <h2 className="text-lg font-bold mb-6 flex items-center gap-2">
-                <Sparkles size={20} className="text-purple-500" />
-                Recommended For You
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {video.source === 'youtube' ? (
-                  <YouTubeRelatedVideos videoId={video.youtube_id} onVideoSelect={(v) => navigate(`/watch/${v.id}`)} />
-                ) : (
-                  related.map((v) => (
-                    <VideoCard key={v.id} video={v} onClick={() => navigate(`/watch/${v.id}`)} />
-                  ))
-                )}
-              </div>
+              {video.source === 'youtube' ? (
+                <YouTubeRelatedVideos 
+                  currentVideoId={video.youtube_id} 
+                  currentVideoTitle={video.title} 
+                  parentCategory={video.category} 
+                />
+              ) : (
+                <>
+                  <h2 className="text-lg font-bold mb-6 flex items-center gap-2">
+                    <Sparkles size={20} className="text-purple-500" />
+                    Recommended For You
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {related.map((v) => (
+                      <VideoCard key={v.id} video={v} onClick={() => navigate(`/watch/${v.id}`)} />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
