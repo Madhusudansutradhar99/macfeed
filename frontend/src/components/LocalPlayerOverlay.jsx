@@ -1289,7 +1289,15 @@ function LocalPlayerOverlay() {
                                         }) },
                                         { icon: <Sliders size={14} />, label: "Equalizer", color: "#22d3ee", onClick: () => setSettingsTab('AUDIO') || setShowSettings(true) },
                                         { icon: <ZoomIn size={14} />, label: "Zoom/Fit", color: "#fbbf24", onClick: () => setAspectRatio('Fill') },
-                                        { icon: <Settings size={14} />, label: "Settings", color: "#94a3b8", onClick: () => setSettingsTab('PLAYBACK') || setShowSettings(true) },
+                                        { icon: <Settings size={14} />, label: "Settings", color: "#94a3b8", onClick: () => setQuickMenuData({
+                                            title: "Quick Settings",
+                                            items: [
+                                                { label: "Playback", active: settingsTab === 'PLAYBACK', action: () => setSettingsTab('PLAYBACK') || setShowSettings(true) },
+                                                { label: "Audio", active: settingsTab === 'AUDIO', action: () => setSettingsTab('AUDIO') || setShowSettings(true) },
+                                                { label: "Subtitles", active: settingsTab === 'SUBTITLES', action: () => setSettingsTab('SUBTITLES') || setShowSettings(true) },
+                                                { label: "Performance", active: settingsTab === 'PERFORMANCE', action: () => setSettingsTab('PERFORMANCE') || setShowSettings(true) }
+                                            ]
+                                        }) },
                                         { icon: <Monitor size={14} />, label: "Quality", color: "#fbbf24", onClick: () => setQuickMenuData({
                                             title: "Video Quality",
                                             items: ['Auto', '1080p', '2K', '4K', '8K', '16K'].map(q => ({ label: q, active: targetQuality === q, action: () => { setTargetQuality(q); setQuickMenuData(null); } }))
@@ -1805,7 +1813,7 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
     const x = useTransform(wheelRotationMV, (rot) => {
         const rad = ((index * angleStep - rot) * Math.PI) / 180;
         const panelRadius = isMobileView ? 200 : 300;
-        const baseOffset = isMobileView ? 40 : 80;
+        const baseOffset = isMobileView ? 70 : 130;
         return Math.cos(rad) * panelRadius + baseOffset;
     });
     const scale = useTransform(y, (yVal) => {
@@ -1834,10 +1842,10 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
             onClick={action.onClick}
         >
             {/* SVG Wireframe Box */}
-            <div className="absolute left-[-190px] w-[200px] h-10 pointer-events-none transition-opacity duration-300" style={{ opacity: isFocused ? '1' : '0.5' }}>
-                <svg width="200" height="40" viewBox="0 0 200 40" fill="none">
-                    <path d="M10 20 H120 L150 5 H200" stroke={action.color} strokeWidth="1.8" strokeOpacity="0.8" />
-                    <path d="M10 20 H120 L150 35 H200" stroke={action.color} strokeWidth="1.8" strokeOpacity="0.8" />
+            <div className="absolute left-[-230px] w-[240px] h-10 pointer-events-none transition-opacity duration-300" style={{ opacity: isFocused ? '1' : '0.5' }}>
+                <svg width="240" height="40" viewBox="0 0 240 40" fill="none">
+                    <path d="M10 20 H160 L190 5 H240" stroke={action.color} strokeWidth="1.8" strokeOpacity="0.8" />
+                    <path d="M10 20 H160 L190 35 H240" stroke={action.color} strokeWidth="1.8" strokeOpacity="0.8" />
                     <circle cx="10" cy="20" r="4" fill={action.color} />
                 </svg>
             </div>
