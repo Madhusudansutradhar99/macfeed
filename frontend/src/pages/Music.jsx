@@ -128,15 +128,24 @@ export default function Music() {
   }, [contextPlaylist]);
 
   async function fetchMusic() {
-    setLoading(true);
-    try {
-      const cached = localStorage.getItem('macfeed_music_cache');
-      if (cached) {
+    const cached = localStorage.getItem('macfeed_music_cache');
+    if (cached) {
+      try {
         const parsed = JSON.parse(cached);
         setSongs(parsed);
         setFilteredSongs(parsed);
-        setLoading(false); // Show stale data immediately
+        setLoading(false); // Skip loader if we have cache
+      } catch (e) {
+        localStorage.removeItem('macfeed_music_cache');
+        setLoading(true);
       }
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      // Background fetch - only update if online
+      if (!navigator.onLine && cached) return;
       const { data } = await supabase
         .from('videos')
         .select('*')

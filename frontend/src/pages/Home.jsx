@@ -288,6 +288,7 @@ export default function Home() {
     if (!error && data) {
       if (isInitial) {
         setVideos(data);
+        localStorage.setItem('macfeed_home_cache', JSON.stringify(data));
       } else {
         setVideos((prev) => {
           // Prevent duplicates
@@ -343,8 +344,21 @@ export default function Home() {
 
   useEffect(() => {
     async function init() {
-      setLoading(true);
+      const cached = localStorage.getItem('macfeed_home_cache');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          setVideos(parsed);
+          setLoading(false); // Skip loader if we have cache
+        } catch (e) { }
+      } else {
+        setLoading(true);
+      }
+
       try {
+        // Skip background fetch if offline and have cache
+        if (!navigator.onLine && cached) return;
+
         // 1. Fetch Hero/Featured Videos specifically
         const { data: heroData, error: heroErr } = await supabase
           .from('videos')
