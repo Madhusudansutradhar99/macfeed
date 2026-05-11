@@ -1372,11 +1372,11 @@ function LocalPlayerOverlay() {
                             <motion.div
                                 initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0.98, opacity: 0 }}
                                 transition={{ duration: 0.1 }}
-                                className="bg-sky-900/30 w-full max-w-[850px] h-[550px] rounded-[3rem] border-2 border-red-600/80 backdrop-blur-3xl overflow-hidden flex flex-col sm:flex-row shadow-[0_50px_200px_rgba(220,38,38,0.4)]"
+                                className="bg-sky-900/40 w-full max-w-[750px] h-[500px] rounded-[2.5rem] border-2 border-red-600/80 backdrop-blur-3xl overflow-hidden flex flex-col sm:flex-row shadow-[0_50px_200px_rgba(220,38,38,0.5)]"
                                 onClick={e => e.stopPropagation()}
                             >
                                 {/* Sidebar Tabs */}
-                                <div className="w-full sm:w-72 bg-white/[0.01] border-r border-white/5 p-10 flex flex-col gap-3">
+                                <div className="w-full sm:w-60 bg-white/[0.01] border-r border-white/5 p-8 flex flex-col gap-2">
                                     <SettingsTab id="PLAYBACK" label="Playback" icon={<PlayCircle size={20} />} active={settingsTab} set={setSettingsTab} />
                                     <SettingsTab id="QUALITY" label="Video Quality" icon={<Monitor size={20} />} active={settingsTab} set={setSettingsTab} />
                                     <SettingsTab id="PERFORMANCE" label="Performance" icon={<Zap size={20} />} active={settingsTab} set={setSettingsTab} />
@@ -1854,10 +1854,14 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
                 e.stopPropagation();
                 action.onClick();
             }}
-            animate={isFocused ? { rotateY: [0, 15, 0], x: [0, 10, 0] } : {}}
-            transition={{ repeat: Infinity, duration: 3 }}
-            whileHover={{ scale: 1.1, rotateY: 20 }}
-            whileTap={{ scale: 0.95 }}
+            animate={isFocused ? { 
+                scale: [1.1, 1.15, 1.1],
+                filter: ['brightness(1)', 'brightness(1.5)', 'brightness(1)'],
+                x: [0, 15, 0]
+            } : {}}
+            transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+            whileHover={{ scale: 1.2, x: 20 }}
+            whileTap={{ scale: 0.9 }}
         >
             {/* SVG Wireframe Box - Starting from OUTSIDE the wheel */}
             <div className="absolute left-[-160px] w-[170px] h-10 pointer-events-none transition-opacity duration-300" style={{ opacity: isFocused ? '1' : '0.5' }}>
