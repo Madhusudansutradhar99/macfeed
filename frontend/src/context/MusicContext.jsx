@@ -205,12 +205,19 @@ export function MusicProvider({ children }) {
 
   const handleDeviceFiles = async (files, isRestore = false) => {
     setIsScanning(true);
-    const songs = [];
+    const songsToAdd = [];
     const fileList = Array.from(files);
-
+    
     try {
+      // Get all existing tracks once to avoid loop overhead
+      const existingTracks = await getAllTracks();
+      const existingIds = new Set(existingTracks.map(t => t.id));
+
       for (const file of fileList) {
         try {
+          const trackId = `device-${file.name}-${file.size}-${file.lastModified}`;
+          if (existingIds.has(trackId)) continue; // Skip if already in DB
+
           const arrayBuffer = await file.arrayBuffer();
           const metadata = await musicMetadata.parseBlob(file);
           let artworkUrl = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800';
@@ -221,7 +228,6 @@ export function MusicProvider({ children }) {
             artworkUrl = URL.createObjectURL(blob);
           }
 
-          const trackId = `device-${file.name}-${file.size}-${file.lastModified}`;
           const trackData = {
             id: trackId,
             title: metadata.common.title || file.name.replace(/\.[^/.]+$/, ''),
@@ -237,16 +243,12 @@ export function MusicProvider({ children }) {
             category: 'Device Music'
           };
 
-          // Check if already exists to avoid duplicates in DB
-          const existing = await getAllTracks();
-          if (!existing.some(t => t.id === trackId)) {
-            await saveTrack(trackData);
-          }
+          await saveTrack(trackData);
 
           const blob = new Blob([arrayBuffer], { type: file.type });
           const url = URL.createObjectURL(blob);
 
-          songs.push({
+          songsToAdd.push({
             ...trackData,
             video_url: url
           });
@@ -254,16 +256,25 @@ export function MusicProvider({ children }) {
           console.error('Error processing file:', file.name, err);
         }
       }
-      setDeviceSongs(prev => deduplicate([...prev, ...songs]));
+      if (songsToAdd.length > 0) {
+        setDeviceSongs(prev => deduplicate([...prev, ...songsToAdd]));
+      }
     } catch (e) {
       console.error('File processing failed:', e);
-      if (e.name === 'QuotaExceededError') {
-        alert('Storage quota exceeded. Please remove some tracks to add more.');
-      }
     } finally {
       setIsScanning(false);
     }
   };
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadStoredDeviceMusic();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   useEffect(() => {
     if (playlist.length > 0) {
