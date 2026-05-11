@@ -326,14 +326,22 @@ export default function Home() {
     }
   }, [page, fetchVideos]);
 
+  const [heroVideos, setHeroVideos] = useState([]);
+
   useEffect(() => {
     async function init() {
       setLoading(true);
-      const start = Date.now();
       try {
-        const fetchPromise = fetchVideos(0, true);
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Fetch timeout')), 10000));
-        await Promise.race([fetchPromise, timeoutPromise]);
+        // 1. Fetch Hero/Featured Videos specifically
+        const { data: heroData } = await supabase
+          .from('videos')
+          .select('*')
+          .or('is_featured.eq.true,upload_location.eq.Header Banner')
+          .limit(5);
+        if (heroData) setHeroVideos(heroData);
+
+        // 2. Fetch main feed
+        await fetchVideos(0, true);
       } catch (err) {
         console.error("Home Load Error:", err);
       } finally {
@@ -358,18 +366,6 @@ export default function Home() {
 
   if (loading) return <Loader />;
 
-  // Allow Movies in header if featured
-  let heroBannerVideos = videos.filter((v) => v.is_featured === true || v.upload_location === 'Header Banner');
-  
-  // If no featured/header videos, show ONLY the latest high-quality videos (not YouTube auto-saved ones)
-  // We limit this fallback to prevent random low-quality or recently played videos from jumping up.
-    // Absolute fallback: just take the latest 4 videos
-    if (heroBannerVideos.length === 0) {
-      heroBannerVideos = videos.slice(0, 4);
-    }
-  
-  heroBannerVideos = heroBannerVideos.slice(0, 4);
-
   // Group videos by category
   const categories = {};
   videos.forEach((v) => {
@@ -392,7 +388,7 @@ export default function Home() {
       transition={{ duration: 0.6 }}
       className="flex flex-col"
     >
-      <HeroBanner videos={heroBannerVideos} />
+      <HeroBanner videos={heroVideos.length > 0 ? heroVideos : videos.slice(0, 4)} />
 
       <div className="px-2 sm:px-4 lg:px-6 xl:px-8 space-y-3 sm:space-y-4 md:space-y-2">
         {/* Row 1: Trending */}
