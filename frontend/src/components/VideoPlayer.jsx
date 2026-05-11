@@ -708,7 +708,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         {viewMode === 'full' && (
           <>
             <div
-              className="absolute left-0 top-0 z-40 flex w-full items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 pb-8 pt-3"
+              className={`absolute left-0 top-0 z-40 flex w-full items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 pb-8 pt-3 transition-opacity duration-300 ${isFullscreen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
               onClick={(event) => {
                 event.stopPropagation();
                 showControlsTemporarily(); 
@@ -739,7 +739,8 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               </div>
             </div>
 
-            {isFullscreen && isYouTube ? (
+            {/* Custom quality button hidden to avoid overlap with native YT quality selector */}
+            {false && isFullscreen && isYouTube ? (
               <div className="absolute bottom-24 right-4 z-[70] sm:right-6" onClick={(event) => event.stopPropagation()}>
                 <button
                   type="button"
