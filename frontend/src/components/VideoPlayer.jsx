@@ -667,10 +667,10 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             ) : null}
 
             {/* Fullscreen Swipe Overlay - FIX 1 & 3 */}
-            {/* Smart Gesture Zone: Uses absolute positioning relative to player container for perfect touch alignment */}
+            {/* Smart Gesture Zone: Restricted to the BOTTOM 50% of the screen to ensure the TOP half (where Gear/Sound icons are) is 100% direct IFrame interaction */}
             {isFullscreen && (
               <div 
-                className="absolute top-[120px] bottom-[120px] left-0 right-[150px] z-[60] bg-transparent pointer-events-auto"
+                className="absolute top-[50%] bottom-[120px] left-0 right-[150px] z-[60] bg-transparent pointer-events-auto"
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
@@ -681,7 +681,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               />
             )}
 
-            <div ref={ytDomContainer} className="absolute inset-0 h-full w-full" />
+            <div ref={ytDomContainer} className="absolute inset-0 h-full w-full z-[10]" />
             
             {/* Transparent overlay captures all taps and swipes. */}
             <div 
