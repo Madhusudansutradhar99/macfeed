@@ -1366,13 +1366,13 @@ function LocalPlayerOverlay() {
                         <motion.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             transition={{ duration: 0.15 }}
-                            className="absolute inset-0 bg-red-950/20 flex items-center justify-center p-4 sm:p-20 z-[2000]"
+                            className="absolute inset-0 bg-sky-950/20 flex items-center justify-center p-4 sm:p-20 z-[2000]"
                             onClick={() => setShowSettings(false)}
                         >
                             <motion.div
-                                initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.98, opacity: 0 }}
-                                transition={{ duration: 0.1, ease: 'linear' }}
-                                className="bg-red-600/10 w-full max-w-[850px] h-[550px] rounded-[3rem] border border-red-500/20 backdrop-blur-3xl overflow-hidden flex flex-col sm:flex-row shadow-[0_50px_200px_rgba(220,38,38,0.3)]"
+                                initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0.98, opacity: 0 }}
+                                transition={{ duration: 0.1 }}
+                                className="bg-sky-900/30 w-full max-w-[850px] h-[550px] rounded-[3rem] border-2 border-red-600/80 backdrop-blur-3xl overflow-hidden flex flex-col sm:flex-row shadow-[0_50px_200px_rgba(220,38,38,0.4)]"
                                 onClick={e => e.stopPropagation()}
                             >
                                 {/* Sidebar Tabs */}
@@ -1769,7 +1769,7 @@ const SettingsTab = memo(({ id, label, icon, active, set }) => {
     return (
         <button
             onClick={() => set(id)}
-            className={`flex items-center gap-4 px-8 py-4 rounded-[1.8rem] transition-all duration-100 outline-none border ${isActive ? 'bg-yellow-400 text-black border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.4)] scale-[1.02]' : 'bg-yellow-500/5 text-yellow-500/40 border-yellow-500/10 hover:bg-yellow-500/10 hover:text-yellow-500/60'}`}
+            className={`flex items-center gap-4 px-8 py-4 rounded-[1.8rem] transition-all duration-100 outline-none border-2 ${isActive ? 'bg-yellow-200 text-black border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.4)] scale-[1.05]' : 'bg-white/5 text-white/40 border-transparent hover:bg-white/10 hover:text-white'}`}
         >
             <div className={`transition-transform duration-100 ${isActive ? 'scale-110' : ''}`}>{icon}</div>
             <span className="text-[13px] font-bold tracking-tight uppercase">{label}</span>
@@ -1854,15 +1854,17 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
                 e.stopPropagation();
                 action.onClick();
             }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.98 }}
+            animate={isFocused ? { rotateY: [0, 15, 0], x: [0, 10, 0] } : {}}
+            transition={{ repeat: Infinity, duration: 3 }}
+            whileHover={{ scale: 1.1, rotateY: 20 }}
+            whileTap={{ scale: 0.95 }}
         >
             {/* SVG Wireframe Box - Starting from OUTSIDE the wheel */}
             <div className="absolute left-[-160px] w-[170px] h-10 pointer-events-none transition-opacity duration-300" style={{ opacity: isFocused ? '1' : '0.5' }}>
                 <svg width="170" height="40" viewBox="0 0 170 40" fill="none">
-                    <path d="M10 20 H90 L120 5 H170" stroke={action.color} strokeWidth="2.2" strokeOpacity="0.8" />
-                    <path d="M10 20 H90 L120 35 H170" stroke={action.color} strokeWidth="2.2" strokeOpacity="0.8" />
-                    <circle cx="10" cy="20" r="4.5" fill={action.color} />
+                    <path d="M10 20 H90 L120 5 H170" stroke={action.color} strokeWidth="2.5" strokeOpacity="0.9" />
+                    <path d="M10 20 H90 L120 35 H170" stroke={action.color} strokeWidth="2.5" strokeOpacity="0.9" />
+                    <circle cx="10" cy="20" r="5" fill={action.color} />
                 </svg>
             </div>
 
