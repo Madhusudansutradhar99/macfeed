@@ -1282,25 +1282,25 @@ function LocalPlayerOverlay() {
                                     {[
                                         { icon: <RefreshCcw size={14} />, label: "Rotation", color: "#fbbf24", onClick: toggleROT },
                                         { icon: <Camera size={14} />, label: "Capture", color: "#fbbf24", onClick: handleCapture },
-                                        { icon: <Headphones size={14} />, label: "Audio", color: "#22d3ee", onClick: () => setQuickMenuData({
+                                        { icon: <Headphones size={14} />, label: "Audio", color: "#22d3ee", inlineMenu: {
                                             title: "Audio Tracks",
                                             items: audioTracks.length > 0 ? audioTracks.map((t, i) => ({ label: t.label, active: t.enabled, action: () => handleAudioTrackChange(i) })) : [{ label: "Default Track", active: true, action: () => {} }]
-                                        }) },
+                                        } },
                                         { icon: <Sliders size={14} />, label: "Equalizer", color: "#22d3ee", onClick: () => setSettingsTab('AUDIO') || setShowSettings(true) },
                                         { icon: <ZoomIn size={14} />, label: "Zoom/Fit", color: "#fbbf24", onClick: () => setAspectRatio('Fill') },
                                         { icon: <Settings size={14} />, label: "Settings", color: "#94a3b8", onClick: () => { setShowSettings(true); setSettingsTab('PLAYBACK'); } },
-                                        { icon: <Monitor size={14} />, label: "Quality", color: "#fbbf24", onClick: () => setQuickMenuData({
+                                        { icon: <Monitor size={14} />, label: "Quality", color: "#fbbf24", inlineMenu: {
                                             title: "Video Quality",
-                                            items: ['Auto', '1080p', '2K', '4K', '8K', '16K'].map(q => ({ label: q, active: targetQuality === q, action: () => { setTargetQuality(q); setQuickMenuData(null); } }))
-                                        }) },
-                                        { icon: <MessageSquare size={14} />, label: "Subtitles", color: "#22d3ee", onClick: () => setQuickMenuData({
+                                            items: ['Auto', '1080p', '2K', '4K', '8K', '16K'].map(q => ({ label: q, active: targetQuality === q, action: () => setTargetQuality(q) }))
+                                        } },
+                                        { icon: <MessageSquare size={14} />, label: "Subtitles", color: "#22d3ee", inlineMenu: {
                                             title: "Subtitles",
                                             items: subtitles.length > 0 ? subtitles.map((s, i) => ({ label: `Track ${i+1}`, active: activeSubtitle === s, action: () => setActiveSubtitle(s) })) : [{ label: "No Subtitles", active: false, action: () => {} }]
-                                        }) },
-                                        { icon: <PlayCircle size={14} />, label: "Speed", color: "#fbbf24", onClick: () => setQuickMenuData({
+                                        } },
+                                        { icon: <PlayCircle size={14} />, label: "Speed", color: "#fbbf24", inlineMenu: {
                                             title: "Playback Speed",
-                                            items: SPEEDS.map(s => ({ label: `${s}x`, active: playbackRate === s, action: () => { setPlaybackRate(s); setQuickMenuData(null); } }))
-                                        }) },
+                                            items: SPEEDS.map(s => ({ label: `${s}x`, active: playbackRate === s, action: () => setPlaybackRate(s) }))
+                                        } },
                                         { icon: <Zap size={14} />, label: "Hardware", color: "#fbbf24", onClick: () => setHwAccel(!hwAccel) },
                                         { icon: <PictureInPicture size={14} />, label: "PIP", color: "#22d3ee", onClick: () => videoRef.current?.requestPictureInPicture() },
                                         { icon: isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />, label: "Mute", color: "#22d3ee", onClick: () => setIsMuted(!isMuted) },
@@ -1839,6 +1839,8 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
     });
 
     const [isFocused, setIsFocused] = useState(false);
+    const [showInlineMenu, setShowInlineMenu] = useState(false);
+
     useEffect(() => {
         const unsubscribe = scale.on('change', (s) => {
             setIsFocused(s > 1.05);
@@ -1846,31 +1848,40 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
         return unsubscribe;
     }, [scale]);
 
+    useEffect(() => {
+        if (!isFocused) setShowInlineMenu(false);
+    }, [isFocused]);
+
     return (
         <motion.div
-            style={{ y, x, scale, opacity, zIndex: 600, position: 'absolute', left: isMobileView ? '10px' : '40px', willChange: 'transform, opacity' }}
+            style={{ y, x, scale, opacity, zIndex: showInlineMenu ? 900 : 600, position: 'absolute', left: isMobileView ? '10px' : '40px', willChange: 'transform, opacity' }}
             className="flex items-center gap-4 cursor-pointer group pointer-events-auto"
             onClick={(e) => {
                 e.stopPropagation();
-                action.onClick();
+                if (action.inlineMenu) {
+                    setShowInlineMenu(!showInlineMenu);
+                } else {
+                    action.onClick();
+                }
             }}
             animate={isFocused ? { 
-                scale: 1.2,
-                brightness: 1.5,
-                filter: `drop-shadow(0 0 25px ${action.color})`
-            } : { 
-                scale: 1, 
-                brightness: 1,
-                filter: 'drop-shadow(0 0 0px transparent)' 
-            }}
+                scale: showInlineMenu ? 1.1 : 1.2,
+                rotateY: showInlineMenu ? 0 : [0, 8, -8, 0],
+                rotateX: showInlineMenu ? 0 : [0, 4, -4, 0],
+                filter: `drop-shadow(0 0 30px ${action.color}) brightness(1.3)`
+            } : { scale: 1, rotateY: 0, rotateX: 0, filter: 'none' }}
             transition={{ 
-                type: 'spring', 
-                stiffness: 500, 
-                damping: 30
+                rotateY: { repeat: Infinity, duration: 4, ease: 'easeInOut' },
+                rotateX: { repeat: Infinity, duration: 3, ease: 'easeInOut' }
             }}
             whileHover={{ scale: 1.25 }}
             whileTap={{ scale: 0.9 }}
         >
+            {/* ATMOSPHERIC BLUR LAYER - Behind the Wheel Area */}
+            {isFocused && (
+                <div className="fixed inset-y-0 left-0 w-[450px] bg-black/10 backdrop-blur-[3px] z-[-1] pointer-events-none" 
+                     style={{ maskImage: 'linear-gradient(to right, black, transparent)' }} />
+            )}
             {/* SVG Wireframe Box - Starting from OUTSIDE the wheel */}
             <div className="absolute left-[-160px] w-[170px] h-10 pointer-events-none transition-opacity duration-300" style={{ opacity: isFocused ? '1' : '0.5' }}>
                 <svg width="170" height="40" viewBox="0 0 170 40" fill="none">
@@ -1882,28 +1893,50 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
 
             {/* Panel Body */}
             <div
-                className="relative w-32 h-12 bg-black/95 border-l-[6px] border-r-[2px] border-y-[2px] transition-all duration-300 flex items-center justify-between px-3"
+                className="relative w-36 h-14 bg-black/95 border-l-[8px] border-r-[2px] border-y-[2px] transition-all duration-300 flex items-center justify-between px-4"
                 style={{
-                    clipPath: 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)',
+                    clipPath: 'polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%)',
                     borderLeftColor: isFocused ? action.color : 'rgba(255,255,255,0.1)',
                     borderRightColor: 'rgba(255,255,255,0.05)',
                     borderTopColor: 'rgba(255,255,255,0.05)',
                     borderBottomColor: 'rgba(255,255,255,0.05)',
-                    boxShadow: isFocused ? `0 0 25px ${action.color}33` : 'none',
-                    transform: isFocused ? 'scale(1.05)' : 'scale(1)',
-                    opacity: isFocused ? '1' : '0.6'
+                    boxShadow: isFocused ? `0 0 35px ${action.color}44` : 'none',
+                    opacity: isFocused ? '1' : '0.7'
                 }}
             >
-                <div className="transition-all duration-300" style={{ color: isFocused ? action.color : 'rgba(255,255,255,0.4)', transform: isFocused ? 'scale(1.25)' : 'scale(1)' }}>
+                <div className="transition-all duration-300" style={{ color: isFocused ? action.color : 'rgba(255,255,255,0.4)', transform: isFocused ? 'scale(1.3)' : 'scale(1)' }}>
                     {action.icon}
                 </div>
-                <div className="flex flex-col items-end mr-1">
-                    <span className="text-[8.5px] font-black uppercase tracking-tighter transition-all duration-300" style={{ color: isFocused ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>
-                        {action.label}
-                    </span>
-                    <div className="h-[1.5px] w-8 mt-1" style={{ backgroundColor: action.color, display: isFocused ? 'block' : 'none' }} />
+                <div className="flex flex-col items-end">
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em]">{action.label}</span>
+                    {action.inlineMenu && (
+                        <div className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${showInlineMenu ? 'bg-red-500 shadow-[0_0_10px_red]' : 'bg-white/20'}`} />
+                    )}
                 </div>
             </div>
+
+            {/* IN-LINE FEATURE ROW - APPEARS IN FRONT OF WIREBOX */}
+            <AnimatePresence>
+                {showInlineMenu && action.inlineMenu && (
+                    <motion.div
+                        initial={{ opacity: 0, x: -30, scale: 0.8 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: -30, scale: 0.8 }}
+                        className="flex items-center gap-3 ml-6 p-3 bg-red-950/20 backdrop-blur-3xl rounded-2xl border border-red-500/20 shadow-[0_0_50px_rgba(220,38,38,0.2)] max-w-[500px] overflow-x-auto no-scrollbar"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {action.inlineMenu.items.map((item, i) => (
+                            <button
+                                key={i}
+                                onClick={() => { item.action(); setShowInlineMenu(false); }}
+                                className={`px-5 py-2.5 rounded-xl whitespace-nowrap text-[10px] font-black uppercase tracking-widest transition-all border ${item.active ? 'bg-yellow-200 text-black border-yellow-200 shadow-[0_0_20px_rgba(250,204,21,0.6)]' : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10 hover:text-white'}`}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 });
