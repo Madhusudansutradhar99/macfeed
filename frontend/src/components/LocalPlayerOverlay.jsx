@@ -376,12 +376,13 @@ function LocalPlayerOverlay() {
                     video.load();
                     if ('decoding' in video) video.decoding = 'async';
 
-                    // Performance optimizations
+                    // Maximum hardware acceleration for 16K support
                     video.style.transform = 'translate3d(0,0,0) scale3d(1,1,1)';
-                    video.style.willChange = 'auto';
+                    video.style.willChange = 'contents, transform';
                     video.style.contain = 'layout style paint';
                     video.style.backfaceVisibility = 'hidden';
                     video.style.WebkitBackfaceVisibility = 'hidden';
+                    video.style.perspective = '1000px';
 
                     // Check slow network
                     let connectionSpeed = 'fast';
@@ -589,7 +590,12 @@ function LocalPlayerOverlay() {
                 if (bufferBarRef.current) bufferBarRef.current.style.width = `${(bEnd / dur) * 100}%`;
             }
             if (currentTimeRef.current) currentTimeRef.current.innerText = formatTime(cur);
-            if (durationRef.current) durationRef.current.innerText = formatTime(dur);
+            if (durationRef.current) {
+                const formattedDur = formatTime(dur);
+                if (durationRef.current.innerText !== formattedDur) {
+                    durationRef.current.innerText = formattedDur;
+                }
+            }
         };
 
         let rafId;
