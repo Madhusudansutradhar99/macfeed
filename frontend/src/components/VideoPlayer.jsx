@@ -398,7 +398,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         height: '100%',
         playerVars: {
           autoplay: connectionSpeed === 'slow' ? 0 : 1,
-          controls: 0,
+          controls: 1,
           rel: 0,
           modestbranding: 1,
           showinfo: 0,
@@ -700,7 +700,12 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
           />
         )}
 
-        {showControls && viewMode === 'full' && (
+        {/* NATIVE UI SHIELD: Hides YT controls in normal view, disappears in fullscreen */}
+        {!isFullscreen && (
+          <div className="absolute bottom-0 left-0 right-0 h-[45px] bg-black z-[5] pointer-events-auto select-none" />
+        )}
+
+        {viewMode === 'full' && (
           <>
             <div
               className="absolute left-0 top-0 z-40 flex w-full items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 pb-8 pt-3"
@@ -785,8 +790,9 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               </div>
             ) : null}
 
+          {/* CUSTOM CONTROLS: Hidden in fullscreen to show Native YT Quality Selector */}
           <div 
-            className={`absolute bottom-0 left-0 right-0 p-4 pt-16 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 z-[100]`}
+            className={`absolute bottom-0 left-0 right-0 p-4 pt-16 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 z-[100] ${isFullscreen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
             onClick={(e) => e.stopPropagation()}
           >
               {/* FIX 3: Progress bar — drag input seeks, fill div updated via DOM ref */}
