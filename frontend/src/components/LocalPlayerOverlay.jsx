@@ -590,26 +590,26 @@ function LocalPlayerOverlay() {
         const updateUI = () => {
             if (!video || !isLocalPlayerOpen || isLocked) return;
             
-            // Smart Throttle for 16K: If video is high-res, sync UI slightly less often to save CPU
-            const isHighRes = video.videoHeight >= 4000;
-            if (isHighRes && Math.random() > 0.5) return; // Drop 50% of UI updates for 16K playback smoothness
-
             const cur = video.currentTime;
             const dur = video.duration || 1;
             const prog = (cur / dur) * 100;
-            if (progressBarRef.current) progressBarRef.current.style.width = `${prog}%`;
-            if (thumbRef.current) thumbRef.current.style.left = `calc(${prog}% - 10px)`;
-            if (video.buffered.length > 0) {
-                const bEnd = video.buffered.end(video.buffered.length - 1);
-                if (bufferBarRef.current) bufferBarRef.current.style.width = `${(bEnd / dur) * 100}%`;
-            }
-            if (currentTimeRef.current) currentTimeRef.current.innerText = formatTime(cur);
-            if (durationRef.current) {
-                const formattedDur = formatTime(dur);
-                if (durationRef.current.innerText !== formattedDur) {
-                    durationRef.current.innerText = formattedDur;
+            
+            // Batch DOM updates
+            requestAnimationFrame(() => {
+                if (progressBarRef.current) progressBarRef.current.style.width = `${prog}%`;
+                if (thumbRef.current) thumbRef.current.style.left = `calc(${prog}% - 10px)`;
+                if (video.buffered.length > 0) {
+                    const bEnd = video.buffered.end(video.buffered.length - 1);
+                    if (bufferBarRef.current) bufferBarRef.current.style.width = `${(bEnd / dur) * 100}%`;
                 }
-            }
+                if (currentTimeRef.current) currentTimeRef.current.innerText = formatTime(cur);
+                if (durationRef.current) {
+                    const formattedDur = formatTime(dur);
+                    if (durationRef.current.innerText !== formattedDur) {
+                        durationRef.current.innerText = formattedDur;
+                    }
+                }
+            });
         };
 
         let rafId;
@@ -1374,12 +1374,12 @@ function LocalPlayerOverlay() {
                     {showSettings && (
                         <motion.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 z-[1000] bg-[#000]/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-10"
+                            className="absolute inset-0 bg-black/80 flex items-center justify-center p-4 sm:p-10"
                             onClick={() => setShowSettings(false)}
                         >
                             <motion.div
                                 initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-                                className="bg-[#111] w-full max-w-4xl h-[80vh] rounded-[2rem] border border-white/5 overflow-hidden flex flex-col sm:flex-row shadow-2xl"
+                                className="bg-[#050505] w-full max-w-4xl h-[80vh] rounded-[2rem] border border-white/10 overflow-hidden flex flex-col sm:flex-row shadow-2xl"
                                 onClick={e => e.stopPropagation()}
                             >
                                 {/* Sidebar Tabs */}
@@ -1607,14 +1607,14 @@ function LocalPlayerOverlay() {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                                className="absolute inset-0 bg-black/90"
                                 onClick={() => handleResume(false)}
                             />
                             <motion.div
                                 initial={{ scale: 0.8, opacity: 0, y: 20 }}
                                 animate={{ scale: 1, opacity: 1, y: 0 }}
                                 exit={{ scale: 0.8, opacity: 0, y: 20 }}
-                                className="relative w-full max-w-[320px] bg-[#111]/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-8 shadow-[0_30px_100px_rgba(0,0,0,0.8)]"
+                                className="relative w-full max-w-[320px] bg-[#050505] border border-white/10 rounded-[2.5rem] p-8 shadow-[0_30px_100px_rgba(0,0,0,0.9)]"
                             >
                                 <div className="flex flex-col items-center text-center gap-6">
                                     <div className="w-20 h-20 bg-accent/20 rounded-[2rem] flex items-center justify-center text-accent shadow-[0_0_30px_rgba(var(--accent-rgb),0.2)]">
@@ -1651,7 +1651,7 @@ function LocalPlayerOverlay() {
                     {showQualityMenu && (
                         <motion.div
                             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                            className="absolute bottom-0 left-0 right-0 z-[1100] bg-black/95 backdrop-blur-xl border-t border-white/10 p-8 rounded-t-[2.5rem] shadow-2xl"
+                            className="absolute bottom-0 left-0 right-0 z-[1100] bg-black border-t border-white/10 p-8 rounded-t-[2.5rem] shadow-2xl"
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="flex items-center justify-between mb-8">
