@@ -284,16 +284,13 @@ export default function Music() {
       video_url: audioData?.publicUrl,
       thumbnail_url: thumbnailPublicUrl,
       source: 'local',
-      category: 'Music',
-      user_id: user?.id
+      category: 'Music'
     };
 
-    // Duplicate Check: Check if this user already has this song
     const { data: existingSong } = await supabase
       .from('videos')
       .select('id')
       .eq('title', newSong.title)
-      .eq('user_id', user?.id)
       .limit(1);
 
     if (existingSong?.length) {
@@ -448,11 +445,16 @@ export default function Music() {
         await musicPlayer.removeOnlineSong(song.id, targetYtId);
       }
 
-      if (audioPath) {
-        await supabase.storage.from('music').remove([audioPath]);
-      }
-      if (thumbPath && !thumbPath.includes('default_music_cover')) {
-        await supabase.storage.from('thumbnails').remove([thumbPath]);
+      // Storage cleanup is secondary - don't let it block the main deletion
+      try {
+        if (audioPath) {
+          await supabase.storage.from('music').remove([audioPath]);
+        }
+        if (thumbPath && !thumbPath.includes('default_music_cover')) {
+          await supabase.storage.from('thumbnails').remove([thumbPath]);
+        }
+      } catch (storageErr) {
+        console.warn('Storage cleanup failed (non-critical):', storageErr);
       }
 
       const history = JSON.parse(localStorage.getItem('macfeed_history') || '[]');
@@ -461,11 +463,12 @@ export default function Music() {
       const liked = JSON.parse(localStorage.getItem('macfeed_liked') || '[]');
       localStorage.setItem('macfeed_liked', JSON.stringify(liked.filter((l) => l.id !== song.id)));
 
-      showToast('Song deleted');
+      showToast('Song deleted successfully');
     } catch (err) {
+      console.error('Deletion error:', err);
       setSongs(prevSongs);
       setFilteredSongs(prevFiltered);
-      showToast('Could not delete, try again');
+      showToast(`Could not delete: ${err.message || 'Permission Denied'}`);
     }
   };
 

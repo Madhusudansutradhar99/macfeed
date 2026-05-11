@@ -4,6 +4,7 @@ import { Play, Eye, Music } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabaseClient';
 import { useMusicPlayer } from '../context/MusicContext';
+import { useAuth } from '../context/AuthContext';
 import { fetchJson } from '../utils/request';
 
 // YouTube API calls are now routed through backend /api/video-info (cached)
@@ -29,6 +30,7 @@ const formatDuration = (iso) => {
 const VideoCard = memo(({ video }) => {
   const navigate = useNavigate();
   const musicPlayer = useMusicPlayer();
+  const { user } = useAuth();
   const [hovered, setHovered] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
