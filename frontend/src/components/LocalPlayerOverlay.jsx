@@ -1290,12 +1290,16 @@ function LocalPlayerOverlay() {
                                         { icon: <Sliders size={14} />, label: "Equalizer", color: "#22d3ee", onClick: () => setSettingsTab('AUDIO') || setShowSettings(true) },
                                         { icon: <ZoomIn size={14} />, label: "Zoom/Fit", color: "#fbbf24", onClick: () => setAspectRatio('Fill') },
                                         { icon: <Settings size={14} />, label: "Settings", color: "#94a3b8", onClick: () => setQuickMenuData({
-                                            title: "Quick Settings",
+                                            title: "System Control Table",
                                             items: [
-                                                { label: "Playback", active: settingsTab === 'PLAYBACK', action: () => setSettingsTab('PLAYBACK') || setShowSettings(true) },
-                                                { label: "Audio", active: settingsTab === 'AUDIO', action: () => setSettingsTab('AUDIO') || setShowSettings(true) },
-                                                { label: "Subtitles", active: settingsTab === 'SUBTITLES', action: () => setSettingsTab('SUBTITLES') || setShowSettings(true) },
-                                                { label: "Performance", active: settingsTab === 'PERFORMANCE', action: () => setSettingsTab('PERFORMANCE') || setShowSettings(true) }
+                                                { label: "Playback Dashboard", active: false, action: () => setSettingsTab('PLAYBACK') || setShowSettings(true) },
+                                                { label: "Video Quality Hub", active: false, action: () => setSettingsTab('QUALITY') || setShowSettings(true) },
+                                                { label: "Performance Engine", active: false, action: () => setSettingsTab('PERFORMANCE') || setShowSettings(true) },
+                                                { label: "Audio Mixer", active: false, action: () => setSettingsTab('AUDIO') || setShowSettings(true) },
+                                                { label: "Subtitle Editor", active: false, action: () => setSettingsTab('SUBTITLES') || setShowSettings(true) },
+                                                { label: "Advanced System", active: false, action: () => setSettingsTab('ADVANCED') || setShowSettings(true) },
+                                                { label: "Hardware Lock", active: hwAccel, action: () => setHwAccel(!hwAccel) },
+                                                { label: "Loop Mode", active: loopVideo, action: () => setLoopVideo(!loopVideo) }
                                             ]
                                         }) },
                                         { icon: <Monitor size={14} />, label: "Quality", color: "#fbbf24", onClick: () => setQuickMenuData({
@@ -1320,30 +1324,46 @@ function LocalPlayerOverlay() {
                                     ))}
                                 </div>
 
-                                {/* QUICK TABLE MENU */}
+                                {/* QUICK TABLE MENU - CENTERED OVER VIDEO */}
                                 <AnimatePresence>
                                     {quickMenuData && (
                                         <motion.div
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -20 }}
-                                            className="absolute left-[450px] md:left-[600px] z-[700] w-72 bg-black/95 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.8)]"
+                                            initial={{ opacity: 0, scale: 0.9, x: 20 }}
+                                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                                            exit={{ opacity: 0, scale: 0.9, x: 20 }}
+                                            className="fixed left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] z-[9999] w-[90%] max-w-[400px] bg-black/98 backdrop-blur-3xl border border-white/10 rounded-[3rem] overflow-hidden shadow-[0_50px_150px_rgba(0,0,0,0.9)]"
+                                            onClick={e => e.stopPropagation()}
                                         >
-                                            <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
-                                                <span className="text-white text-[10px] font-black uppercase tracking-widest">{quickMenuData.title}</span>
-                                                <button onClick={() => setQuickMenuData(null)} className="text-white/30 hover:text-white"><X size={14} /></button>
+                                            <div className="px-8 py-6 bg-white/5 border-b border-white/5 flex items-center justify-between">
+                                                <div className="flex flex-col">
+                                                    <span className="text-white text-[12px] font-black uppercase tracking-[0.2em]">{quickMenuData.title}</span>
+                                                    <span className="text-white/30 text-[8px] font-bold uppercase tracking-widest mt-1">Direct Function Access</span>
+                                                </div>
+                                                <button onClick={() => setQuickMenuData(null)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-red-500 hover:text-white transition-all">
+                                                    <X size={18} />
+                                                </button>
                                             </div>
-                                            <div className="max-h-60 overflow-y-auto no-scrollbar py-2">
+                                            <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-4 space-y-2">
                                                 {quickMenuData.items.map((item, i) => (
                                                     <button
                                                         key={i}
-                                                        onClick={() => { item.action(); if(quickMenuData.title !== 'Audio Tracks' && quickMenuData.title !== 'Subtitles') setQuickMenuData(null); }}
-                                                        className={`w-full px-6 py-3 flex items-center justify-between transition-all ${item.active ? 'bg-white/10 text-white' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
+                                                        onClick={() => { 
+                                                            item.action(); 
+                                                            if(!quickMenuData.title.includes('Audio') && !quickMenuData.title.includes('Subtitles')) setQuickMenuData(null); 
+                                                        }}
+                                                        className={`w-full px-6 py-4 flex items-center justify-between rounded-2xl transition-all border ${item.active ? 'bg-white text-black border-white' : 'bg-white/[0.02] text-white/60 border-white/5 hover:bg-white/10 hover:text-white'}`}
                                                     >
-                                                        <span className="text-[11px] font-bold">{item.label}</span>
-                                                        {item.active && <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(var(--accent-rgb),0.8)]" />}
+                                                        <span className="text-[12px] font-black uppercase tracking-wider">{item.label}</span>
+                                                        {item.active ? (
+                                                            <Check size={16} />
+                                                        ) : (
+                                                            <ChevronRight size={16} className="opacity-20" />
+                                                        )}
                                                     </button>
                                                 ))}
+                                            </div>
+                                            <div className="px-8 py-4 bg-white/5 border-t border-white/5 text-center">
+                                                <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.4em]">MacFeed Hyper Engine v1.1</span>
                                             </div>
                                         </motion.div>
                                     )}
