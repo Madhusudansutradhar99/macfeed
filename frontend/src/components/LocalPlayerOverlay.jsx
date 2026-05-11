@@ -116,6 +116,13 @@ function LocalPlayerOverlay() {
     const [orientation, setOrientation] = useState('portrait');
     const [physOrientation, setPhysOrientation] = useState(window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
     const [forceLandscape, setForceLandscape] = useState(false);
+    const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobileView(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
 
     // Web Audio API Refs for Boost & EQ
@@ -452,9 +459,8 @@ function LocalPlayerOverlay() {
 
         const calculateAngle = (clientX, clientY) => {
             const rect = el.getBoundingClientRect();
-            const isMobile = window.innerWidth < 768;
             // Visual Wheel center is offset to the left of the drag container
-            const offsetX = isMobile ? -70 : -100; 
+            const offsetX = isMobileView ? -70 : -100; 
             const centerX = rect.left + offsetX;
             const centerY = rect.top + rect.height / 2;
             return Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
@@ -1268,7 +1274,7 @@ function LocalPlayerOverlay() {
 
 
                                 {/* Panels with ZERO-GAP Connections (Aligned to Ring Center) */}
-                                <div className="absolute left-[-280px] w-[400px] h-full flex items-center justify-center pointer-events-none">
+                                <div className={`absolute ${isMobileView ? 'left-[-220px] w-[300px]' : 'left-[-280px] w-[400px]'} h-full flex items-center justify-center pointer-events-none`}>
                                     {[
                                         { icon: <RefreshCcw size={14} />, label: "Rotation", color: "#fbbf24", onClick: toggleROT },
                                         { icon: <Camera size={14} />, label: "Capture", color: "#fbbf24", onClick: handleCapture },
@@ -1294,8 +1300,8 @@ function LocalPlayerOverlay() {
                                         const angleStep = 18;
                                         const totalRotation = (i * angleStep) - wheelRotation;
                                         const rad = (totalRotation * Math.PI) / 180;
-                                        const panelRadius = 200;
-                                        const centerX = 200;
+                                        const panelRadius = isMobileView ? 160 : 200;
+                                        const centerX = isMobileView ? 150 : 200;
                                         const xPos = Math.cos(rad) * panelRadius + centerX;
                                         const yPos = Math.sin(rad) * panelRadius;
                                         const normalizedDist = Math.abs(yPos) / (panelRadius * 1.5);
