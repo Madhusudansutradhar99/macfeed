@@ -453,8 +453,8 @@ function LocalPlayerOverlay() {
 
         const state = {
             isDragging: false,
-            startAngle: 0,
-            pointerId: null
+            pointerId: null,
+            startAngle: 0
         };
 
         const calculateAngle = (clientX, clientY) => {
@@ -467,7 +467,6 @@ function LocalPlayerOverlay() {
         };
 
         const handlePointerDown = (e) => {
-            e.preventDefault();
             state.isDragging = true;
             state.pointerId = e.pointerId;
             state.startAngle = calculateAngle(e.clientX, e.clientY);
@@ -477,17 +476,12 @@ function LocalPlayerOverlay() {
 
         const handlePointerMove = (e) => {
             if (!state.isDragging) return;
-            e.preventDefault();
-
             const currentAngle = calculateAngle(e.clientX, e.clientY);
             let deltaAngle = currentAngle - state.startAngle;
-
             if (deltaAngle > 180) deltaAngle -= 360;
             if (deltaAngle < -180) deltaAngle += 360;
-
             state.startAngle = currentAngle;
             
-            // Increased sensitivity for faster rotation on mobile
             const sensitivity = 1.8;
             if (wheelRafRef.current) cancelAnimationFrame(wheelRafRef.current);
             wheelRafRef.current = requestAnimationFrame(() => {
@@ -496,7 +490,6 @@ function LocalPlayerOverlay() {
         };
 
         const handlePointerUp = (e) => {
-            if (!state.isDragging) return;
             state.isDragging = false;
             state.pointerId = null;
             el.releasePointerCapture(e.pointerId);
@@ -504,9 +497,9 @@ function LocalPlayerOverlay() {
         };
 
         el.addEventListener('pointerdown', handlePointerDown);
-        el.addEventListener('pointermove', handlePointerMove);
-        el.addEventListener('pointerup', handlePointerUp);
-        el.addEventListener('pointercancel', handlePointerUp);
+        window.addEventListener('pointermove', handlePointerMove, { passive: false });
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('pointercancel', handlePointerUp);
         
         // Ensure touch-action is none to prevent browser scroll interference
         el.style.touchAction = 'none';
@@ -1300,13 +1293,12 @@ function LocalPlayerOverlay() {
                                         const angleStep = 18;
                                         const totalRotation = (i * angleStep) - wheelRotation;
                                         const rad = (totalRotation * Math.PI) / 180;
-                                        const panelRadius = isMobileView ? 160 : 200;
-                                        const centerX = isMobileView ? 150 : 200;
-                                        const xPos = Math.cos(rad) * panelRadius + centerX;
+                                        const panelRadius = isMobileView ? 170 : 240;
+                                        const xPos = Math.cos(rad) * panelRadius;
                                         const yPos = Math.sin(rad) * panelRadius;
-                                        const normalizedDist = Math.abs(yPos) / (panelRadius * 1.5);
-                                        const scale = Math.max(0.7, 1.15 - normalizedDist);
-                                        const opacity = Math.max(0.3, 1 - normalizedDist);
+                                        const normalizedDist = Math.abs(yPos) / (panelRadius * 1.2);
+                                        const scale = Math.max(0.7, 1.2 - normalizedDist);
+                                        const opacity = Math.max(0.2, 1.1 - normalizedDist);
                                         const isFocused = scale > 1.05;
 
                                         return (
@@ -1316,10 +1308,12 @@ function LocalPlayerOverlay() {
                                                 data-color={action.color}
                                                 className="absolute pointer-events-auto flex items-center cursor-pointer group"
                                                 animate={{
-                                                    transform: `translate3d(${xPos}px, ${yPos}px, 0) scale(${scale})`,
+                                                    x: xPos,
+                                                    y: yPos,
+                                                    scale: scale,
                                                     opacity: opacity,
                                                 }}
-                                                transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.8 }}
+                                                transition={{ type: 'spring', damping: 25, stiffness: 200, mass: 0.5 }}
                                                 style={{
                                                     zIndex: 300 + Math.round(opacity * 100),
                                                     backfaceVisibility: 'hidden',
