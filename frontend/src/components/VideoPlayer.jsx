@@ -54,7 +54,7 @@ function ControlBtn({ onClick, title, children, className = '' }) {
     <button
       onClick={onClick}
       title={title}
-      className={`relative rounded-full p-2 text-white/90 transition-all duration-150 hover:bg-white/10 hover:text-white active:scale-90 ${className}`}
+      className={`relative rounded-full p-1.5 text-white/90 transition-all duration-150 hover:bg-white/10 hover:text-white active:scale-90 ${className}`}
     >
       {children}
     </button>
@@ -799,11 +799,11 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
           {/* CUSTOM CONTROLS: Hidden in fullscreen to show Native YT Quality Selector */}
           <div 
-            className={`absolute bottom-0 left-0 right-0 p-2.5 pt-12 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 z-[100] ${isFullscreen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+            className={`absolute bottom-0 left-0 right-0 p-2 pt-8 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 z-[100] ${isFullscreen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
             onClick={(e) => e.stopPropagation()}
           >
               {/* YouTube Style Progress Bar */}
-              <div className="mb-2 w-full group relative flex items-center h-4">
+              <div className="mb-1 w-full group relative flex items-center h-3">
                 <input
                   ref={inputRangeRef}
                   type="range"
@@ -861,8 +861,8 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                   <ControlBtn onClick={() => skip(10)} title="Forward 10s">
                     <SkipForward className="h-5 w-5" />
                   </ControlBtn>
-                  <div className="flex items-center gap-1 px-1.5 group/vol">
-                    <ControlBtn onClick={() => setMuted((prev) => !prev)} title="Mute" className="p-1">
+                  <div className="flex items-center gap-0.5 px-1 group/vol">
+                    <ControlBtn onClick={() => setMuted((prev) => !prev)} title="Mute" className="p-0.5">
                       {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                     </ControlBtn>
                     <input 
@@ -876,11 +876,11 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                         setVolume(v);
                         if (v > 0) setMuted(false);
                       }}
-                      className="w-12 h-0.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-white"
+                      className="w-10 h-0.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-white"
                     />
                   </div>
                   {/* FIX 3: Time display via DOM refs — zero re-render */}
-                  <span className="ml-1 font-mono text-[10px] tabular-nums text-white/60">
+                  <span className="ml-0.5 font-mono text-[9px] tabular-nums text-white/60">
                     <span ref={currentTimeRef}>0:00</span> / <span ref={durationRef}>0:00</span>
                   </span>
                 </div>
