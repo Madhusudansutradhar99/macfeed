@@ -1289,19 +1289,7 @@ function LocalPlayerOverlay() {
                                         }) },
                                         { icon: <Sliders size={14} />, label: "Equalizer", color: "#22d3ee", onClick: () => setSettingsTab('AUDIO') || setShowSettings(true) },
                                         { icon: <ZoomIn size={14} />, label: "Zoom/Fit", color: "#fbbf24", onClick: () => setAspectRatio('Fill') },
-                                        { icon: <Settings size={14} />, label: "Settings", color: "#94a3b8", onClick: () => setQuickMenuData({
-                                            title: "System Control Table",
-                                            items: [
-                                                { label: "Playback Dashboard", active: false, action: () => setSettingsTab('PLAYBACK') || setShowSettings(true) },
-                                                { label: "Video Quality Hub", active: false, action: () => setSettingsTab('QUALITY') || setShowSettings(true) },
-                                                { label: "Performance Engine", active: false, action: () => setSettingsTab('PERFORMANCE') || setShowSettings(true) },
-                                                { label: "Audio Mixer", active: false, action: () => setSettingsTab('AUDIO') || setShowSettings(true) },
-                                                { label: "Subtitle Editor", active: false, action: () => setSettingsTab('SUBTITLES') || setShowSettings(true) },
-                                                { label: "Advanced System", active: false, action: () => setSettingsTab('ADVANCED') || setShowSettings(true) },
-                                                { label: "Hardware Lock", active: hwAccel, action: () => setHwAccel(!hwAccel) },
-                                                { label: "Loop Mode", active: loopVideo, action: () => setLoopVideo(!loopVideo) }
-                                            ]
-                                        }) },
+                                        { icon: <Settings size={14} />, label: "Settings", color: "#94a3b8", onClick: () => { setShowSettings(true); setSettingsTab('PLAYBACK'); } },
                                         { icon: <Monitor size={14} />, label: "Quality", color: "#fbbf24", onClick: () => setQuickMenuData({
                                             title: "Video Quality",
                                             items: ['Auto', '1080p', '2K', '4K', '8K', '16K'].map(q => ({ label: q, active: targetQuality === q, action: () => { setTargetQuality(q); setQuickMenuData(null); } }))
@@ -1378,22 +1366,22 @@ function LocalPlayerOverlay() {
                     {showSettings && (
                         <motion.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/80 flex items-center justify-center p-4 sm:p-10"
+                            className="absolute inset-0 bg-black/85 flex items-center justify-center p-4 sm:p-20 z-[2000]"
                             onClick={() => setShowSettings(false)}
                         >
                             <motion.div
-                                initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-                                className="bg-[#111]/90 w-full max-w-4xl h-[80vh] rounded-[2rem] border border-white/5 backdrop-blur-2xl overflow-hidden flex flex-col sm:flex-row shadow-2xl"
+                                initial={{ scale: 0.95, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 30 }}
+                                className="bg-[#111] w-full max-w-[1000px] h-[600px] rounded-[3rem] border border-white/5 overflow-hidden flex flex-col sm:flex-row shadow-[0_50px_150px_rgba(0,0,0,0.9)]"
                                 onClick={e => e.stopPropagation()}
                             >
                                 {/* Sidebar Tabs */}
-                                <div className="w-full sm:w-64 bg-white/[0.02] border-r border-white/5 p-6 flex flex-row sm:flex-col gap-2 overflow-x-auto no-scrollbar">
-                                    <SettingsTab id="PLAYBACK" label="Playback" icon={<PlayCircle size={18} />} active={settingsTab} set={setSettingsTab} />
-                                    <SettingsTab id="QUALITY" label="Video Quality" icon={<Monitor size={18} />} active={settingsTab} set={setSettingsTab} />
-                                    <SettingsTab id="PERFORMANCE" label="Performance" icon={<Zap size={18} />} active={settingsTab} set={setSettingsTab} />
-                                    <SettingsTab id="AUDIO" label="Audio" icon={<Volume2 size={18} />} active={settingsTab} set={setSettingsTab} />
-                                    <SettingsTab id="SUBTITLES" label="Subtitles" icon={<MessageSquare size={18} />} active={settingsTab} set={setSettingsTab} />
-                                    <SettingsTab id="ADVANCED" label="Advanced" icon={<Settings2 size={18} />} active={settingsTab} set={setSettingsTab} />
+                                <div className="w-full sm:w-72 bg-white/[0.01] border-r border-white/5 p-10 flex flex-col gap-3">
+                                    <SettingsTab id="PLAYBACK" label="Playback" icon={<PlayCircle size={20} />} active={settingsTab} set={setSettingsTab} />
+                                    <SettingsTab id="QUALITY" label="Video Quality" icon={<Monitor size={20} />} active={settingsTab} set={setSettingsTab} />
+                                    <SettingsTab id="PERFORMANCE" label="Performance" icon={<Zap size={20} />} active={settingsTab} set={setSettingsTab} />
+                                    <SettingsTab id="AUDIO" label="Audio" icon={<Volume2 size={20} />} active={settingsTab} set={setSettingsTab} />
+                                    <SettingsTab id="SUBTITLES" label="Subtitles" icon={<MessageSquare size={20} />} active={settingsTab} set={setSettingsTab} />
+                                    <SettingsTab id="ADVANCED" label="Advanced" icon={<Settings2 size={20} />} active={settingsTab} set={setSettingsTab} />
                                 </div>
 
                                 {/* Content Area */}
@@ -1780,19 +1768,21 @@ const SettingsTab = memo(({ id, label, icon, active, set }) => {
     return (
         <button
             onClick={() => set(id)}
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all whitespace-nowrap outline-none ${isActive ? 'bg-white text-black' : 'text-white/40 hover:bg-white/5'}`}
+            className={`flex items-center gap-4 px-8 py-4 rounded-[1.8rem] transition-all duration-300 outline-none ${isActive ? 'bg-white text-black shadow-xl scale-[1.05]' : 'text-white/40 hover:text-white'}`}
         >
-            {icon}
-            <span className="text-xs font-bold">{label}</span>
+            <div className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>{icon}</div>
+            <span className="text-[13px] font-bold tracking-tight">{label}</span>
         </button>
     );
 });
 
 const SettingRow = memo(({ label, children }) => {
     return (
-        <div className="space-y-4">
-            <h4 className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">{label}</h4>
-            {children}
+        <div className="space-y-6 mb-10">
+            <h4 className="text-white/30 text-[9px] font-black uppercase tracking-[0.3em] ml-1">{label}</h4>
+            <div className="flex flex-wrap gap-3">
+                {children}
+            </div>
         </div>
     );
 });
