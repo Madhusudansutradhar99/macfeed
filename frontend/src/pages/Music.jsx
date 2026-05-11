@@ -89,6 +89,7 @@ export default function Music() {
   const canDeleteSong = useCallback((song) => {
     if (!user || !song) return false;
     if (isAdmin) return true;
+    if (song.source === 'device') return true;
     return song.source === 'local' && song.user_id === user.id;
   }, [isAdmin, user]);
 
@@ -285,6 +286,22 @@ export default function Music() {
       category: 'Music',
       user_id: user?.id
     };
+
+    // Duplicate Check: Check if this user already has this song
+    const { data: existingSong } = await supabase
+      .from('videos')
+      .select('id')
+      .eq('title', newSong.title)
+      .eq('user_id', user?.id)
+      .limit(1);
+
+    if (existingSong?.length) {
+      showToast('This song is already in your library!');
+      setUploadStatus('');
+      setUploadProgress(0);
+      setPendingUploadFile(null);
+      return;
+    }
 
     const { data: insertedData, error: dbErr } = await supabase.from('videos').insert([newSong]).select().single();
     if (dbErr) throw dbErr;
@@ -499,33 +516,45 @@ export default function Music() {
 
     if (songToPlay?.id?.toString().startsWith('yt-')) {
       setIsProcessing(true);
-      const ytId = song.youtubeId || song.id.replace('yt-', '');
+      const ytId = songToPlay.youtube_id || songToPlay.youtubeId || songToPlay.id.replace('yt-', '');
       try {
         const { data: existing } = await supabase.from('videos').select('*').eq('youtube_id', ytId).limit(1);
         if (existing && existing.length > 0) {
-          navigate(`/watch/${existing[0].id}`);
+          playVideo(existing[0]);
           addToHistory(existing[0]);
+          setIsExpanded(true);
         } else {
-          const { data: inserted } = await supabase.from('videos').insert([{
-            title: songToPlay?.title || 'Untitled Video', video_url: songToPlay.video_url, youtube_id: ytId,
-            thumbnail_url: songToPlay.thumbnail_url, source: 'youtube', category: 'Music', views: 0
-          }]).select('*');
-          if (inserted && inserted.length > 0) {
-            navigate(`/watch/${inserted[0].id}`);
-            addToHistory(inserted[0]);
+          // Prevent duplicates by checking again right before insert
+          const { data: checkAgain } = await supabase.from('videos').select('id').eq('youtube_id', ytId).limit(1);
+          if (checkAgain?.length) {
+             playVideo(checkAgain[0]);
+             setIsExpanded(true);
           } else {
-            navigate(`/watch/${songToPlay.id}`);
-            addToHistory(songToPlay);
+            const { data: inserted } = await supabase.from('videos').insert([{
+              title: songToPlay?.title || 'Untitled Video', 
+              video_url: `https://www.youtube.com/embed/${ytId}`, 
+              youtube_id: ytId,
+              thumbnail_url: songToPlay.thumbnail_url, 
+              source: 'youtube', 
+              category: 'Music', 
+              views: 0
+            }]).select('*').single();
+            
+            if (inserted) {
+              playVideo(inserted);
+              addToHistory(inserted);
+              setIsExpanded(true);
+            }
           }
         }
       } catch (e) {
-        navigate(`/watch/${songToPlay.id}`);
-        addToHistory(songToPlay);
+        playVideo(songToPlay);
+        setIsExpanded(true);
       } finally {
         setIsProcessing(false);
       }
     } else {
-      playVideo(songToPlay, list);
+      playVideo(songToPlay);
       addToHistory(songToPlay);
       setIsExpanded(true);
     }

@@ -43,25 +43,30 @@ const VideoCard = memo(({ video }) => {
       setIsSaving(true);
       const ytId = video.id.replace('yt-', '');
       try {
-        const { data: existing } = await supabase.from('videos').select('id').or(`youtube_id.eq.${ytId},video_url.ilike.%${ytId}%`).limit(1);
+        const { data: existing } = await supabase.from('videos').select('*').or(`youtube_id.eq.${ytId},video_url.ilike.%${ytId}%`).limit(1);
 
         if (existing?.length) {
-          navigate(`/watch/${existing[0].id}`);
+          const found = existing[0];
+          if (found.category === 'Music' && musicPlayer?.playVideo) {
+            musicPlayer.playVideo(found);
+          } else {
+            navigate(`/watch/${found.id}`);
+          }
         } else {
           let finalTitle = video.title;
           let finalDuration = video.duration || '00:00';
           let finalThumb = video.thumbnail_url;
 
-          if (true) {
-            try {
-              const { data: d } = await fetchJson(`/api/video-info?id=${ytId}`, {}, { timeoutMs: 10000, retryTimeoutMs: 5000, retries: 1 });
-              if (d?.video) {
-                finalTitle = d.video.title || finalTitle;
-                finalDuration = d.video.duration ? formatDuration(d.video.duration) : finalDuration;
-                finalThumb = d.video.thumbnail || finalThumb;
-              }
-            } catch (e) { /* Use existing data if backend fails */ }
-          }
+          try {
+            const { data: d } = await fetchJson(`/api/video-info?id=${ytId}`, {}, { timeoutMs: 10000, retryTimeoutMs: 5000, retries: 1 });
+            if (d?.video) {
+              finalTitle = d.video.title || finalTitle;
+              finalDuration = d.video.duration ? formatDuration(d.video.duration) : finalDuration;
+              finalThumb = d.video.thumbnail || finalThumb;
+            }
+          } catch (e) { }
+
+          const isMusic = finalTitle.toLowerCase().includes('song') || finalTitle.toLowerCase().includes('music') || finalTitle.toLowerCase().includes('lyrics');
 
           const { data: inserted } = await supabase.from('videos').insert([{
             title: finalTitle,
@@ -69,13 +74,20 @@ const VideoCard = memo(({ video }) => {
             youtube_id: ytId,
             thumbnail_url: finalThumb,
             source: 'youtube',
-            category: finalTitle.toLowerCase().includes('song') ? 'Music' : 'YouTube',
+            category: isMusic ? 'Music' : 'YouTube',
             duration: finalDuration,
             views: 0
-          }]).select('id').single();
+          }]).select('*').single();
 
-          if (inserted?.id) navigate(`/watch/${inserted.id}`);
-          else navigate(`/watch/${video.id}`);
+          if (inserted) {
+            if (inserted.category === 'Music' && musicPlayer?.playVideo) {
+              musicPlayer.playVideo(inserted);
+            } else {
+              navigate(`/watch/${inserted.id}`);
+            }
+          } else {
+            navigate(`/watch/${video.id}`);
+          }
         }
       } catch (e) {
         navigate(`/watch/${video.id}`);
