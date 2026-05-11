@@ -376,6 +376,14 @@ function LocalPlayerOverlay() {
                     video.load();
                     if ('decoding' in video) video.decoding = 'async';
 
+                    // Activate 16K Hyper-Decode Engine
+                    if ('latencyHint' in video) video.latencyHint = 'low';
+                    if ('lowLatency' in video) video.lowLatency = true;
+                    video.setAttribute('importance', 'high');
+                    video.setAttribute('fetchpriority', 'high');
+                    video.setAttribute('webkit-playsinline', 'true');
+                    video.setAttribute('playsinline', 'true');
+
                     // Maximum hardware acceleration for 16K support
                     video.style.transform = 'translate3d(0,0,0) scale3d(1,1,1)';
                     video.style.willChange = 'contents, transform';
@@ -383,6 +391,7 @@ function LocalPlayerOverlay() {
                     video.style.backfaceVisibility = 'hidden';
                     video.style.WebkitBackfaceVisibility = 'hidden';
                     video.style.perspective = '1000px';
+                    video.style.imageRendering = 'optimizeQuality';
 
                     // Check slow network
                     let connectionSpeed = 'fast';
@@ -580,6 +589,11 @@ function LocalPlayerOverlay() {
 
         const updateUI = () => {
             if (!video || !isLocalPlayerOpen || isLocked) return;
+            
+            // Smart Throttle for 16K: If video is high-res, sync UI slightly less often to save CPU
+            const isHighRes = video.videoHeight >= 4000;
+            if (isHighRes && Math.random() > 0.5) return; // Drop 50% of UI updates for 16K playback smoothness
+
             const cur = video.currentTime;
             const dur = video.duration || 1;
             const prog = (cur / dur) * 100;

@@ -16,8 +16,8 @@ export async function probeMediaCapabilities() {
 
     // Try MediaCapabilities API to detect actual decoding smoothness for a given resolution/codecs
     if (navigator.mediaCapabilities && navigator.mediaCapabilities.decodingInfo) {
-      // Try a descending list of heights to find the highest smooth one
-      const heights = [4320, 2160, 1440, 1080, 720, 480];
+      // Try a descending list of heights to find the highest smooth one (up to 16K)
+      const heights = [8640, 4320, 2160, 1440, 1080, 720, 480];
       for (const h of heights) {
         const config = {
           type: 'file',
