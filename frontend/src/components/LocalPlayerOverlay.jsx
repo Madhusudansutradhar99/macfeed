@@ -119,9 +119,6 @@ function LocalPlayerOverlay() {
     // Core UI States
     const [showControls, setShowControls] = useState(true);
     const [isLocked, setIsLocked] = useState(false);
-    // Core UI States
-    const [showControls, setShowControls] = useState(true);
-    const [isLocked, setIsLocked] = useState(false);
     const [duration, setDuration] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [brightness, setBrightness] = useState(100);
