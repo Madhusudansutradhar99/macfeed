@@ -667,12 +667,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             ) : null}
 
             {/* Fullscreen Swipe Overlay - FIX 1 & 3 */}
-            {isFullscreen && (
-              <div 
-                ref={fullscreenOverlayRef}
-                className="fixed top-0 left-0 z-[99999] w-screen h-screen bg-transparent"
-              />
-            )}
+            {/* Fullscreen Overlay removed to allow native YT interaction */}
 
             <div ref={ytDomContainer} className="absolute inset-0 h-full w-full" />
             
