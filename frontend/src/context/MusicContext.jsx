@@ -80,9 +80,14 @@ export function MusicProvider({ children }) {
           const url = URL.createObjectURL(blob);
           
           let thumbnail_url = track.thumbnail_url;
-          // If thumbnail was a blob URL, it's dead. Use default if so.
-          if (thumbnail_url?.startsWith('blob:')) {
-             thumbnail_url = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800';
+          
+          // Reconstruct thumbnail from stored binary data if it exists
+          if (track.thumbnailData) {
+            const thumbBlob = new Blob([track.thumbnailData], { type: 'image/jpeg' });
+            thumbnail_url = URL.createObjectURL(thumbBlob);
+          } else if (thumbnail_url?.startsWith('blob:')) {
+            // Fallback for old records without binary thumb data
+            thumbnail_url = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800';
           }
 
           return {
@@ -176,8 +181,10 @@ export function MusicProvider({ children }) {
             try {
               const metadata = await musicMetadata.parseBlob(file);
               let artworkUrl = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800';
+              let thumbnailData = null;
               if (metadata.common.picture && metadata.common.picture[0]) {
                 const pic = metadata.common.picture[0];
+                thumbnailData = pic.data; // Uint8Array
                 const blob = new Blob([pic.data], { type: pic.format });
                 artworkUrl = URL.createObjectURL(blob);
               }
@@ -237,11 +244,33 @@ export function MusicProvider({ children }) {
           const arrayBuffer = await file.arrayBuffer();
           const metadata = await musicMetadata.parseBlob(file);
           let artworkUrl = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800';
+          let thumbnailData = null;
           
           if (metadata.common.picture && metadata.common.picture[0]) {
             const pic = metadata.common.picture[0];
+            thumbnailData = pic.data;
             const blob = new Blob([pic.data], { type: pic.format });
             artworkUrl = URL.createObjectURL(blob);
+          }
+
+          // Optional: Upload to Supabase if logged in
+          const user = (await supabase.auth.getUser())?.data?.user;
+          if (user && thumbnailData) {
+            try {
+              const fileName = `${user.id}/${trackId}.jpg`;
+              const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('music_thumbnails')
+                .upload(fileName, thumbnailData, { upsert: true, contentType: 'image/jpeg' });
+              
+              if (!uploadError) {
+                const { data: { publicUrl } } = supabase.storage
+                  .from('music_thumbnails')
+                  .getPublicUrl(fileName);
+                artworkUrl = publicUrl;
+              }
+            } catch (err) {
+              console.warn('Supabase thumbnail upload failed:', err);
+            }
           }
 
           const trackData = {
@@ -251,6 +280,7 @@ export function MusicProvider({ children }) {
             album: metadata.common.album || 'Unknown Album',
             duration: metadata.common.duration || 0,
             thumbnail_url: artworkUrl,
+            thumbnailData: thumbnailData, // Save binary data for offline persistence
             type: file.type,
             size: file.size,
             dateAdded: Date.now(),
