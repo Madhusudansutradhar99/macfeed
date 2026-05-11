@@ -68,7 +68,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     volume, setVolume, 
     currentTime, setCurrentTime, 
     duration, setDuration, 
-    minimize, maximize, closePlayer, 
+    closePlayer, 
     ytPlayerRef 
   } = useVideoMiniPlayer();
   const containerRef = useRef(null);
@@ -278,11 +278,9 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             } else if (container?.webkitRequestFullscreen) {
               container.webkitRequestFullscreen();
             }
-          } else if (deltaY > 80 && viewMode === 'full') { // Swipe Down: Minimize
-            minimize();
+            }
           }
-        }
-      } else if (absX > 70 && absX > absY * 1.5 && duration < 500) {
+        } else {
         // Horizontal Swipe
         if (deltaX > 0) skip(10);
         else skip(-10);
@@ -604,10 +602,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
           event.preventDefault();
           skip(10);
           break;
-        case 'i':
-          event.preventDefault();
-          handleMiniPlayer();
-          break;
         case 't':
           event.preventDefault();
           // Theater mode is intentionally mapped to fullscreen/minimize only for this simplified player.
@@ -644,7 +638,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
   return (
     <div 
-      className={`flex w-full flex-col transition-all duration-500 ease-in-out ${isFullscreen ? 'fixed inset-0 z-[9999] bg-black h-screen w-screen' : ''} ${forceLandscape ? 'rotate-90 origin-center' : ''} ${viewMode === 'mini' ? 'h-full flex-row items-center overflow-hidden' : ''}`}
+      className={`flex w-full flex-col transition-all duration-500 ease-in-out ${isFullscreen ? 'fixed inset-0 z-[9999] bg-black h-screen w-screen' : ''} ${forceLandscape ? 'rotate-90 origin-center' : ''}`}
       style={forceLandscape ? { 
         width: '100vh', 
         height: '100vw', 
@@ -661,10 +655,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         style={{ touchAction: 'none' }}
         onMouseMove={showControlsTemporarily}
         onClick={(e) => {
-          if (viewMode === 'mini') {
-            e.stopPropagation();
-            maximize();
-          } else if (!isFullscreen) {
+          if (!isFullscreen) {
             e.stopPropagation();
             toggleControls();
           }
@@ -714,31 +705,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             onError={() => onError?.('This video could not be loaded.')}
           />
         )}
-        {viewMode === 'mini' && (
-          <>
-            <button 
-              onClick={(e) => { e.stopPropagation(); closePlayer(); }}
-              className="absolute top-1 right-1 z-[100] p-1.5 bg-black/50 hover:bg-black/80 rounded-full text-white backdrop-blur-md"
-            >
-              <X size={14} />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (isYouTube && ytPlayerRef.current) {
-                  if (!playing) { ytPlayerRef.current.playVideo?.(); setPlaying(true); }
-                  else { ytPlayerRef.current.pauseVideo?.(); setPlaying(false); }
-                } else if (nativeVideoRef.current) {
-                  if (!playing) { nativeVideoRef.current.play(); setPlaying(true); }
-                  else { nativeVideoRef.current.pause(); setPlaying(false); }
-                }
-              }}
-              className="absolute bottom-1 left-1 z-[100] p-1.5 bg-black/50 hover:bg-black/80 rounded-full text-white backdrop-blur-md"
-            >
-              {playing ? <Pause size={14} /> : <Play size={14} fill="white" />}
-            </button>
-          </>
-        )}
 
         {showControls && viewMode === 'full' && (
           <>
@@ -757,9 +723,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               </div>
 
               <div className="flex items-center gap-2">
-                <ControlBtn onClick={handleMiniPlayer} title="Minimize video">
-                  <Minimize className="h-5 w-5" />
-                </ControlBtn>
                 <ControlBtn onClick={toggleFullscreen} title="Fullscreen">
                   {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
                 </ControlBtn>

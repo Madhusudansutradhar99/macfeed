@@ -7,6 +7,14 @@ export function useVideoMiniPlayer() {
 }
 
 export function VideoPlayerProvider({ children }) {
+  const [activeVideo, setActiveVideo] = useState(null);
+  const [viewMode, setViewMode] = useState('closed'); // 'full', 'mini', 'closed'
+  const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
   // Playlist support
   const [playlist, setPlaylist] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
@@ -53,14 +61,6 @@ export function VideoPlayerProvider({ children }) {
     }
   }, [playlist, currentIndex]);
 
-  const minimize = useCallback(() => {
-    if (viewMode === 'full') setViewMode('mini');
-  }, [viewMode]);
-
-  const maximize = useCallback(() => {
-    if (viewMode === 'mini') setViewMode('full');
-  }, [viewMode]);
-
   const closePlayer = useCallback(() => {
     setViewMode('closed');
     setPlaying(false);
@@ -88,8 +88,6 @@ export function VideoPlayerProvider({ children }) {
     playVideo,
     playNext,
     playPrevious,
-    minimize,
-    maximize,
     closePlayer,
   };
 

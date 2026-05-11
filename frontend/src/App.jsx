@@ -9,7 +9,6 @@ import { ThemeProvider } from './context/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import MainLayout from './layout/MainLayout';
 import MusicMiniPlayer from './components/MusicMiniPlayer';
-import GlobalVideoPlayer from './components/GlobalVideoPlayer';
 import AuthModal from './components/AuthModal';
 import AdBanner from './components/AdBanner';
 import Loader from './components/Loader';

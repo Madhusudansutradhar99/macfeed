@@ -14,7 +14,7 @@ import { fetchJson } from '../utils/request';
 import { useVideoMiniPlayer } from '../context/VideoPlayerContext';
 
 export default function VideoPlayerPage() {
-  const { playVideo, viewMode, maximize } = useVideoMiniPlayer();
+  const { playVideo, viewMode } = useVideoMiniPlayer();
   const { user, setAuthModalOpen } = useAuth();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -130,12 +130,6 @@ export default function VideoPlayerPage() {
 
 
 
-  // If user minimizes on watch page, navigate back to reveal the global mini player
-  useEffect(() => {
-    if (viewMode === 'mini') {
-      navigate(-1);
-    }
-  }, [viewMode, navigate]);
 
   if (loading) return <Loader />;
   if (!video) return <div className="text-primary p-20 text-center bg-primary min-h-screen">Video Not Found</div>;
@@ -143,7 +137,13 @@ export default function VideoPlayerPage() {
   return (
     <div className="min-h-screen bg-primary text-primary transition-colors duration-500">
       <div className="flex flex-col w-full p-0 sm:p-6 max-w-[1400px] mx-auto">
-        {/* Global Player is now rendered inline at the top of the main layout */}
+        {/* Inline Video Player */}
+        <div className="w-full mb-4">
+          <VideoPlayer 
+            video={video} 
+            onClose={() => navigate(-1)}
+          />
+        </div>
 
         {/* Back Button - Moved below video */}
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-secondary hover:text-primary mt-4 mb-2 sm:mb-6 p-4 sm:p-0 w-fit transition-colors">

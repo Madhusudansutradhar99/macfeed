@@ -497,28 +497,24 @@ export default function Music() {
       try {
         const { data: existing } = await supabase.from('videos').select('*').eq('youtube_id', ytId).limit(1);
         if (existing && existing.length > 0) {
-          playVideo(existing[0], list);
+          navigate(`/watch/${existing[0].id}`);
           addToHistory(existing[0]);
-          setIsExpanded(true);
         } else {
           const { data: inserted } = await supabase.from('videos').insert([{
             title: songToPlay?.title || 'Untitled Video', video_url: songToPlay.video_url, youtube_id: ytId,
             thumbnail_url: songToPlay.thumbnail_url, source: 'youtube', category: 'Music', views: 0
           }]).select('*');
           if (inserted && inserted.length > 0) {
-            playVideo(inserted[0], list);
+            navigate(`/watch/${inserted[0].id}`);
             addToHistory(inserted[0]);
-            setIsExpanded(true);
           } else {
-            playVideo(songToPlay, list);
+            navigate(`/watch/${songToPlay.id}`);
             addToHistory(songToPlay);
-            setIsExpanded(true);
           }
         }
       } catch (e) {
-        playVideo(songToPlay, list);
+        navigate(`/watch/${songToPlay.id}`);
         addToHistory(songToPlay);
-        setIsExpanded(true);
       } finally {
         setIsProcessing(false);
       }
