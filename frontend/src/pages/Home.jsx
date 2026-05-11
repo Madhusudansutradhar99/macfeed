@@ -328,6 +328,19 @@ export default function Home() {
 
   const [heroVideos, setHeroVideos] = useState([]);
 
+  // Background sync hero videos if they appear in main list
+  useEffect(() => {
+    const featured = videos.filter(v => v.is_featured === true);
+    if (featured.length > 0) {
+      setHeroVideos(prev => {
+        const existingIds = new Set(prev.map(v => v.id));
+        const newOnes = featured.filter(v => !existingIds.has(v.id));
+        if (newOnes.length > 0) return [...prev, ...newOnes];
+        return prev;
+      });
+    }
+  }, [videos]);
+
   useEffect(() => {
     async function init() {
       setLoading(true);
@@ -336,9 +349,17 @@ export default function Home() {
         const { data: heroData } = await supabase
           .from('videos')
           .select('*')
-          .or('is_featured.eq.true,upload_location.eq.Header Banner')
-          .limit(5);
-        if (heroData) setHeroVideos(heroData);
+          .or('is_featured.eq.true,upload_location.ilike.%Header Banner%')
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (heroData && heroData.length > 0) {
+          setHeroVideos(heroData);
+        } else {
+          // Check if any featured videos are in the main videos list as fallback
+          const featuredFromList = videos.filter(v => v.is_featured);
+          if (featuredFromList.length > 0) setHeroVideos(featuredFromList);
+        }
 
         // 2. Fetch main feed
         await fetchVideos(0, true);
