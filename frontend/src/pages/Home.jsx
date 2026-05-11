@@ -346,19 +346,23 @@ export default function Home() {
       setLoading(true);
       try {
         // 1. Fetch Hero/Featured Videos specifically
-        const { data: heroData } = await supabase
+        const { data: heroData, error: heroErr } = await supabase
           .from('videos')
           .select('*')
-          .or('is_featured.eq.true,upload_location.ilike.%Header Banner%')
+          .or('is_featured.eq.true,is_featured.eq.TRUE,upload_location.ilike.%header%')
           .order('created_at', { ascending: false })
           .limit(10);
         
-        if (heroData && heroData.length > 0) {
+        if (!heroErr && heroData && heroData.length > 0) {
           setHeroVideos(heroData);
         } else {
-          // Check if any featured videos are in the main videos list as fallback
-          const featuredFromList = videos.filter(v => v.is_featured);
-          if (featuredFromList.length > 0) setHeroVideos(featuredFromList);
+          // If dedicated fetch empty, try to extract from main feed as second attempt
+          const { data: mainData } = await supabase
+            .from('videos')
+            .select('*')
+            .eq('is_featured', true)
+            .limit(5);
+          if (mainData?.length) setHeroVideos(mainData);
         }
 
         // 2. Fetch main feed
