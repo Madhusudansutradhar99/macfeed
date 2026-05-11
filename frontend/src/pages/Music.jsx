@@ -141,7 +141,7 @@ export default function Music() {
         .select('*')
         .eq('category', 'Music')
         .order('created_at', { ascending: false });
-      const musicData = data || [];
+      const musicData = deduplicate(data || []);
       setSongs(musicData);
       setFilteredSongs(musicData);
       localStorage.setItem('macfeed_music_cache', JSON.stringify(musicData));
@@ -423,6 +423,15 @@ export default function Music() {
         .delete()
         .eq('id', song.id);
       if (deleteErr) throw deleteErr;
+
+      // Update Local Cache immediately to prevent "reappearing" on refresh
+      const updatedCache = prevSongs.filter(s => s.id !== song.id);
+      localStorage.setItem('macfeed_music_cache', JSON.stringify(updatedCache));
+      
+      // Clear search caches to be safe
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('mf_search_')) localStorage.removeItem(key);
+      });
 
       if (audioPath) {
         await supabase.storage.from('music').remove([audioPath]);
