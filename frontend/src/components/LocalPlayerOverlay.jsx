@@ -1855,23 +1855,21 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
                 action.onClick();
             }}
             animate={isFocused ? { 
-                scale: 1.25,
-                rotateY: 15,
-                rotateZ: [0, 2, -2, 0],
-                x: 35,
-                filter: `drop-shadow(0 0 15px ${action.color}) brightness(1.3)`
+                scale: 1.2,
+                rotate: [0, 3, -3, 0],
+                x: 20,
+                filter: `drop-shadow(0 0 20px ${action.color}) brightness(1.4)`
             } : { 
                 scale: 1, 
-                rotateY: 0, 
-                rotateZ: 0, 
+                rotate: 0, 
                 x: 0, 
                 filter: 'drop-shadow(0 0 0px transparent) brightness(1)' 
             }}
             transition={{ 
                 type: 'spring', 
-                stiffness: 300, 
-                damping: 20,
-                rotateZ: { repeat: Infinity, duration: 2, ease: 'easeInOut' }
+                stiffness: 400, 
+                damping: 30,
+                rotate: { repeat: Infinity, duration: 1.5, ease: 'easeInOut' }
             }}
             whileHover={{ scale: 1.3, x: 45 }}
             whileTap={{ scale: 0.9 }}
