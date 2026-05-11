@@ -57,11 +57,12 @@ export default function Music() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const dropdownRef = useRef(null);
 
+  const musicPlayer = useMusicPlayer();
   const {
     playVideo, setIsExpanded, playlist: contextPlaylist,
     deviceSongs, devicePermission, isScanning, requestDevicePermission,
     handleDeviceFiles, refreshDeviceMusic, removeDeviceSong
-  } = useMusicPlayer() || {};
+  } = musicPlayer || {};
   const { user } = useAuth();
   const navigate = useNavigate();
 
