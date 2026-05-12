@@ -1372,7 +1372,7 @@ function LocalPlayerOverlay() {
                             <motion.div
                                 initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0.98, opacity: 0 }}
                                 transition={{ duration: 0.1 }}
-                                className="bg-sky-900/40 w-[85%] sm:w-full max-w-[750px] h-[75vh] sm:h-[500px] rounded-[1rem] sm:rounded-[2.5rem] border-2 border-red-600/80 backdrop-blur-3xl overflow-hidden flex flex-row shadow-[0_50px_200px_rgba(220,38,38,0.5)]"
+                                className="bg-sky-900/40 w-[85%] sm:w-full max-w-[750px] h-[60vh] sm:h-[420px] rounded-[1rem] sm:rounded-[2.5rem] border-2 border-red-600/80 backdrop-blur-3xl overflow-hidden flex flex-row shadow-[0_50px_200px_rgba(220,38,38,0.5)]"
                                 onClick={e => e.stopPropagation()}
                             >
                                 {/* Sidebar Tabs */}
