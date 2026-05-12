@@ -1330,7 +1330,7 @@ function LocalPlayerOverlay() {
                                                     <X size={18} />
                                                 </button>
                                             </div>
-                                            <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-4 space-y-2">
+                                            <div className="max-h-[40vh] overflow-y-auto custom-scrollbar p-4 space-y-2">
                                                 {quickMenuData.items.map((item, i) => (
                                                     <button
                                                         key={i}
