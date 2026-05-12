@@ -1242,13 +1242,13 @@ function LocalPlayerOverlay() {
                                     }}
                                 />
                                 {/* COMPACT & TIGHT MOBILE WHEEL (Smaller radius and size) */}
-                                <div className="absolute left-[-160px] md:left-[-280px] w-[300px] md:w-[400px] h-[300px] md:h-[400px] flex items-center justify-center pointer-events-none scale-[0.8] md:scale-100 origin-left">
+                                <div className="absolute left-[-180px] md:left-[-280px] w-[240px] md:w-[400px] h-[240px] md:h-[400px] flex items-center justify-center pointer-events-none scale-[0.7] md:scale-100 origin-left">
 
                                     {/* 1. OUTER GOLD RING (STABLE ARROW) */}
                                     <motion.div
                                         animate={showExtraPanel ? { rotate: 360 } : {}}
                                         transition={{ repeat: Infinity, duration: 60, ease: 'linear' }}
-                                        className="absolute w-[320px] md:w-[420px] h-[320px] md:h-[420px] rounded-full border-[3px] border-dashed border-yellow-400/60 shadow-[0_0_20px_rgba(250,204,21,0.3)]"
+                                        className="absolute w-[260px] md:w-[420px] h-[260px] md:h-[420px] rounded-full border-[3px] border-dashed border-yellow-400/60 shadow-[0_0_20px_rgba(250,204,21,0.3)]"
                                     />
 
                                     {/* STABLE SYSTEM ARROW (FIXED AT RIGHT) */}
@@ -1260,7 +1260,7 @@ function LocalPlayerOverlay() {
                                     <motion.div
                                         animate={showExtraPanel ? { rotate: -360 } : {}}
                                         transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
-                                        className="absolute w-[240px] md:w-[340px] h-[240px] md:h-[340px] rounded-full border-[4px] border-cyan-300/70 shadow-[0_0_35px_rgba(34,211,238,0.5)]"
+                                        className="absolute w-[180px] md:w-[340px] h-[180px] md:h-[340px] rounded-full border-[4px] border-cyan-300/70 shadow-[0_0_35px_rgba(34,211,238,0.5)]"
                                     >
                                         {[...Array(36)].map((_, i) => (
                                             <div key={i} className="absolute w-1 h-3 bg-cyan-400/40" style={{ left: '50%', top: -2, transform: `rotate(${i * 10}deg)` }} />
@@ -1268,7 +1268,7 @@ function LocalPlayerOverlay() {
                                     </motion.div>
 
                                     {/* 3. CORE HUB (CLEAN & MINIMAL) */}
-                                    <div className="absolute w-[180px] md:w-[280px] h-[180px] md:h-[280px] rounded-full flex flex-col items-center justify-center border-[2px] border-white/5 bg-radial-gradient from-cyan-400/[0.08] to-transparent">
+                                    <div className="absolute w-[140px] md:w-[280px] h-[140px] md:h-[280px] rounded-full flex flex-col items-center justify-center border-[2px] border-white/5 bg-radial-gradient from-cyan-400/[0.08] to-transparent">
                                         <motion.div
                                             animate={{ opacity: [0.3, 0.6, 0.3] }}
                                             transition={{ repeat: Infinity, duration: 2 }}
@@ -1278,7 +1278,7 @@ function LocalPlayerOverlay() {
                                         </motion.div>
                                     </div>
                                 </div>
-                                <div className={`absolute ${isMobileView ? 'left-[-160px] w-[300px]' : 'left-[-280px] w-[400px]'} h-full flex items-center justify-center pointer-events-none`}>
+                                <div className={`absolute ${isMobileView ? 'left-[-180px] w-[240px]' : 'left-[-280px] w-[400px]'} h-full flex items-center justify-center pointer-events-none`}>
                                     {[
                                         { icon: <RefreshCcw size={14} />, label: "Rotation", color: "#fbbf24", onClick: toggleROT },
                                         { icon: <Camera size={14} />, label: "Capture", color: "#fbbf24", onClick: handleCapture },
@@ -1372,7 +1372,7 @@ function LocalPlayerOverlay() {
                             <motion.div
                                 initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0.98, opacity: 0 }}
                                 transition={{ duration: 0.1 }}
-                                className="bg-sky-900/40 w-full max-w-[750px] h-[85vh] sm:h-[500px] rounded-[2.5rem] border-2 border-red-600/80 backdrop-blur-3xl overflow-hidden flex flex-col sm:flex-row shadow-[0_50px_200px_rgba(220,38,38,0.5)]"
+                                className="bg-sky-900/40 w-[95%] sm:w-full max-w-[750px] h-[80vh] sm:h-[500px] rounded-[2rem] sm:rounded-[2.5rem] border-2 border-red-600/80 backdrop-blur-3xl overflow-hidden flex flex-col sm:flex-row shadow-[0_50px_200px_rgba(220,38,38,0.5)]"
                                 onClick={e => e.stopPropagation()}
                             >
                                 {/* Sidebar Tabs */}
@@ -1769,7 +1769,7 @@ const SettingsTab = memo(({ id, label, icon, active, set }) => {
     return (
         <button
             onClick={() => set(id)}
-            className={`flex items-center gap-4 px-8 py-4 rounded-[1.8rem] transition-all duration-100 outline-none border-2 ${isActive ? 'bg-yellow-200 text-black border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.4)] scale-[1.05]' : 'bg-white/5 text-white/40 border-transparent hover:bg-white/10 hover:text-white'}`}
+            className={`flex items-center gap-4 px-4 sm:px-8 py-2 sm:py-4 rounded-[1.2rem] sm:rounded-[1.8rem] transition-all duration-100 outline-none border-2 ${isActive ? 'bg-yellow-200 text-black border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.4)] scale-[1.05]' : 'bg-white/5 text-white/40 border-transparent hover:bg-white/10 hover:text-white'}`}
         >
             <div className={`transition-transform duration-100 ${isActive ? 'scale-110' : ''}`}>{icon}</div>
             <span className="text-[13px] font-bold tracking-tight uppercase">{label}</span>
@@ -1818,22 +1818,22 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
     const angleStep = 18;
     const y = useTransform(wheelRotationMV, (rot) => {
         const rad = ((index * angleStep - rot) * Math.PI) / 180;
-        const panelRadius = isMobileView ? 160 : 300;
+        const panelRadius = isMobileView ? 140 : 300;
         return Math.sin(rad) * panelRadius;
     });
     const x = useTransform(wheelRotationMV, (rot) => {
         const rad = ((index * angleStep - rot) * Math.PI) / 180;
-        const panelRadius = isMobileView ? 160 : 300;
-        const baseOffset = isMobileView ? 120 : 250;
+        const panelRadius = isMobileView ? 140 : 300;
+        const baseOffset = isMobileView ? 100 : 250;
         return Math.cos(rad) * panelRadius + baseOffset;
     });
     const scale = useTransform(y, (yVal) => {
-        const panelRadius = isMobileView ? 160 : 300;
+        const panelRadius = isMobileView ? 140 : 300;
         const normalizedDist = Math.abs(yVal) / (panelRadius * 1.2);
         return Math.max(0.7, 1.2 - normalizedDist);
     });
     const opacity = useTransform(y, (yVal) => {
-        const panelRadius = isMobileView ? 160 : 300;
+        const panelRadius = isMobileView ? 140 : 300;
         const normalizedDist = Math.abs(yVal) / (panelRadius * 1.2);
         return Math.max(0.1, 1.1 - normalizedDist);
     });
@@ -1854,7 +1854,7 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
 
     return (
         <motion.div
-            style={{ y, x, scale, opacity, zIndex: showInlineMenu ? 900 : 600, position: 'absolute', left: isMobileView ? '10px' : '40px', willChange: 'transform, opacity' }}
+            style={{ y, x, scale, opacity, zIndex: showInlineMenu ? 900 : 600, position: 'absolute', left: isMobileView ? '0px' : '40px', willChange: 'transform, opacity' }}
             className="flex items-center gap-4 cursor-pointer group pointer-events-auto"
             onClick={(e) => {
                 e.stopPropagation();
@@ -1893,7 +1893,7 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
 
             {/* Panel Body */}
             <div
-                className="relative w-36 h-14 bg-black/95 border-l-[8px] border-r-[2px] border-y-[2px] transition-all duration-300 flex items-center justify-between px-4"
+                className={`relative ${isMobileView ? 'w-28 h-10' : 'w-36 h-14'} bg-black/95 border-l-[8px] border-r-[2px] border-y-[2px] transition-all duration-300 flex items-center justify-between px-4`}
                 style={{
                     clipPath: 'polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%)',
                     borderLeftColor: isFocused ? action.color : 'rgba(255,255,255,0.1)',
