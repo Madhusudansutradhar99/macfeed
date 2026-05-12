@@ -1372,7 +1372,7 @@ function LocalPlayerOverlay() {
                             <motion.div
                                 initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0.98, opacity: 0 }}
                                 transition={{ duration: 0.1 }}
-                                className="bg-sky-900/40 w-[85%] sm:w-full max-w-[750px] h-[60vh] sm:h-[420px] rounded-[1rem] sm:rounded-[2.5rem] border-2 border-red-600/80 backdrop-blur-3xl overflow-hidden flex flex-row shadow-[0_50px_200px_rgba(220,38,38,0.5)]"
+                                className="bg-sky-900/40 w-[90%] sm:w-full max-w-[700px] h-[50vh] sm:h-[380px] rounded-[1rem] sm:rounded-[2rem] border-2 border-red-600/80 backdrop-blur-3xl overflow-hidden flex flex-row shadow-[0_50px_200px_rgba(220,38,38,0.5)]"
                                 onClick={e => e.stopPropagation()}
                             >
                                 {/* Sidebar Tabs */}
@@ -1386,7 +1386,7 @@ function LocalPlayerOverlay() {
                                 </div>
 
                                 {/* Content Area */}
-                                <div className="flex-1 p-8 overflow-y-auto custom-scrollbar space-y-8">
+                                <div className="flex-1 p-4 sm:p-8 overflow-y-auto custom-scrollbar space-y-4 sm:space-y-8">
                                     <div className="flex justify-between items-center mb-4">
                                         <h3 className="text-white text-xl font-bold tracking-tight">{settingsTab}</h3>
                                         <button onClick={() => setShowSettings(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-white/50 hover:text-white">
@@ -1769,7 +1769,7 @@ const SettingsTab = memo(({ id, label, icon, active, set }) => {
     return (
         <button
             onClick={() => set(id)}
-            className={`flex items-center gap-1 sm:gap-4 px-1 sm:px-8 py-1 sm:py-4 rounded-[0.6rem] sm:rounded-[1.8rem] transition-all duration-100 outline-none border-2 ${isActive ? 'bg-yellow-200 text-black border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.4)] scale-[1.01] sm:scale-[1.05]' : 'bg-white/5 text-white/40 border-transparent hover:bg-white/10 hover:text-white'}`}
+            className={`flex items-center gap-1 sm:gap-4 px-1 sm:px-8 py-1 sm:py-3 rounded-[0.6rem] sm:rounded-[1.8rem] transition-all duration-100 outline-none border-2 ${isActive ? 'bg-yellow-200 text-black border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.4)] scale-[1.01] sm:scale-[1.05]' : 'bg-white/5 text-white/40 border-transparent hover:bg-white/10 hover:text-white'}`}
         >
             <div className={`transition-transform duration-100 ${isActive ? 'scale-110' : ''}`}>{icon}</div>
             <span className="text-[8px] sm:text-[13px] font-bold tracking-tight uppercase">{label}</span>
@@ -1779,7 +1779,7 @@ const SettingsTab = memo(({ id, label, icon, active, set }) => {
 
 const SettingRow = memo(({ label, children }) => {
     return (
-        <div className="space-y-6 mb-10">
+        <div className="space-y-3 sm:space-y-6 mb-6 sm:mb-10">
             <h4 className="text-yellow-500/40 text-[9px] font-black uppercase tracking-[0.3em] ml-1">{label}</h4>
             <div className="flex flex-wrap gap-3">
                 {children}
