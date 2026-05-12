@@ -1372,11 +1372,11 @@ function LocalPlayerOverlay() {
                             <motion.div
                                 initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0.98, opacity: 0 }}
                                 transition={{ duration: 0.1 }}
-                                className="bg-sky-900/40 w-full max-w-[750px] h-[500px] rounded-[2.5rem] border-2 border-red-600/80 backdrop-blur-3xl overflow-hidden flex flex-col sm:flex-row shadow-[0_50px_200px_rgba(220,38,38,0.5)]"
+                                className="bg-sky-900/40 w-full max-w-[750px] h-[85vh] sm:h-[500px] rounded-[2.5rem] border-2 border-red-600/80 backdrop-blur-3xl overflow-hidden flex flex-col sm:flex-row shadow-[0_50px_200px_rgba(220,38,38,0.5)]"
                                 onClick={e => e.stopPropagation()}
                             >
                                 {/* Sidebar Tabs */}
-                                <div className="w-full sm:w-60 bg-white/[0.01] border-r border-white/5 p-8 flex flex-col gap-2">
+                                <div className="w-full sm:w-60 bg-white/[0.01] border-b sm:border-b-0 sm:border-r border-white/5 p-4 sm:p-8 flex flex-row sm:flex-col gap-2 overflow-x-auto no-scrollbar">
                                     <SettingsTab id="PLAYBACK" label="Playback" icon={<PlayCircle size={20} />} active={settingsTab} set={setSettingsTab} />
                                     <SettingsTab id="QUALITY" label="Video Quality" icon={<Monitor size={20} />} active={settingsTab} set={setSettingsTab} />
                                     <SettingsTab id="PERFORMANCE" label="Performance" icon={<Zap size={20} />} active={settingsTab} set={setSettingsTab} />
@@ -1818,22 +1818,22 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
     const angleStep = 18;
     const y = useTransform(wheelRotationMV, (rot) => {
         const rad = ((index * angleStep - rot) * Math.PI) / 180;
-        const panelRadius = isMobileView ? 200 : 300;
+        const panelRadius = isMobileView ? 160 : 300;
         return Math.sin(rad) * panelRadius;
     });
     const x = useTransform(wheelRotationMV, (rot) => {
         const rad = ((index * angleStep - rot) * Math.PI) / 180;
-        const panelRadius = isMobileView ? 200 : 300;
-        const baseOffset = isMobileView ? 150 : 250;
+        const panelRadius = isMobileView ? 160 : 300;
+        const baseOffset = isMobileView ? 120 : 250;
         return Math.cos(rad) * panelRadius + baseOffset;
     });
     const scale = useTransform(y, (yVal) => {
-        const panelRadius = isMobileView ? 200 : 300;
+        const panelRadius = isMobileView ? 160 : 300;
         const normalizedDist = Math.abs(yVal) / (panelRadius * 1.2);
         return Math.max(0.7, 1.2 - normalizedDist);
     });
     const opacity = useTransform(y, (yVal) => {
-        const panelRadius = isMobileView ? 200 : 300;
+        const panelRadius = isMobileView ? 160 : 300;
         const normalizedDist = Math.abs(yVal) / (panelRadius * 1.2);
         return Math.max(0.1, 1.1 - normalizedDist);
     });
@@ -1922,7 +1922,7 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
                         initial={{ opacity: 0, x: -30, scale: 0.8 }}
                         animate={{ opacity: 1, x: 0, scale: 1 }}
                         exit={{ opacity: 0, x: -30, scale: 0.8 }}
-                        className="flex items-center gap-3 ml-6 p-3 bg-red-950/20 backdrop-blur-3xl rounded-2xl border border-red-500/20 shadow-[0_0_50px_rgba(220,38,38,0.2)] max-w-[500px] overflow-x-auto no-scrollbar"
+                        className="flex items-center gap-3 ml-2 sm:ml-6 p-3 bg-red-950/20 backdrop-blur-3xl rounded-2xl border border-red-500/20 shadow-[0_0_50px_rgba(220,38,38,0.2)] max-w-[200px] sm:max-w-[500px] overflow-x-auto no-scrollbar"
                         onClick={e => e.stopPropagation()}
                     >
                         {action.inlineMenu.items.map((item, i) => (
