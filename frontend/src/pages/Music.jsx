@@ -146,11 +146,18 @@ export default function Music() {
     try {
       // Background fetch - only update if online
       if (!navigator.onLine && cached) return;
-      const { data } = await supabase
+      let query = supabase
         .from('videos')
         .select('*')
-        .eq('category', 'Music')
-        .order('created_at', { ascending: false });
+        .eq('category', 'Music');
+      
+      if (user) {
+        query = query.or(`user_id.eq.${user.id},user_id.is.null`);
+      } else {
+        query = query.is('user_id', null);
+      }
+      
+      const { data } = await query.order('created_at', { ascending: false });
       const musicData = deduplicate(data || []);
       setSongs(musicData);
       setFilteredSongs(musicData);
@@ -294,7 +301,8 @@ export default function Music() {
       video_url: audioData?.publicUrl,
       thumbnail_url: thumbnailPublicUrl,
       source: 'local',
-      category: 'Music'
+      category: 'Music',
+      user_id: user?.id
     };
 
     const { data: existingSong } = await supabase
@@ -518,7 +526,7 @@ export default function Music() {
       const liked = JSON.parse(localStorage.getItem('macfeed_liked') || '[]');
       return deduplicate(liked.filter(l => l.category === 'Music'));
     }
-    if (activeTab === 'My Uploads') return deduplicate(songs.filter(s => s.source === 'local'));
+    if (activeTab === 'My Uploads') return deduplicate(songs.filter(s => s.source === 'local' && s.user_id === user?.id));
     if (activeTab === 'Artists') return deduplicate(songs).slice().sort(() => Math.random() - 0.5);
     return deduplicate(filteredSongs);
   };
@@ -574,7 +582,8 @@ export default function Music() {
               thumbnail_url: songToPlay.thumbnail_url,
               source: 'youtube',
               category: 'Music',
-              views: 0
+              views: 0,
+              user_id: user?.id
             }]).select('*').single();
 
             if (inserted) {

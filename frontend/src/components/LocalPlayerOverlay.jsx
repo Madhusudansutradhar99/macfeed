@@ -1207,7 +1207,7 @@ function LocalPlayerOverlay() {
                             initial={{ opacity: 0, x: -50 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -50 }}
-                            className="absolute inset-0 z-[800] flex items-center justify-start overflow-hidden pointer-events-auto bg-black/60 backdrop-blur-2xl"
+                            className="absolute inset-0 z-[800] flex items-center justify-start overflow-hidden pointer-events-auto bg-white/[0.03] backdrop-blur-3xl border-r border-white/5"
                             onClick={() => setShowExtraPanel(false)}
                         >
                             {/* 
