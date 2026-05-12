@@ -336,16 +336,20 @@ function LocalPlayerOverlay() {
                     
                     // Buffer Strategy: Large Smart Buffer for high-resolution content
                     // We monitor the buffered ranges to prevent stuttering in 8K streams
+                    let bufferCheckInterval;
                     const checkBuffer = () => {
                         if (video.buffered.length > 0) {
                             const bufferedEnd = video.buffered.end(video.buffered.length - 1);
-                            const duration = video.duration;
-                            if (duration > 0 && bufferedEnd < duration) {
-                                // Potentially pre-fetch more data if supported by the source
+                            const currentTime = video.currentTime;
+                            // Ensure we always have at least 30 seconds or 20% of the video buffered
+                            if (bufferedEnd - currentTime < 30 && bufferedEnd < video.duration) {
+                                // Hint the browser to prioritize buffering
+                                video.setAttribute('preload', 'auto');
                             }
                         }
                     };
                     video.addEventListener('progress', checkBuffer);
+                    bufferCheckInterval = setInterval(checkBuffer, 2000);
 
                     video.setAttribute('playsinline', 'true');
 
@@ -1038,12 +1042,18 @@ function LocalPlayerOverlay() {
                         backfaceVisibility: 'hidden',
                         WebkitBackfaceVisibility: 'hidden',
                         
+                        // 8K/16K Ultra-Low-Latency Rasterization
+                        shapeRendering: 'crispEdges',
+                        textRendering: 'optimizeSpeed',
+                        colorProfile: 'display-p3',
+                        
                         // Rendering isolation for zero-frame-drop performance
                         transformStyle: 'preserve-3d',
                         isolation: 'isolate',
                         
-                        filter: showExtraPanel ? 'blur(4px) brightness(0.4)' : 'none',
-                        transition: 'filter 0.4s ease',
+                        // Dynamic Optimization: Remove blur during high-load playback if possible
+                        filter: (showExtraPanel || showSettings) ? 'blur(10px) brightness(0.3)' : 'none',
+                        transition: 'filter 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                         borderRadius: '12px'
                     }}
                     onLoadedMetadata={handleVideoMetadata}
