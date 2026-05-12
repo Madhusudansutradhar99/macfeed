@@ -528,39 +528,26 @@ function LocalPlayerOverlay() {
             const dur = video.duration || 1;
             const prog = (cur / dur) * 100;
             
-            // Batch DOM updates
-            requestAnimationFrame(() => {
-                if (progressBarRef.current) progressBarRef.current.style.width = `${prog}%`;
-                if (thumbRef.current) thumbRef.current.style.left = `calc(${prog}% - 10px)`;
-                if (video.buffered.length > 0) {
-                    const bEnd = video.buffered.end(video.buffered.length - 1);
-                    if (bufferBarRef.current) bufferBarRef.current.style.width = `${(bEnd / dur) * 100}%`;
+            // Direct DOM updates for maximum performance
+            if (progressBarRef.current) progressBarRef.current.style.width = `${prog}%`;
+            if (thumbRef.current) thumbRef.current.style.left = `calc(${prog}% - 10px)`;
+            if (video.buffered.length > 0) {
+                const bEnd = video.buffered.end(video.buffered.length - 1);
+                if (bufferBarRef.current) bufferBarRef.current.style.width = `${(bEnd / dur) * 100}%`;
+            }
+            if (currentTimeRef.current) currentTimeRef.current.innerText = formatTime(cur);
+            if (durationRef.current) {
+                const formattedDur = formatTime(dur);
+                if (durationRef.current.innerText !== formattedDur) {
+                    durationRef.current.innerText = formattedDur;
                 }
-                if (currentTimeRef.current) currentTimeRef.current.innerText = formatTime(cur);
-                if (durationRef.current) {
-                    const formattedDur = formatTime(dur);
-                    if (durationRef.current.innerText !== formattedDur) {
-                        durationRef.current.innerText = formattedDur;
-                    }
-                }
-            });
+            }
         };
 
-        let rafId;
-        if ('requestVideoFrameCallback' in video) {
-            const callback = () => {
-                updateUI();
-                video.requestVideoFrameCallback(callback);
-            };
-            video.requestVideoFrameCallback(callback);
-        } else {
-            const loop = () => {
-                updateUI();
-                rafId = requestAnimationFrame(loop);
-            };
-            rafId = requestAnimationFrame(loop);
-            return () => cancelAnimationFrame(rafId);
-        }
+        // Throttled UI loop (250ms) to save CPU/GPU for 8K decoding
+        // Higher resolution video needs more CPU cycles for the decoder, not the UI
+        const intervalId = setInterval(updateUI, 250);
+        return () => clearInterval(intervalId);
     }, [isLocalPlayerOpen, currentSong, isLocked]);
 
     useEffect(() => {
@@ -568,7 +555,9 @@ function LocalPlayerOverlay() {
         if (!video || !isLocalPlayerOpen) return;
 
         // Initialize Web Audio Context on first play/interaction
-        if (!audioCtxRef.current && playing) {
+        // DISABLED WEB AUDIO FOR 8K STABILITY
+        // Connecting high-bitrate video to Web Audio causes demuxer lag
+        if (false && !audioCtxRef.current && playing) {
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (AudioContext) {
