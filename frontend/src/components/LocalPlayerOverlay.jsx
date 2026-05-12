@@ -937,7 +937,7 @@ function LocalPlayerOverlay() {
             ref={containerRef}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className={`fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center overflow-hidden font-sans select-none touch-none px-2 sm:px-0 rounded-lg sm:rounded-2xl ${forceLandscape ? 'rotate-90 origin-center' : ''}`}
-            style={forceLandscape ? { width: '100vh', height: '100vw', position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(90deg)' } : {}}
+            style={forceLandscape ? { width: '100vh', height: '100vw', position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(90deg)', backgroundColor: 'black' } : { backgroundColor: 'black' }}
             onMouseMove={resetControlsTimeout}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
@@ -975,11 +975,13 @@ function LocalPlayerOverlay() {
                         contain: 'strict',
                         willChange: 'transform',
                         transform: 'translate3d(0,0,0)', 
+                        backgroundColor: 'black',
                         
                         // Disable expensive post-processing for 8K performance
                         filter: 'none',
                         transition: 'none',
-                        borderRadius: '12px'
+                        borderRadius: '12px',
+                        pointerEvents: showControls ? 'auto' : 'none'
                     }}
                     onLoadedMetadata={handleVideoMetadata}
                     onCanPlay={() => setIsLoading(false)}
@@ -1034,7 +1036,7 @@ function LocalPlayerOverlay() {
                 {/* Toast Notification */}
                 <AnimatePresence>
                     {toast && (
-                        <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 60, opacity: 1 }} exit={{ opacity: 0 }} className="absolute top-0 left-1/2 -translate-x-1/2 z-[1000] bg-black/80 px-4 py-2 rounded-full flex items-center gap-2 border border-white/10 shadow-2xl backdrop-blur-md">
+                        <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 60, opacity: 1 }} exit={{ opacity: 0 }} className="absolute top-0 left-1/2 -translate-x-1/2 z-[1000] bg-black/95 px-4 py-2 rounded-full flex items-center gap-2 border border-white/10 shadow-2xl">
                             <span style={{ color: toast.color }}>{toast.icon}</span>
                             <span className="text-white text-[10px] font-black uppercase tracking-widest">{toast.msg}</span>
                         </motion.div>
@@ -1049,7 +1051,7 @@ function LocalPlayerOverlay() {
                         <motion.div
                             initial={{ y: -100 }} animate={{ y: 0 }} exit={{ y: -100 }}
                             transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
-                            className="absolute top-0 left-0 right-0 z-[600] p-6 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent backdrop-blur-md"
+                            className="absolute top-0 left-0 right-0 z-[600] p-6 flex items-center justify-between bg-gradient-to-b from-black to-transparent"
                             onClick={e => { e.stopPropagation(); resetControlsTimeout(); }}
                         >
                             <div className="flex items-center gap-6">
@@ -1112,7 +1114,7 @@ function LocalPlayerOverlay() {
                     {showControls && !isLocked && !showExtraPanel && (
                         <motion.div
                             transition={{ type: 'tween', ease: 'circOut', duration: 0.15 }}
-                            className="absolute bottom-0 left-0 right-0 z-[600] p-6 flex flex-col gap-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent"
+                            className="absolute bottom-0 left-0 right-0 z-[600] p-6 flex flex-col gap-6 bg-gradient-to-t from-black to-transparent"
                             onClick={e => { e.stopPropagation(); resetControlsTimeout(); }}
                         >
                             <div className="flex items-center justify-between gap-6">
