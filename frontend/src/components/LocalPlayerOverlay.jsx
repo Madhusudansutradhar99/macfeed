@@ -311,45 +311,10 @@ function LocalPlayerOverlay() {
                     video.preload = 'auto';
                     video.load();
                     
-                    // ── ADVANCED HYPER-DECODE ENGINE (EXOPLAYER LOGIC) ──
-                    // This section replaces standard browser decoding with a high-priority pipeline
-                    // Optimized for 8K/16K hardware accelerated playback on high-RAM devices.
-                    
-                    if ('decoding' in video) video.decoding = 'async'; // Asynchronous decoding to prevent UI freezing
-                    video.setAttribute('importance', 'high'); // Resource priority hint
-                    video.setAttribute('fetchpriority', 'high'); // Network/System priority hint
-                    
-                    // Hardware Acceleration & GPU Rendering hints
-                    if ('latencyHint' in video) video.latencyHint = 'low';
-                    if ('lowLatency' in video) video.lowLatency = true;
-                    
-                    // Android WebView & PWA Specific Immersive Optimization
-                    video.setAttribute('webkit-playsinline', 'true');
-                    video.setAttribute('playsinline', 'true');
-                    video.setAttribute('x5-video-player-type', 'h5');
-                    video.setAttribute('x5-video-player-fullscreen', 'true');
-                    video.setAttribute('x5-video-orientation', 'landscape|portrait');
-                    
-                    // Enable high-bitrate buffer management
-                    video.setAttribute('disableRemotePlayback', 'true');
-                    video.setAttribute('x-webkit-airplay', 'deny');
-                    
-                    // Buffer Strategy: Large Smart Buffer for high-resolution content
-                    // We monitor the buffered ranges to prevent stuttering in 8K streams
-                    let bufferCheckInterval;
-                    const checkBuffer = () => {
-                        if (video.buffered.length > 0) {
-                            const bufferedEnd = video.buffered.end(video.buffered.length - 1);
-                            const currentTime = video.currentTime;
-                            // Ensure we always have at least 30 seconds or 20% of the video buffered
-                            if (bufferedEnd - currentTime < 30 && bufferedEnd < video.duration) {
-                                // Hint the browser to prioritize buffering
-                                video.setAttribute('preload', 'auto');
-                            }
-                        }
-                    };
-                    video.addEventListener('progress', checkBuffer);
-                    bufferCheckInterval = setInterval(checkBuffer, 2000);
+                    // Buffer Strategy: Native Browser Optimization
+                    // We let the browser's native media engine handle buffering for 8K
+                    video.setAttribute('preload', 'auto');
+                    video.setAttribute('fetchpriority', 'high');
 
                     video.setAttribute('playsinline', 'true');
 
@@ -964,30 +929,13 @@ function LocalPlayerOverlay() {
         return () => window.removeEventListener('keydown', handleKey);
     }, [playing, isLocalPlayerOpen, isMuted, volume, isLocked, orientation, playbackRate]);
 
+    // ── LIGHTWEIGHT ENGINE CLEANUP ──
     useEffect(() => {
-        const video = videoRef.current;
-        if (!video) return;
-
-        // Ultra-Smooth Frame Tracking using requestVideoFrameCallback (Modern Engine)
-        let rVFCId;
-        const updateFrameData = (now, metadata) => {
-            // This loop runs in sync with the GPU frame updates
-            // Providing "butter-smooth" interaction even at 8K 60FPS
-            if (metadata.presentedFrames % 60 === 0) {
-                // Periodically check engine health
-                if (metadata.droppedFrames > 5) {
-                    console.log('HyperEngine: Optimizing rendering loop due to detected drops...');
-                }
-            }
-            rVFCId = video.requestVideoFrameCallback(updateFrameData);
-        };
-
-        if (video.requestVideoFrameCallback) {
-            rVFCId = video.requestVideoFrameCallback(updateFrameData);
-        }
-
         return () => {
-            if (rVFCId) video.cancelVideoFrameCallback(rVFCId);
+            if (videoRef.current) {
+                videoRef.current.src = '';
+                videoRef.current.load();
+            }
         };
     }, []);
 
@@ -1034,26 +982,14 @@ function LocalPlayerOverlay() {
                         objectFit: aspectRatio === 'Fit' ? 'contain' : aspectRatio === 'Fill' ? 'cover' : aspectRatio === 'Stretch' ? 'fill' : 'contain',
                         aspectRatio: (aspectRatio === '16:9' || aspectRatio === '4:3') ? aspectRatio.replace(':', '/') : 'auto',
                         
-                        // ── GPU RENDERING & FRAME SCHEDULING ──
-                        contain: 'strict', // Prevents layout thrashing during high-bitrate playback
-                        imageRendering: 'auto', // Browser optimized high-quality rendering
-                        willChange: 'transform, contents', // Promotes to GPU compositor layer
-                        transform: 'translate3d(0,0,0) perspective(1000px)', // Forces hardware acceleration
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
+                        // ── ULTRA-LIGHTWEIGHT 8K RENDERER ──
+                        contain: 'strict',
+                        willChange: 'transform',
+                        transform: 'translate3d(0,0,0)', 
                         
-                        // 8K/16K Ultra-Low-Latency Rasterization
-                        shapeRendering: 'crispEdges',
-                        textRendering: 'optimizeSpeed',
-                        colorProfile: 'display-p3',
-                        
-                        // Rendering isolation for zero-frame-drop performance
-                        transformStyle: 'preserve-3d',
-                        isolation: 'isolate',
-                        
-                        // Dynamic Optimization: Remove blur during high-load playback if possible
-                        filter: (showExtraPanel || showSettings) ? 'blur(10px) brightness(0.3)' : 'none',
-                        transition: 'filter 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        // Disable expensive post-processing for 8K performance
+                        filter: 'none',
+                        transition: 'none',
                         borderRadius: '12px'
                     }}
                     onLoadedMetadata={handleVideoMetadata}
