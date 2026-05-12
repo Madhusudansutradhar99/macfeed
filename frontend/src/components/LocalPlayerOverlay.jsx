@@ -960,9 +960,6 @@ function LocalPlayerOverlay() {
         return () => window.removeEventListener('keydown', handleKey);
     }, [playing, isLocalPlayerOpen, isMuted, volume, isLocked, orientation, playbackRate]);
 
-    // ONLY RENDER IF PLAYER IS OPEN AND SONG EXISTS
-    if (!isLocalPlayerOpen || !currentSong) return null;
-
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
@@ -989,6 +986,9 @@ function LocalPlayerOverlay() {
             if (rVFCId) video.cancelVideoFrameCallback(rVFCId);
         };
     }, []);
+
+    // ONLY RENDER IF PLAYER IS OPEN AND SONG EXISTS
+    if (!isLocalPlayerOpen || !currentSong) return null;
 
     return (
         <AnimatePresence>
