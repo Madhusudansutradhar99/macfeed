@@ -1047,7 +1047,7 @@ function LocalPlayerOverlay() {
 
                 {/* TOP BAR */}
                 <AnimatePresence>
-                    {showControls && !isLocked && (
+                    {showControls && !isLocked && !showExtraPanel && (
                         <motion.div
                             initial={{ y: -100 }} animate={{ y: 0 }} exit={{ y: -100 }}
                             transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
@@ -1090,7 +1090,7 @@ function LocalPlayerOverlay() {
 
                 {/* CENTER CONTROLS */}
                 <AnimatePresence>
-                    {showControls && !isLocked && (
+                    {showControls && !isLocked && !showExtraPanel && (
                         <motion.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             transition={{ duration: 0.15 }}
@@ -1111,7 +1111,7 @@ function LocalPlayerOverlay() {
 
                 {/* BOTTOM SECTION */}
                 <AnimatePresence>
-                    {showControls && !isLocked && (
+                    {showControls && !isLocked && !showExtraPanel && (
                         <motion.div
                             transition={{ type: 'tween', ease: 'circOut', duration: 0.15 }}
                             className="absolute bottom-0 left-0 right-0 z-[600] p-6 flex flex-col gap-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent"
@@ -1207,7 +1207,7 @@ function LocalPlayerOverlay() {
                             initial={{ opacity: 0, x: -50 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -50 }}
-                            className="absolute inset-0 z-[150] flex items-center justify-start overflow-hidden pointer-events-auto bg-black/30 backdrop-blur-md"
+                            className="absolute inset-0 z-[800] flex items-center justify-start overflow-hidden pointer-events-auto bg-black/60 backdrop-blur-2xl"
                             onClick={() => setShowExtraPanel(false)}
                         >
                             {/* 
@@ -1879,7 +1879,7 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
         >
             {/* ATMOSPHERIC BLUR LAYER - Behind the Wheel Area */}
             {isFocused && (
-                <div className="fixed inset-y-0 left-0 w-[450px] bg-black/10 backdrop-blur-[3px] z-[-1] pointer-events-none" 
+                <div className="fixed inset-y-0 left-0 w-[450px] bg-black/20 backdrop-blur-[8px] z-[-1] pointer-events-none" 
                      style={{ maskImage: 'linear-gradient(to right, black, transparent)' }} />
             )}
             {/* SVG Wireframe Box - Starting from OUTSIDE the wheel */}
