@@ -979,7 +979,7 @@ function LocalPlayerOverlay() {
                         transform: 'translate3d(0,0,0) perspective(1000px)',
                         backfaceVisibility: 'hidden',
                         WebkitBackfaceVisibility: 'hidden',
-                        filter: showExtraPanel ? 'blur(10px) brightness(0.4)' : 'none',
+                        filter: showExtraPanel ? 'blur(4px) brightness(0.4)' : 'none',
                         transition: 'filter 0.4s ease',
                         borderRadius: '12px'
                     }}
@@ -1207,7 +1207,7 @@ function LocalPlayerOverlay() {
                             initial={{ opacity: 0, x: -50 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -50 }}
-                            className="absolute inset-0 z-[800] flex items-center justify-start overflow-hidden pointer-events-auto bg-white/[0.03] backdrop-blur-3xl border-r border-white/5"
+                            className="absolute inset-0 z-[800] flex items-center justify-start overflow-hidden pointer-events-auto bg-blue-600/[0.08] backdrop-blur-2xl border-r border-white/10 shadow-[50px_0_150px_rgba(0,0,0,0.5)]"
                             onClick={() => setShowExtraPanel(false)}
                         >
                             {/* 
