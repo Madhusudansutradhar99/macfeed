@@ -1242,7 +1242,7 @@ function LocalPlayerOverlay() {
                                     }}
                                 />
                                 {/* COMPACT & TIGHT MOBILE WHEEL (Smaller radius and size) */}
-                                <div className="absolute left-[-180px] md:left-[-280px] w-[240px] md:w-[400px] h-[240px] md:h-[400px] flex items-center justify-center pointer-events-none scale-[0.7] md:scale-100 origin-left">
+                                <div className="absolute left-[-150px] md:left-[-280px] w-[240px] md:w-[400px] h-[240px] md:h-[400px] flex items-center justify-center pointer-events-none scale-[0.65] md:scale-100 origin-left">
 
                                     {/* 1. OUTER GOLD RING (STABLE ARROW) */}
                                     <motion.div
@@ -1278,7 +1278,7 @@ function LocalPlayerOverlay() {
                                         </motion.div>
                                     </div>
                                 </div>
-                                <div className={`absolute ${isMobileView ? 'left-[-180px] w-[240px]' : 'left-[-280px] w-[400px]'} h-full flex items-center justify-center pointer-events-none`}>
+                                <div className={`absolute ${isMobileView ? 'left-[-150px] w-[240px]' : 'left-[-280px] w-[400px]'} h-full flex items-center justify-center pointer-events-none`}>
                                     {[
                                         { icon: <RefreshCcw size={14} />, label: "Rotation", color: "#fbbf24", onClick: toggleROT },
                                         { icon: <Camera size={14} />, label: "Capture", color: "#fbbf24", onClick: handleCapture },
@@ -1372,11 +1372,11 @@ function LocalPlayerOverlay() {
                             <motion.div
                                 initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0.98, opacity: 0 }}
                                 transition={{ duration: 0.1 }}
-                                className="bg-sky-900/40 w-[95%] sm:w-full max-w-[750px] h-[80vh] sm:h-[500px] rounded-[2rem] sm:rounded-[2.5rem] border-2 border-red-600/80 backdrop-blur-3xl overflow-hidden flex flex-col sm:flex-row shadow-[0_50px_200px_rgba(220,38,38,0.5)]"
+                                className="bg-sky-900/40 w-[92%] sm:w-full max-w-[750px] h-[85vh] sm:h-[500px] rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-red-600/80 backdrop-blur-3xl overflow-hidden flex flex-row shadow-[0_50px_200px_rgba(220,38,38,0.5)]"
                                 onClick={e => e.stopPropagation()}
                             >
                                 {/* Sidebar Tabs */}
-                                <div className="w-full sm:w-60 bg-white/[0.01] border-b sm:border-b-0 sm:border-r border-white/5 p-4 sm:p-8 flex flex-row sm:flex-col gap-2 overflow-x-auto no-scrollbar">
+                                <div className="w-32 sm:w-60 bg-white/[0.01] border-r border-white/5 p-2 sm:p-8 flex flex-col gap-2 overflow-y-auto no-scrollbar">
                                     <SettingsTab id="PLAYBACK" label="Playback" icon={<PlayCircle size={20} />} active={settingsTab} set={setSettingsTab} />
                                     <SettingsTab id="QUALITY" label="Video Quality" icon={<Monitor size={20} />} active={settingsTab} set={setSettingsTab} />
                                     <SettingsTab id="PERFORMANCE" label="Performance" icon={<Zap size={20} />} active={settingsTab} set={setSettingsTab} />
@@ -1769,10 +1769,10 @@ const SettingsTab = memo(({ id, label, icon, active, set }) => {
     return (
         <button
             onClick={() => set(id)}
-            className={`flex items-center gap-4 px-4 sm:px-8 py-2 sm:py-4 rounded-[1.2rem] sm:rounded-[1.8rem] transition-all duration-100 outline-none border-2 ${isActive ? 'bg-yellow-200 text-black border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.4)] scale-[1.05]' : 'bg-white/5 text-white/40 border-transparent hover:bg-white/10 hover:text-white'}`}
+            className={`flex items-center gap-2 sm:gap-4 px-2 sm:px-8 py-2 sm:py-4 rounded-[0.8rem] sm:rounded-[1.8rem] transition-all duration-100 outline-none border-2 ${isActive ? 'bg-yellow-200 text-black border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.4)] scale-[1.02] sm:scale-[1.05]' : 'bg-white/5 text-white/40 border-transparent hover:bg-white/10 hover:text-white'}`}
         >
             <div className={`transition-transform duration-100 ${isActive ? 'scale-110' : ''}`}>{icon}</div>
-            <span className="text-[13px] font-bold tracking-tight uppercase">{label}</span>
+            <span className="text-[9px] sm:text-[13px] font-bold tracking-tight uppercase">{label}</span>
         </button>
     );
 });
@@ -1823,8 +1823,8 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
     });
     const x = useTransform(wheelRotationMV, (rot) => {
         const rad = ((index * angleStep - rot) * Math.PI) / 180;
-        const panelRadius = isMobileView ? 140 : 300;
-        const baseOffset = isMobileView ? 100 : 250;
+        const panelRadius = isMobileView ? 120 : 300;
+        const baseOffset = isMobileView ? 80 : 250;
         return Math.cos(rad) * panelRadius + baseOffset;
     });
     const scale = useTransform(y, (yVal) => {
@@ -1893,7 +1893,7 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
 
             {/* Panel Body */}
             <div
-                className={`relative ${isMobileView ? 'w-28 h-10' : 'w-36 h-14'} bg-black/95 border-l-[8px] border-r-[2px] border-y-[2px] transition-all duration-300 flex items-center justify-between px-4`}
+                className={`relative ${isMobileView ? 'w-24 h-8' : 'w-36 h-14'} bg-black/95 border-l-[6px] sm:border-l-[8px] border-r-[1px] sm:border-r-[2px] border-y-[1px] sm:border-y-[2px] transition-all duration-300 flex items-center justify-between px-2 sm:px-4`}
                 style={{
                     clipPath: 'polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%)',
                     borderLeftColor: isFocused ? action.color : 'rgba(255,255,255,0.1)',
