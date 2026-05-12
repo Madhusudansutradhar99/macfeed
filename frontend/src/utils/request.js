@@ -53,7 +53,12 @@ export async function fetchWithRetry(input, init = {}, options = {}) {
 
   while (attempt <= retries) {
     try {
-      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      // Don't wait for online if we're on a background fetch that can be served from cache
+      // or if we've already waited long enough.
+      if (typeof navigator !== 'undefined' && !navigator.onLine && attempt === 0) {
+        // Fast fail for background syncs to allow cache-first logic to take over
+        console.warn('[Request] Offline - skipping network wait for initial attempt');
+      } else if (typeof navigator !== 'undefined' && !navigator.onLine) {
         await waitForOnline();
       }
 

@@ -64,6 +64,20 @@ export default defineConfig({
                 maxEntries: 100
               }
             }
+          },
+          {
+            urlPattern: /.*supabase\.co\/storage\/v1\/object\/public.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'supabase-storage',
+              expiration: {
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+                maxEntries: 200
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
           }
         ]
       }

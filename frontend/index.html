@@ -26,29 +26,12 @@
     
     <title>MacFeed - Final Sync</title>
     <script>
-      // Force clear old service workers to resolve black screen on refresh
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for(let registration of registrations) {
-            registration.unregister();
-          }
-        });
-      }
-      // Check for new version and force reload if necessary
+      // Check for new version and notify if necessary
       window.addEventListener('load', () => {
         const currentVersion = '1.1.14'; 
         const storedVersion = localStorage.getItem('macfeed_version');
         if (storedVersion !== currentVersion) {
           localStorage.setItem('macfeed_version', currentVersion);
-          // Try to unregister all service workers before reloading
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(regs => {
-              for(let reg of regs) reg.unregister();
-              setTimeout(() => { location.reload(true); }, 500);
-            });
-          } else {
-            location.reload(true);
-          }
         }
       });
     </script>
