@@ -26,7 +26,16 @@
     "react-dom": "18.2.0",
     "react-router-dom": "6.22.3",
     "sharp": "^0.34.5",
-    "yt-search": "^2.13.1"
+    "yt-search": "^2.13.1",
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/screen-orientation": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
+    "@capgo/capacitor-updater": "^8.45.10"
   },
   "devDependencies": {
     "@types/react": "^18.2.55",
