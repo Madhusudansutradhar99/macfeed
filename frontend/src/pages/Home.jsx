@@ -207,10 +207,10 @@ function VideoRow({ title, videos, emoji }) {
   return (
     <section className="mb-8">
       <div className="flex items-center justify-between mb-4 px-2">
-        <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+        <h2 className="text-xl font-bold text-white flex items-center gap-2">
           {emoji && <span className="text-2xl">{emoji}</span>}
           {title}
-          <span className="text-sm font-normal text-secondary ml-2">({videos.length})</span>
+          <span className="text-sm font-normal text-white/50 ml-2">({videos.length})</span>
         </h2>
         <div className="flex gap-2">
           <button className={`${prevClass} bg-secondary hover:bg-purple-600 text-primary rounded-full p-2 transition-all active:scale-90 border border-primary`}>

@@ -131,7 +131,7 @@ const VideoCard = memo(({ video }) => {
       onMouseLeave={() => setHovered(false)}
       onClick={handleClick}
     >
-      <div className="relative aspect-video rounded-xl md:rounded-[1.5rem] overflow-hidden bg-secondary border border-primary shadow-2xl transition-all duration-500 group-hover:border-accent group-hover:shadow-[0_0_30px_var(--accent-color)]" style={{ '--accent': 'var(--accent-color)' }}>
+      <div className="relative aspect-video rounded-xl md:rounded-[1.5rem] overflow-hidden bg-background border border-white/10 shadow-2xl transition-all duration-500 group-hover:border-accent">
         <img src={video?.thumbnail_url || 'https://via.placeholder.com/640x360?text=No+Thumbnail'} alt={video?.title || 'Video'} loading="lazy" decoding="async" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-75" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
@@ -151,7 +151,7 @@ const VideoCard = memo(({ video }) => {
       </div>
 
       <div className="px-2">
-        <h3 className="text-primary font-bold text-sm line-clamp-2 leading-tight group-hover:text-accent transition-colors uppercase tracking-tight" style={{ '--accent': 'var(--accent-color)' }}>{video?.title || 'Untitled Video'}</h3>
+        <h3 className="text-white font-bold text-sm line-clamp-2 leading-tight group-hover:text-accent transition-colors uppercase tracking-tight">{video?.title || 'Untitled Video'}</h3>
         <div className="flex items-center gap-3 mt-1.5">
           <span className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">{video.category}</span>
         </div>
