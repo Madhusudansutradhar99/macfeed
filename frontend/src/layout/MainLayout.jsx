@@ -58,7 +58,7 @@ const MainLayout = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-primary text-primary overflow-x-hidden relative">
+    <div className="flex flex-col min-h-screen bg-[#000000] text-white overflow-x-hidden relative">
       <Header />
       <div className="flex flex-1 relative min-w-0">
         <Sidebar />

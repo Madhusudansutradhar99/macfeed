@@ -40,28 +40,6 @@ textarea,
   --header-bg: rgba(0, 0, 0, 0.8);
 }
 
-.light {
-  --bg-primary: #f8fafc;
-  --bg-secondary: #ffffff;
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --border-color: #ef4444;
-  --accent-color: #ef4444;
-  --text-on-accent: #ffffff;
-  --accent-hover: #dc2626;
-}
-
-.blue {
-  --bg-primary: #eff6ff;
-  --bg-secondary: #dbeafe;
-  --text-primary: #1e40af;
-  --text-secondary: #3b82f6;
-  --border-color: #fbbf24;
-  --accent-color: #fbbf24;
-  --text-on-accent: #1e3a8a;
-  --accent-hover: #f59e0b;
-}
-
 /* ── BASE DESKTOP STYLES ── */
 html {
   height: auto !important;

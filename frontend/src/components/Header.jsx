@@ -222,8 +222,6 @@ export default function Header() {
 
       {!isSearchPage && (
         <div className="shrink-0 ml-2 md:ml-10 flex items-center gap-2 md:gap-4 pointer-events-auto">
-          <ThemeToggle />
-          
           {user ? (
             <button 
               onClick={() => navigate('/settings')}
