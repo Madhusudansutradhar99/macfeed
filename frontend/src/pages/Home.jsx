@@ -33,100 +33,34 @@ function formatViews(n) {
 // ── CAKRABOLA Style Static Hero Banner ──
 function HeroBanner({ videos }) {
   const navigate = useNavigate();
-  
   if (!videos || !videos.length) return null;
 
   return (
-    <div className="relative w-full mb-8 md:mb-16 select-none bg-[#000000]">
-      <div className="max-w-[1600px] mx-auto px-2 md:px-4">
-        <Swiper
-          modules={[Autoplay, Pagination, Navigation]}
-          spaceBetween={20}
-          slidesPerView={1.2}
-          centeredSlides={true}
-          breakpoints={{
-            768: { slidesPerView: 2, centeredSlides: false },
-          }}
-          pagination={{ clickable: true, el: '.hero-pagination' }}
-          navigation={{
-            prevEl: '.hero-prev',
-            nextEl: '.hero-next',
-          }}
-          autoplay={{ delay: 2500, disableOnInteraction: false }}
-          className="w-full"
-        >
-          {videos.map((video) => (
-            <SwiperSlide key={video.id}>
-              <div className="hero-card relative w-full h-[160px] md:h-[280px] flex flex-col justify-end overflow-hidden cursor-pointer group rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl border border-primary" onClick={() => navigate('/watch/' + video.id)}>
-                
-                {/* Full Fit Pro Thumbnail */}
-                <div className="absolute inset-0 z-0 overflow-hidden bg-black">
-                  <img 
-                    src={video.thumbnail_url} 
-                    alt={video.title} 
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent z-20" />
-                </div>
-
-                {/* Ultra-Slim Bottom Glass Bar */}
-                <div className="relative z-30 w-full bg-white/10 backdrop-blur-xl border-t border-white/10 px-5 md:px-8 py-2 md:py-3 flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
-                    <h1 className="text-sm md:text-lg font-black italic text-white leading-tight uppercase tracking-tighter line-clamp-1">
-                      {video.title}
-                    </h1>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); navigate('/watch/' + video.id); }} 
-                        className="bg-white text-black font-black uppercase tracking-widest text-[8px] md:text-[10px] px-4 md:px-7 py-1.5 md:py-2.5 rounded-full flex items-center gap-2 hover:bg-yellow-500 transition-all"
-                      >
-                        <Play className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 fill-black" /> Play Now
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </SwiperSlide>
-          ))}
-          
-          {/* Navigation Controls Overlay */}
-          <div className="absolute top-1/2 -translate-y-1/2 left-6 right-6 z-40 hidden md:flex items-center justify-between pointer-events-none">
-            <button className="hero-prev w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white flex items-center justify-center backdrop-blur-xl transition-all pointer-events-auto">
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <button className="hero-next w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white flex items-center justify-center backdrop-blur-xl transition-all pointer-events-auto">
-              <ChevronRight className="w-6 h-6" />
-            </button>
+    <div className="relative w-full mb-12 select-none overflow-hidden">
+      <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory px-4">
+        {videos.map((video) => (
+          <div 
+            key={video.id} 
+            onClick={() => navigate('/watch/' + video.id)}
+            className="min-w-[85vw] md:min-w-[700px] h-[180px] md:h-[320px] relative rounded-[2rem] overflow-hidden snap-center flex-shrink-0 cursor-pointer border border-white/10 group"
+          >
+            <img src={video.thumbnail_url} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+            
+            <div className="absolute bottom-0 left-0 right-0 p-6">
+               <h2 className="text-xl md:text-3xl font-black italic uppercase tracking-tighter text-white line-clamp-1">{video.title}</h2>
+               <div className="mt-3 flex items-center gap-3">
+                  <button className="bg-white text-black px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
+                    <Play className="w-3 h-3 fill-black" /> Play Now
+                  </button>
+               </div>
+            </div>
           </div>
-          <div className="hero-pagination absolute bottom-6 right-10 z-40 flex items-center gap-2"></div>
-        </Swiper>
+        ))}
       </div>
-
-      {/* Hero section padding bottom */}
-      <div className="pb-8"></div>
-      
-      {/* Custom Styles for Pagination */}
-      <style>{`
-        .hero-pagination .swiper-pagination-bullet {
-          width: 8px !important;
-          height: 8px !important;
-          background: rgba(255, 255, 255, 0.3) !important;
-          opacity: 1 !important;
-          border-radius: 50% !important;
-          transition: all 0.3s ease !important;
-          margin: 0 4px !important;
-        }
-        .hero-pagination .swiper-pagination-bullet-active {
-          background: #ff0000 !important;
-          width: 24px !important;
-          border-radius: 4px !important;
-          box-shadow: 0 0 10px rgba(255, 0, 0, 0.5) !important;
-        }
-      `}</style>
     </div>
+  );
+}
   );
 }
 
