@@ -1004,13 +1004,13 @@ function LocalPlayerOverlay() {
                     decoding="async"
                     preload="auto"
                     fetchpriority="high"
-                    // Optimization: VLC-like GPU offloading and layout isolation
+                    // Optimization: VLC-like hardware bypass
                     style={{ 
                         contain: 'strict',
-                        willChange: 'transform',
-                        transform: 'translate3d(0,0,0) scale(1.0001)',
+                        transform: 'translateZ(0)', // Force dedicated GPU plane with zero overhead
+                        imageRendering: 'optimizeSpeed',
                         backfaceVisibility: 'hidden',
-                        perspective: '1000px'
+                        backgroundColor: '#000'
                     }}
                 >
                     {activeSubtitle && <track src={activeSubtitle} kind="subtitles" srcLang="en" label="English" default />}

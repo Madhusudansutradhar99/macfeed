@@ -18,48 +18,49 @@ export default function PosterCard({ video, index }) {
 
   return (
     <motion.div
-      whileTap={{ scale: 0.96 }}
+      variants={{
+        hidden: { opacity: 0, y: 30 },
+        show: { opacity: 1, y: 0 }
+      }}
+      whileHover={{ y: -10 }}
       onClick={handleClick}
-      className="premium-card relative flex flex-col group cursor-pointer bg-secondary/30"
+      className="relative flex flex-col group cursor-pointer"
     >
-      <div className="relative aspect-[2/3] overflow-hidden">
+      {/* Poster Image Container */}
+      <div className="relative aspect-[2/3] rounded-[2rem] md:rounded-[2.5rem] overflow-hidden bg-[#111] border border-white/5 shadow-2xl transition-all duration-500 group-hover:border-blue-500/50 group-hover:shadow-[0_20px_50px_rgba(59,130,246,0.2)]">
         <img
           src={video.thumbnail_url}
           alt={video.title}
-          className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 brightness-90 group-hover:brightness-100"
+          className="w-full h-full object-cover object-top transition-all duration-700 group-hover:scale-110 group-hover:blur-[2px] brightness-90 group-hover:brightness-100"
         />
         
         {/* Play Overlay */}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col items-center justify-center backdrop-blur-[2px] p-4 text-center">
-          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-2xl">
-            <Play size={20} fill="black" className="text-black ml-1" />
-          </div>
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col items-center justify-center backdrop-blur-[4px] p-4 text-center">
+          <motion.div 
+            whileHover={{ scale: 1.1 }}
+            className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center shadow-[0_0_30px_rgba(37,99,235,0.6)] mb-4"
+          >
+            <Play size={28} fill="white" className="text-white ml-1" />
+          </motion.div>
+          <h4 className="text-white font-black uppercase italic text-xs tracking-tighter leading-tight line-clamp-2 drop-shadow-2xl">
+            {video.title}
+          </h4>
         </div>
-
-        {video.year && (
-          <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[8px] font-black text-white border border-white/10 uppercase tracking-widest">
-            {video.year}
-          </div>
-        )}
       </div>
 
-      <div className="p-3">
-        <h3 className="text-white font-bold text-xs line-clamp-1 group-hover:text-accent transition-colors tracking-tight">
+      {/* Info Section */}
+      <div className="mt-4 px-2">
+        <h3 className="text-white/90 font-black text-sm uppercase italic tracking-tighter leading-tight line-clamp-1 group-hover:text-blue-400 transition-colors">
           {video.title}
         </h3>
-        <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-white/40 text-[8px] font-black uppercase tracking-widest">
+        <div className="flex items-center gap-3 mt-1.5">
+          <span className="text-white/30 text-[9px] font-black uppercase tracking-widest">
+            {video.year || '2024'}
+          </span>
+          <div className="w-1 h-1 rounded-full bg-white/10" />
+          <span className="text-blue-500/50 text-[8px] font-black uppercase tracking-widest">
             {video.category || 'Movies'}
           </span>
-          {video.rating && (
-            <>
-              <div className="w-1 h-1 rounded-full bg-white/10" />
-              <div className="flex items-center gap-1 text-yellow-500 text-[8px] font-bold">
-                <Star size={8} fill="currentColor" />
-                <span>{video.rating}</span>
-              </div>
-            </>
-          )}
         </div>
       </div>
     </motion.div>

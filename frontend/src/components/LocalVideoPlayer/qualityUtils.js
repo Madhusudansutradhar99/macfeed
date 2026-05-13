@@ -31,16 +31,16 @@ export const getHlsConfig = () => ({
   lowInitialPlaylistSize: 2,
   smoothQualityChange: true,
   handleManifestRedirects: true,
-  // VLC-like ultra-aggressive buffering for 8K/4K
-  maxBufferLength: 120,        // Buffer up to 120s ahead
-  maxMaxBufferLength: 300,    // Allow up to 300s (5 minutes)
-  maxBufferSize: 500 * 1024 * 1024, // 500MB buffer for high bitrate
+  // VLC-like extreme buffering for 8K (Max Stability)
+  maxBufferLength: 240,        // Buffer up to 240s (4 minutes)
+  maxMaxBufferLength: 600,    // Allow up to 10 minutes buffer
+  maxBufferSize: 1000 * 1024 * 1024, // 1GB buffer for ultra-high bitrate
   maxBufferHole: 0.5,
-  lowBufferWatchdogPeriod: 0.5,
-  highBufferWatchdogPeriod: 2,
-  nudgeOffset: 0.1,
-  nudgeMaxRetry: 5,
-  backBufferLength: 60,        // Keep 60s of previous video
+  lowBufferWatchdogPeriod: 0.1, // Faster watchdog for 8K
+  highBufferWatchdogPeriod: 1,
+  nudgeOffset: 0.05,
+  nudgeMaxRetry: 10,
+  backBufferLength: 120,       // Keep 2 mins of previous video
   playlistSelector: () => {
     const maxHeight = getMaxQualityHeight();
     return (playlists) => {
