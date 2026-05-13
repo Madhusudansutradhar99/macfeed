@@ -345,27 +345,6 @@ function LocalPlayerOverlay() {
                     setIsLoading(false);
                 }
             };
-
-                    // Check slow network
-                    let connectionSpeed = 'fast';
-                    if (navigator.connection && navigator.connection.effectiveType) {
-                        const type = navigator.connection.effectiveType;
-                        if (type === '2g' || type === '3g') connectionSpeed = 'slow';
-                    }
-
-                    if (connectionSpeed === 'slow') {
-                        setPlaying(false);
-                        video.autoplay = false;
-                        showMXToast('Slow network detected. Autoplay paused.', <Zap size={16} />, '#F59E0B');
-                    } else {
-                        setPlaying(true);
-                    }
-
-                } catch (err) {
-                    console.error("Player setup error:", err);
-                    setIsLoading(false);
-                }
-            };
             setupPlayer();
         }
     }, [isLocalPlayerOpen, currentSong]);
