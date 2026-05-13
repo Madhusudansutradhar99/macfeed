@@ -353,7 +353,8 @@ export default function Home() {
           setVideos(data);
           // Hero videos: Use featured if any, else just use first 5
           const featured = data.filter(v => v.is_featured);
-          setHeroVideos(featured.length > 0 ? featured.slice(0, 5) : data.slice(0, 5));
+          const finalHero = featured.length > 0 ? featured.slice(0, 5) : data.slice(0, 5);
+          setHeroVideos(finalHero);
           localStorage.setItem('macfeed_home_cache', JSON.stringify(data));
         }
       } catch (e) {
