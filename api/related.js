@@ -40,6 +40,7 @@ export default async function handler(req, res) {
         ytId: item.videoId,
         title: item.title,
         thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${item.videoId}/hqdefault.jpg`,
+        duration: item.timestamp || item.duration || '--:--',
         source: 'youtube'
       }));
 
