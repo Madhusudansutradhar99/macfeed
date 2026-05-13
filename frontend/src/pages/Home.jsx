@@ -344,44 +344,37 @@ export default function Home() {
   }, [videos]);
 
   useEffect(() => {
+    // Failsafe: Force stop loading after 4 seconds
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 4000);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
     async function init() {
       const cached = localStorage.getItem('macfeed_home_cache');
       if (cached) {
         try {
-          const parsed = JSON.parse(cached);
-          setVideos(parsed);
-          setLoading(false); // Skip loader if we have cache
+          setVideos(JSON.parse(cached));
+          setLoading(false);
         } catch (e) { }
-      } else {
-        setLoading(true);
       }
 
       try {
-        // Skip background fetch if offline and have cache
-        if (!navigator.onLine && cached) return;
-
-        // 1. Fetch Featured Videos
-        const { data: heroData, error: heroErr } = await supabase
+        // 1. Fetch Main Feed (Simple & Reliable)
+        const { data: mainData, error: mainErr } = await supabase
           .from('videos')
           .select('*')
-          .eq('is_featured', true)
           .order('created_at', { ascending: false })
-          .limit(10);
+          .limit(24);
         
-        if (!heroErr && heroData && heroData.length > 0) {
-          setHeroVideos(heroData);
-        } else {
-          // If dedicated fetch empty, try to extract from main feed as second attempt
-          const { data: mainData } = await supabase
-            .from('videos')
-            .select('*')
-            .eq('is_featured', true)
-            .limit(5);
-          if (mainData?.length) setHeroVideos(mainData);
+        if (!mainErr && mainData) {
+          setVideos(mainData);
+          setHeroVideos(mainData.filter(v => v.is_featured).slice(0, 5));
+          if (heroVideos.length === 0) setHeroVideos(mainData.slice(0, 5));
+          localStorage.setItem('macfeed_home_cache', JSON.stringify(mainData));
         }
-
-        // 2. Fetch main feed
-        await fetchVideos(0, true);
       } catch (err) {
         console.error("Home Load Error:", err);
       } finally {
@@ -389,19 +382,6 @@ export default function Home() {
       }
     }
     init();
-
-    // ── Supabase Realtime ──
-    const channel = supabase
-      .channel('home-videos-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos' }, () => {
-        setPage(0);
-        fetchVideos(0, true);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [fetchVideos]);
 
   if (loading) return <Loader />;
@@ -409,6 +389,7 @@ export default function Home() {
   // Group videos by category
   const categories = {};
   videos.forEach((v) => {
+    if (!v.category) return;
     if (!categories[v.category]) categories[v.category] = [];
     categories[v.category].push(v);
   });
