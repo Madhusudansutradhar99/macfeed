@@ -162,52 +162,58 @@ export default function Header() {
       onMouseEnter={() => setIsHeaderHovered(true)}
       onMouseLeave={() => setIsHeaderHovered(false)}
       transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-      className={`fixed top-0 left-0 right-0 h-[65px] md:h-[80px] bg-primary/95 backdrop-blur-2xl z-[5000] flex items-center px-4 md:px-10 border-b border-white/5 transition-all duration-500`}
+      className={`fixed top-0 left-0 right-0 h-[75px] bg-transparent z-[5000] flex items-center px-4 transition-colors duration-500 pointer-events-none ${isSearchPage ? 'justify-center' : 'md:px-10'}`}
+      style={isSearchPage ? { backgroundColor: 'transparent', backdropFilter: 'none', WebkitBackdropFilter: 'none', borderBottom: 'none' } : {}}
     >
       {!isSearchPage && (
-        <div className="flex items-center gap-4 md:gap-6 shrink-0 pointer-events-auto">
-          <Link to="/" className="flex items-center gap-2 active:scale-95 transition-transform">
-            <img src="/macfeed-logo.png" className="h-8 w-8 md:h-10 md:w-10 object-contain" />
-            <span className="text-primary text-lg md:text-2xl font-black uppercase italic tracking-tighter leading-none">
+        <div className="flex items-center gap-6 shrink-0 mr-10 pointer-events-auto">
+          <button onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))} className="p-3 bg-secondary rounded-2xl hover:bg-primary/10 border border-primary transition-all text-primary">
+            <Layout className="w-5 h-5" />
+          </button>
+          <Link to="/" className="hidden md:flex items-center gap-2">
+            <img src="/macfeed-logo.png" className="h-10 w-10" />
+            <span className="text-primary text-2xl font-black uppercase italic tracking-tighter leading-none">
               Mac<span className="text-accent" style={{ color: 'var(--accent-color)' }}>Feed</span>
             </span>
           </Link>
         </div>
       )}
 
-      <div ref={dropdownRef} className="flex-1 max-w-2xl mx-4 md:mx-auto relative z-[6000] pointer-events-auto">
+      <div ref={dropdownRef} className="flex-1 min-w-[100px] max-w-4xl mx-2 md:mx-auto relative z-[6000] pointer-events-auto">
         <div
-          className={`search-container flex items-center transition-all duration-500 px-4 py-2 rounded-full border border-white/10 ${isFocused ? 'bg-secondary border-accent shadow-2xl scale-[1.02]' : 'bg-secondary/50 hover:bg-secondary'}`}
-          style={isFocused ? { borderColor: 'var(--accent-color)', boxShadow: '0 0 20px rgba(255, 255, 255, 0.1)' } : {}}
+          className={`search-container flex items-center transition-all duration-500 px-2 md:px-4 py-1.5 rounded-full border-2 ${isFocused ? 'bg-secondary/95 border-accent ring-4 ring-accent/20 w-full shadow-2xl' : 'bg-secondary/40 border-primary w-full hover:bg-secondary/60 hover:border-accent/40'}`}
+          style={isFocused ? { borderColor: '#ff0000', boxShadow: '0 0 20px rgba(255, 0, 0, 0.3)' } : {}}
         >
-          <Search className={`w-4 h-4 md:w-5 md:h-5 transition-colors ${isFocused ? 'text-accent' : 'text-white/40'}`} style={isFocused ? { color: 'var(--accent-color)' } : {}} />
+          <div className={`flex items-center justify-center p-2 rounded-full transition-all ${isFocused || isHeaderHovered ? 'text-accent' : 'text-secondary'}`} style={isFocused || isHeaderHovered ? { color: 'var(--accent-color)' } : {}}>
+            <Search className="w-4 h-4 md:w-5 md:h-5" />
+          </div>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onKeyDown={(e) => e.key === 'Enter' && (navigate(`/search?q=${encodeURIComponent(query)}`), setIsFocused(false))}
             placeholder="Search..."
-            className="bg-transparent outline-none text-primary text-xs md:text-sm font-bold w-full px-3 placeholder:text-white/20"
+            className="bg-transparent outline-none text-primary text-[10px] md:text-lg font-black italic uppercase tracking-tight transition-all duration-500 w-full min-w-0 px-2 md:px-4 placeholder:text-secondary"
           />
-          {loading && isFocused && <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin ml-2" style={{ borderColor: 'var(--accent-color)', borderTopColor: 'transparent' }} />}
+          {loading && isFocused && <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin ml-3" style={{ borderColor: 'var(--accent-color)', borderTopColor: 'transparent' }} />}
         </div>
-        
         <AnimatePresence>
           {isFocused && !isSearchPage && (
             <motion.div 
                 initial={{ opacity: 0, y: 15 }} 
                 animate={{ opacity: 1, y: 10 }} 
                 exit={{ opacity: 0, y: 15 }} 
-                className="fixed md:absolute top-[70px] md:top-full left-4 right-4 md:left-0 md:right-0 mx-auto w-auto md:w-full bg-[#111] backdrop-blur-3xl border border-white/10 rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden"
+                className="fixed md:absolute top-[80px] md:top-full left-4 right-4 md:left-0 md:right-0 mx-auto w-auto md:w-full max-w-4xl bg-secondary/95 backdrop-blur-3xl border border-primary rounded-[2rem] shadow-2xl overflow-hidden"
             >
-              <div className="max-h-[60vh] overflow-y-auto pb-6 custom-scrollbar">
-                <div className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest border-b border-white/5">Results for "{query}"</div>
+              <div className="max-h-[70vh] overflow-y-auto pb-6">
+                {isFreeMode && <div className="mx-8 mt-4 p-3 bg-accent/10 border border-accent/20 rounded-2xl flex items-center gap-2 shadow-lg" style={{ backgroundColor: 'var(--accent-color)22', borderColor: 'var(--accent-color)44' }}><Zap className="w-4 h-4 text-accent animate-pulse" style={{ color: 'var(--accent-color)' }} /><span className="text-[10px] font-black text-accent uppercase tracking-widest italic" style={{ color: 'var(--accent-color)' }}>Global Free Engine Active</span></div>}
+                <div className="px-10 py-5 text-[10px] font-black text-secondary uppercase tracking-[0.4em] border-b border-primary">Results for "{query}"</div>
                 {results.length > 0 ? results.map((r, idx) => (
-                  <div key={r.id + idx} onClick={() => handleResultClick(r)} className="flex items-center gap-4 px-6 py-4 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 group transition-all">
-                    <div className="relative w-24 h-14 rounded-lg overflow-hidden bg-black shrink-0 shadow-md border border-white/5"><img src={r.thumbnail_url} decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /></div>
-                    <div className="flex-1 min-w-0"><p className="text-white text-sm font-bold truncate group-hover:text-accent transition-colors tracking-tight" style={{ color: hovered ? 'var(--accent-color)' : 'white' }}>{r.title}</p><div className="flex items-center gap-2 mt-1">{r.type === 'local' ? <span className="text-[8px] text-accent font-black uppercase bg-accent/10 px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-color)', backgroundColor: 'var(--accent-color)22' }}>MacFeed</span> : <span className="text-[8px] text-red-500 font-black uppercase bg-red-500/10 px-1.5 py-0.5 rounded">YouTube</span>}</div></div>
+                  <div key={r.id + idx} onClick={() => handleResultClick(r)} className="flex items-center gap-6 px-10 py-5 hover:bg-accent/10 cursor-pointer border-b border-primary last:border-0 group transition-all">
+                    <div className="relative w-36 h-20 rounded-xl overflow-hidden bg-black shrink-0 shadow-lg border border-primary"><img src={r.thumbnail_url} decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500" />{r.duration && <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/10">{r.duration}</span>}</div>
+                    <div className="flex-1 min-w-0"><p className="text-primary text-lg font-black truncate group-hover:text-accent transition-colors uppercase italic tracking-tighter leading-none" style={{ '--accent': 'var(--accent-color)' }}>{r.title}</p><div className="flex items-center gap-3 mt-2">{r.type === 'local' ? <span className="text-[9px] text-accent font-black uppercase flex items-center gap-1 bg-accent/10 px-2 py-1 rounded-lg" style={{ color: 'var(--accent-color)', backgroundColor: 'var(--accent-color)22' }}>MacFeed</span> : <span className="text-[9px] text-red-500 font-black uppercase flex items-center gap-2 bg-red-500/10 px-2 py-1 rounded-lg"><YoutubeIcon /> YouTube Global</span>}</div></div>
                   </div>
-                )) : !loading && <div className="p-10 text-center text-white/30 font-bold uppercase tracking-widest text-[10px]">No results found</div>}
+                )) : !loading && <div className="p-20 text-center text-secondary font-black uppercase italic tracking-[0.5em]">Searching...</div>}
               </div>
             </motion.div>
           )}
@@ -215,34 +221,34 @@ export default function Header() {
       </div>
 
       {!isSearchPage && (
-        <div className="shrink-0 flex items-center gap-3 pointer-events-auto">
-          <div className="hidden md:block">
-            <ThemeToggle />
-          </div>
+        <div className="shrink-0 ml-2 md:ml-10 flex items-center gap-2 md:gap-4 pointer-events-auto">
+          <ThemeToggle />
           
           {user ? (
             <button 
               onClick={() => navigate('/settings')}
-              className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-accent to-purple-600 p-[2px] shadow-lg active:scale-90 transition-transform"
-              style={{ backgroundImage: 'linear-gradient(to bottom right, var(--accent-color), #7c3aed)' }}
+              className="w-11 h-11 rounded-full bg-gradient-to-br from-accent via-purple-500 to-accent p-[2px] shadow-xl transition-transform active:scale-90"
+              style={{ backgroundImage: 'linear-gradient(to bottom right, var(--accent-color), #a855f7, var(--accent-color))' }}
             >
-              <div className="w-full h-full rounded-full bg-[#000] flex items-center justify-center font-black text-[10px] md:text-xs text-white">
-                {user.email?.[0]?.toUpperCase() || <User size={16} />}
+              <div className="w-full h-full rounded-full bg-secondary flex items-center justify-center font-black text-xs text-primary uppercase">
+                {user.email?.[0] || <User className="w-4 h-4" />}
               </div>
             </button>
           ) : (
             <motion.button
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setAuthModalOpen(true)}
-              className="px-4 py-2 bg-accent rounded-full font-black text-[10px] uppercase tracking-widest text-white shadow-lg active:opacity-80"
-              style={{ backgroundColor: 'var(--accent-color)' }}
+              className="flex items-center gap-2 px-6 py-2.5 bg-accent rounded-full font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-accent/30 transition-all border border-white/20"
+              style={{ backgroundColor: 'var(--accent-color)', color: 'var(--text-on-accent)' }}
             >
-              Sign In
+              <LogIn className="w-4 h-4" />
+              <span className="hidden sm:inline">Sign In</span>
             </motion.button>
           )}
         </div>
       )}
-      <AnimatePresence>{isFocused && !isSearchPage && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[4500] pointer-events-none" />}</AnimatePresence>
+      <AnimatePresence>{isFocused && !isSearchPage && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-primary/80 backdrop-blur-sm z-[4500] pointer-events-none" />}</AnimatePresence>
     </motion.header>
   );
 }
