@@ -71,7 +71,7 @@ export const applyHardwareDecodingHints = (videoEl) => {
     ];
     
     let supported = false;
-    if (MediaSource) {
+    if (typeof MediaSource !== 'undefined') {
       supported = codecs.some(c => MediaSource.isTypeSupported(c));
     }
 
