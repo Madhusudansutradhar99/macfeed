@@ -90,13 +90,7 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 5000,
     sourcemap: false,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
-      }
-    },
+    minify: 'esbuild',
     rollupOptions: {
       onwarn(warning, warn) {
         if (warning.code === 'EVAL') return;
