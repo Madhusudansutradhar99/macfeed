@@ -442,7 +442,7 @@ export default function Home() {
             { id: 'light', name: 'Daylight', bg: 'bg-white', border: 'border-red-500', text: 'text-black' },
             { id: 'blue', name: 'Blue Sky', bg: 'bg-blue-100', border: 'border-yellow-400', text: 'text-blue-900' }
           ].map(t => {
-            const { theme, toggleTheme } = useTheme(); // Note: useTheme needs to be imported/used correctly
+            const { theme } = useTheme();
             const isActive = theme === t.id;
             return (
               <button
