@@ -125,20 +125,22 @@ body {
     position: fixed; /* Lock body to prevent scrolling the whole page */
     font-size: 16px;
     touch-action: none; /* Disable all browser gestures */
+    background-color: #020617 !important; /* Match splash screen exactly */
   }
 
+  /* Only allow scrolling inside content containers, not the whole site */
+  .scroll-container {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    padding-bottom: env(safe-area-inset-bottom, 20px); /* Add padding for system bar */
+    scrollbar-width: none;
+  }
 }
 
-/* Only allow scrolling inside content containers, not the whole site */
-.scroll-container {
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-  scrollbar-width: none;
-}
 .scroll-container::-webkit-scrollbar {
   display: none;
 }

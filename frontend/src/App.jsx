@@ -107,11 +107,11 @@ function AppContent() {
     const initNative = async () => {
       if (Capacitor.isNativePlatform()) {
         try {
-          // 1. Style Status Bar
+          // 1. Style Status Bar for True Immersive Look
+          await StatusBar.setOverlaysWebView({ overlay: true });
           await StatusBar.setStyle({ style: Style.Dark });
-          await StatusBar.setBackgroundColor({ color: '#000000' });
           
-          // 2. Hide Splash Screen (manual control)
+          // 2. Hide Splash Screen
           await SplashScreen.hide();
         } catch (e) {
           console.warn('Capacitor plugin error:', e);

@@ -59,15 +59,15 @@ export default function StartupAnimation({ onComplete }) {
               </motion.h1>
             </div>
 
-            {/* Cinematic Progress Bar */}
-            <div className="mt-6 w-40 h-[1px] bg-white/10 relative overflow-hidden rounded-full">
-              <motion.div
-                initial={{ left: "-100%" }}
-                animate={{ left: "100%" }}
-                transition={{ duration: 1.5, ease: "easeInOut", repeat: Infinity }}
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400 to-transparent"
-              />
-            </div>
+            {/* Cinematic Pulse */}
+            <motion.div
+              animate={{ 
+                opacity: [0.2, 0.5, 0.2],
+                scaleX: [1, 1.2, 1]
+              }}
+              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+              className="mt-6 w-48 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent"
+            />
 
             {/* Subtext */}
             <motion.p
