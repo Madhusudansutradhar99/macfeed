@@ -31,16 +31,16 @@ export const getHlsConfig = () => ({
   lowInitialPlaylistSize: 2,
   smoothQualityChange: true,
   handleManifestRedirects: true,
-  // VLC-like aggressive buffering
-  maxBufferLength: 60,         // Increase to 60s
-  maxMaxBufferLength: 120,     // Allow up to 120s
-  maxBufferSize: 120 * 1024 * 1024, // 120MB buffer
+  // VLC-like ultra-aggressive buffering for 8K/4K
+  maxBufferLength: 120,        // Buffer up to 120s ahead
+  maxMaxBufferLength: 300,    // Allow up to 300s (5 minutes)
+  maxBufferSize: 500 * 1024 * 1024, // 500MB buffer for high bitrate
   maxBufferHole: 0.5,
   lowBufferWatchdogPeriod: 0.5,
   highBufferWatchdogPeriod: 2,
   nudgeOffset: 0.1,
   nudgeMaxRetry: 5,
-  backBufferLength: 30,        // Keep 30s of previous video for smooth seeking
+  backBufferLength: 60,        // Keep 60s of previous video
   playlistSelector: () => {
     const maxHeight = getMaxQualityHeight();
     return (playlists) => {
@@ -77,9 +77,10 @@ export const applyHardwareDecodingHints = (videoEl) => {
 
     if (supported) {
       videoEl.setAttribute('data-hw-decode', 'true');
-      videoEl.style.transform = 'translate3d(0,0,0)'; // Force GPU layer
-      videoEl.style.willChange = 'transform';
+      videoEl.style.transform = 'translate3d(0,0,0) scale(1.001)'; // Force GPU + sub-pixel rendering
+      videoEl.style.willChange = 'transform, opacity';
       videoEl.setAttribute('fetchpriority', 'high');
+      videoEl.setAttribute('preload', 'auto');
     }
     
     // Disable software-heavy features for performance

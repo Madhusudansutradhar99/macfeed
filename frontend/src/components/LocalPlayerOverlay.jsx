@@ -1002,12 +1002,15 @@ function LocalPlayerOverlay() {
                     onEnded={() => setPlaying(false)}
                     playsInline
                     decoding="async"
-                    // Optimization: Prevent UI jank by disabling layout shifts
+                    preload="auto"
+                    fetchpriority="high"
+                    // Optimization: VLC-like GPU offloading and layout isolation
                     style={{ 
                         contain: 'strict',
                         willChange: 'transform',
-                        transform: 'translate3d(0,0,0)',
-                        backfaceVisibility: 'hidden'
+                        transform: 'translate3d(0,0,0) scale(1.0001)',
+                        backfaceVisibility: 'hidden',
+                        perspective: '1000px'
                     }}
                 >
                     {activeSubtitle && <track src={activeSubtitle} kind="subtitles" srcLang="en" label="English" default />}

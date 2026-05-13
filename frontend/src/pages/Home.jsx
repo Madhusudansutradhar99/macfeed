@@ -199,7 +199,7 @@ function VideoRow({ title, videos, emoji }) {
   if (!videos.length) return null;
 
   // Create unique navigation class names for this specific row
-  const safeTitle = title.replace(/\s+/g, '-').toLowerCase();
+  const safeTitle = (title || 'videos').replace(/\s+/g, '-').toLowerCase();
   const nextClass = `swiper-next-${safeTitle}`;
   const prevClass = `swiper-prev-${safeTitle}`;
 
@@ -363,7 +363,7 @@ export default function Home() {
         const { data: heroData, error: heroErr } = await supabase
           .from('videos')
           .select('*')
-          .or('is_featured.eq.true,is_featured.eq.TRUE,upload_location.ilike.%header%')
+          .or('is_featured.eq.true,upload_location.ilike.%header%')
           .order('created_at', { ascending: false })
           .limit(10);
         
