@@ -31,26 +31,26 @@ export const getHlsConfig = () => ({
   lowInitialPlaylistSize: 2,
   smoothQualityChange: true,
   handleManifestRedirects: true,
-  // VLC-like extreme buffering for 8K (Max Stability)
-  maxBufferLength: 300,        // Buffer up to 5 minutes
-  maxMaxBufferLength: 900,    // Allow up to 15 minutes buffer
-  maxBufferSize: 1500 * 1024 * 1024, // 1.5GB buffer for ultra-high bitrate
-  maxBufferHole: 0.1,          // Aggressively fill even small holes
-  lowBufferWatchdogPeriod: 0.05, // Ultra-fast watchdog for 8K
-  highBufferWatchdogPeriod: 0.5,
-  nudgeOffset: 0.02,
-  nudgeMaxRetry: 20,
-  backBufferLength: 180,       // Keep 3 mins of previous video
-  fragLoadingMaxRetry: 10,     // Never give up on fragments
-  manifestLoadingMaxRetry: 10,
-  levelLoadingMaxRetry: 10,
-  enableWorker: true,          // Offload HLS processing to a worker
-  stable: true,
+  // VLC-like efficiency: High forward buffer, Zero back buffer
+  maxBufferLength: 30,         // 30s is more stable for 8K on mobile than 60s
+  maxMaxBufferLength: 60,      // 1 min max
+  maxBufferSize: 256 * 1024 * 1024, // 256MB is safer for low-RAM mobile devices
+  maxBufferHole: 0.1,
+  lowBufferWatchdogPeriod: 0.1,
+  highBufferWatchdogPeriod: 1,
+  nudgeOffset: 0.05,
+  nudgeMaxRetry: 10,
+  backBufferLength: 0,         // Purge back-buffer immediately
+  fragLoadingMaxRetry: 5,
+  manifestLoadingMaxRetry: 5,
+  levelLoadingMaxRetry: 5,
+  enableWorker: false,         
+  lowLatencyMode: true,
+  stable: false,
   playlistSelector: () => {
     const maxHeight = getMaxQualityHeight();
     return (playlists) => {
       if (!playlists || playlists.length === 0) return 0;
-      // Select variant closest to (but not exceeding) max quality
       let bestIdx = 0;
       for (let i = 0; i < playlists.length; i++) {
         const height = playlists[i].attributes?.RESOLUTION?.height || 0;
@@ -67,80 +67,48 @@ export const getHlsConfig = () => ({
 export const applyHardwareDecodingHints = (videoEl) => {
   if (!videoEl) return;
   try {
-    // Hint for VP9/AV1/HEVC (modern codecs) to use hardware decoding
-    const codecs = [
-      'video/mp4; codecs="avc1.640028"', // H.264 High Profile
-      'video/mp4; codecs="hvc1.1.6.L120.90"', // HEVC/H.265
-      'video/mp4; codecs="vp9, opus"',
-      'video/mp4; codecs="av01.0.08M.08, opus"' // AV1
-    ];
-    
-    let supported = false;
-    if (typeof MediaSource !== 'undefined') {
-      supported = codecs.some(c => MediaSource.isTypeSupported(c));
-    }
-
-    if (supported) {
-      videoEl.setAttribute('data-hw-decode', 'true');
-      videoEl.style.transform = 'translate3d(0,0,0) scale(1.001)'; // Force GPU + sub-pixel rendering
-      videoEl.style.willChange = 'transform, opacity';
-      videoEl.setAttribute('fetchpriority', 'high');
-      videoEl.setAttribute('preload', 'auto');
-    }
-    
-    // Disable software-heavy features for performance
-    videoEl.setAttribute('decoding', 'async');
+    videoEl.setAttribute('data-hw-decode', 'true');
+    videoEl.style.transform = 'translateZ(0)'; // Force dedicated plane
+    videoEl.style.willChange = 'transform';
+    videoEl.setAttribute('fetchpriority', 'high');
     videoEl.setAttribute('preload', 'auto');
-  } catch (err) {
-    console.debug('[HW Decode] Not available:', err.message);
-  }
+    videoEl.setAttribute('decoding', 'async');
+  } catch (err) {}
 };
 
 /**
  * Request video frame callback for smooth playback monitoring
- * (used to detect stalls and trigger recovery)
  */
 export const setupFrameCallbackMonitoring = (videoEl, onStall) => {
   if (!videoEl.requestVideoFrameCallback) return null;
-  
   let lastTimestamp = 0;
   let stallCount = 0;
-  
   const checkFrame = (now, metadata) => {
-    // If currentTime hasn't advanced, we may be stalled
     if (Math.abs(metadata.presentedFrames - lastTimestamp) < 1) {
       stallCount++;
-      if (stallCount > 3) onStall?.();
+      if (stallCount > 5) onStall?.(); // 5 frames dropped = stall
     } else {
       stallCount = 0;
     }
     lastTimestamp = metadata.presentedFrames;
     videoEl.requestVideoFrameCallback(checkFrame);
   };
-  
   return videoEl.requestVideoFrameCallback(checkFrame);
 };
 
 /**
- * Memory pressure mitigation: Clear buffered segments beyond playhead
+ * Memory pressure mitigation: Clear segments BEHIND the playhead
  */
 export const mitigateMemoryPressure = (videoEl) => {
-  if (!videoEl.buffered) return;
+  if (!videoEl.buffered || !videoEl.sourceBuffer) return;
   try {
     const currentTime = videoEl.currentTime;
     const buffer = videoEl.buffered;
-    
-    // Purge segments >60s ahead of playhead
+    // Purge everything more than 5 seconds behind the playhead
     for (let i = 0; i < buffer.length; i++) {
-      if (buffer.start(i) > currentTime + 60) {
-        // Some browsers allow removeAttribute to clean up, others don't
-        // This is best-effort
-        if (videoEl.sourceBuffer) {
-          videoEl.sourceBuffer.remove(buffer.start(i), buffer.end(i));
-        }
+      if (buffer.end(i) < currentTime - 5) {
+        videoEl.sourceBuffer.remove(buffer.start(i), buffer.end(i));
       }
     }
-  } catch (err) {
-    console.debug('[Memory] Cleanup unavailable:', err.message);
-  }
+  } catch (err) {}
 };
