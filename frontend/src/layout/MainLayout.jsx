@@ -31,7 +31,7 @@ const MainLayout = () => {
       <Header />
       <div className="flex flex-1 relative min-w-0">
         <Sidebar />
-        <main className="flex-1 p-2 sm:p-4 pt-24 sm:pt-24 md:p-6 md:pt-24">
+        <main className="flex-1 p-2 sm:p-4 pt-20 md:p-6 md:pt-24">
           <ErrorBoundary resetKey={location.pathname}>
             <Outlet />
           </ErrorBoundary>

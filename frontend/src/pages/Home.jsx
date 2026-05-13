@@ -352,39 +352,30 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    async function init() {
-      const cached = localStorage.getItem('macfeed_home_cache');
-      if (cached) {
-        try {
-          setVideos(JSON.parse(cached));
-          setLoading(false);
-        } catch (e) { }
-      }
-
+    async function loadData() {
+      setLoading(true);
       try {
-        // 1. Fetch Main Feed (Ultra Safe)
-        const { data: mainData, error: mainErr } = await supabase
+        const { data, error } = await supabase
           .from('videos')
           .select('*')
-          .limit(20);
-        
-        if (!mainErr && mainData && mainData.length > 0) {
-          setVideos(mainData);
-          setHeroVideos(mainData.slice(0, 5));
-          localStorage.setItem('macfeed_home_cache', JSON.stringify(mainData));
-        } else {
-          // Attempt simple order if first one worked
-          const { data: ordered } = await supabase.from('videos').select('*').order('id', { ascending: false }).limit(20);
-          if (ordered) setVideos(ordered);
+          .order('created_at', { ascending: false })
+          .limit(30);
+
+        if (data) {
+          setVideos(data);
+          // Hero videos: Use featured if any, else just use first 5
+          const featured = data.filter(v => v.is_featured);
+          setHeroVideos(featured.length > 0 ? featured.slice(0, 5) : data.slice(0, 5));
+          localStorage.setItem('macfeed_home_cache', JSON.stringify(data));
         }
-      } catch (err) {
-        console.error("Home Load Error:", err);
+      } catch (e) {
+        console.error(e);
       } finally {
         setLoading(false);
       }
     }
-    init();
-  }, [fetchVideos]);
+    loadData();
+  }, []);
 
   if (loading) return <Loader />;
 
