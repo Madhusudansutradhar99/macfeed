@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useTheme } from '../context/ThemeContext';
 import { 
   Flame, Clapperboard, MonitorPlay, Sparkles, 
   Smile, Trophy, Video, Ghost, Newspaper, Rocket 
@@ -17,6 +18,7 @@ const CATEGORIES = [
 ];
 
 const CategoryPills = ({ activeCategory, setCategory }) => {
+  const { theme } = useTheme();
   return (
     <div className="flex items-center gap-3 py-2 px-1 overflow-visible">
       {CATEGORIES.map((cat) => {
@@ -30,12 +32,13 @@ const CategoryPills = ({ activeCategory, setCategory }) => {
             className={`
               flex items-center gap-3 px-6 py-3 rounded-full border transition-all duration-300 whitespace-nowrap
               ${isActive 
-                ? 'bg-blue-600 border-blue-500 text-white shadow-[0_10px_25px_rgba(37,99,235,0.4)]' 
-                : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white hover:scale-105 shadow-blue-500/20'
+                ? 'bg-accent text-on-accent border-accent shadow-lg' 
+                : 'bg-secondary/40 border-primary text-secondary hover:bg-secondary/60 hover:text-primary'
               }
             `}
+            style={isActive ? { backgroundColor: 'var(--accent-color)', color: 'var(--text-on-accent)', borderColor: 'var(--accent-color)' } : {}}
           >
-            <span className={`${isActive ? 'text-white' : 'text-blue-500'}`}>{cat.icon}</span>
+            <span className={`${isActive ? 'text-on-accent' : 'text-accent'}`} style={{ color: isActive ? 'var(--text-on-accent)' : 'var(--accent-color)' }}>{cat.icon}</span>
             <span className="text-xs font-black uppercase tracking-widest">{cat.label}</span>
           </motion.button>
         );
