@@ -31,6 +31,16 @@ export const getHlsConfig = () => ({
   lowInitialPlaylistSize: 2,
   smoothQualityChange: true,
   handleManifestRedirects: true,
+  // VLC-like aggressive buffering
+  maxBufferLength: 60,         // Increase to 60s
+  maxMaxBufferLength: 120,     // Allow up to 120s
+  maxBufferSize: 120 * 1024 * 1024, // 120MB buffer
+  maxBufferHole: 0.5,
+  lowBufferWatchdogPeriod: 0.5,
+  highBufferWatchdogPeriod: 2,
+  nudgeOffset: 0.1,
+  nudgeMaxRetry: 5,
+  backBufferLength: 30,        // Keep 30s of previous video for smooth seeking
   playlistSelector: () => {
     const maxHeight = getMaxQualityHeight();
     return (playlists) => {
@@ -50,17 +60,31 @@ export const getHlsConfig = () => ({
  * Apply hardware decoding hints via Media Source Extensions
  */
 export const applyHardwareDecodingHints = (videoEl) => {
-  if (!videoEl || !MediaSource) return;
+  if (!videoEl) return;
   try {
-    // Hint for VP9/AV1 (modern codecs) to use hardware decoding
-    const supported = MediaSource.isTypeSupported(
-      'video/mp4; codecs="vp9, opus"'
-    ) || MediaSource.isTypeSupported(
-      'video/mp4; codecs="av01.0.08M.08, opus"'
-    );
+    // Hint for VP9/AV1/HEVC (modern codecs) to use hardware decoding
+    const codecs = [
+      'video/mp4; codecs="avc1.640028"', // H.264 High Profile
+      'video/mp4; codecs="hvc1.1.6.L120.90"', // HEVC/H.265
+      'video/mp4; codecs="vp9, opus"',
+      'video/mp4; codecs="av01.0.08M.08, opus"' // AV1
+    ];
+    
+    let supported = false;
+    if (MediaSource) {
+      supported = codecs.some(c => MediaSource.isTypeSupported(c));
+    }
+
     if (supported) {
       videoEl.setAttribute('data-hw-decode', 'true');
+      videoEl.style.transform = 'translate3d(0,0,0)'; // Force GPU layer
+      videoEl.style.willChange = 'transform';
+      videoEl.setAttribute('fetchpriority', 'high');
     }
+    
+    // Disable software-heavy features for performance
+    videoEl.setAttribute('decoding', 'async');
+    videoEl.setAttribute('preload', 'auto');
   } catch (err) {
     console.debug('[HW Decode] Not available:', err.message);
   }

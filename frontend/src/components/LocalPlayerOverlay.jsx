@@ -326,6 +326,16 @@ function LocalPlayerOverlay() {
                     video.style.WebkitBackfaceVisibility = 'hidden';
                     video.style.perspective = '1000px';
                     video.style.imageRendering = 'optimizeQuality';
+                    
+                    // VLC-like Buffer Optimization: Force high-priority fetching and async decoding
+                    video.setAttribute('decoding', 'async');
+                    video.setAttribute('fetchpriority', 'high');
+                    video.setAttribute('preload', 'auto');
+                    
+                    // Buffer Strategy: Aggressive smart buffering for 4K/8K
+                    if ('MediaSource' in window) {
+                        // We rely on useVideoPlayer hook's hls.js config for MSE buffering
+                    }
 
                     // Check slow network
                     let connectionSpeed = 'fast';
@@ -992,6 +1002,14 @@ function LocalPlayerOverlay() {
                     onEnded={() => setPlaying(false)}
                     playsInline
                     decoding="async"
+                    // Optimization: Prevent UI jank by disabling layout shifts
+                    style={{ 
+                        ...videoRef.current?.style, 
+                        contain: 'strict',
+                        willChange: 'transform',
+                        transform: 'translate3d(0,0,0)',
+                        backfaceVisibility: 'hidden'
+                    }}
                 >
                     {activeSubtitle && <track src={activeSubtitle} kind="subtitles" srcLang="en" label="English" default />}
                 </video>
@@ -1318,7 +1336,8 @@ function LocalPlayerOverlay() {
                                             initial={{ opacity: 0, scale: 0.9, x: 20 }}
                                             animate={{ opacity: 1, scale: 1, x: 0 }}
                                             exit={{ opacity: 0, scale: 0.9, x: 20 }}
-                                            className="fixed left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] z-[9999] w-[90%] max-w-[400px] bg-black/98 backdrop-blur-3xl border border-white/10 rounded-[3rem] overflow-hidden shadow-[0_50px_150px_rgba(0,0,0,0.9)]"
+                                            // Resized "hidden table" (Quick Menu) to 15% width on mobile as requested
+                                            className="fixed left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] z-[9999] w-[15%] md:w-[90%] max-w-[400px] bg-black/98 backdrop-blur-3xl border border-white/10 rounded-[1rem] md:rounded-[3rem] overflow-hidden shadow-[0_50px_150px_rgba(0,0,0,0.9)]"
                                             onClick={e => e.stopPropagation()}
                                         >
                                             <div className="px-8 py-6 bg-white/5 border-b border-white/5 flex items-center justify-between">
