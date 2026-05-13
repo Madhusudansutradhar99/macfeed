@@ -89,7 +89,9 @@ export default function SearchResults() {
       const resultsData = data?.results || [];
       if (resultsData.length > 0) {
         const globalResults = resultsData.map(v => ({
-          id: `yt-${v.ytId}`, ytId: v.ytId, title: v.title, thumbnail_url: (v.thumbnail || v.thumbnail_url)?.replace('maxresdefault.jpg', 'mqdefault.jpg'),
+          id: `yt-${v.ytId}`, ytId: v.ytId, title: v.title, 
+          thumbnail_url: (v.thumbnail || v.thumbnail_url)?.replace('maxresdefault.jpg', 'mqdefault.jpg'),
+          duration: v.duration || '--:--',
           video_url: `https://www.youtube.com/embed/${v.ytId}`, source: 'youtube', type: 'global'
         }));
         

@@ -24,9 +24,10 @@ function getCachedRelated(videoId) {
 }
 
 const formatDuration = (iso) => {
-  if (!iso || iso === '--:--') return '00:00';
+  if (!iso || iso === '--:--') return '--:--';
+  if (iso.includes(':') && !iso.includes('P')) return iso;
   const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-  if (!match) return iso.includes(':') ? iso : '00:00';
+  if (!match) return iso;
   const h = parseInt(match[1] || 0);
   const m = parseInt(match[2] || 0);
   const s = parseInt(match[3] || 0);

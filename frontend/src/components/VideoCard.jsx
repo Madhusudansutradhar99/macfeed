@@ -17,9 +17,12 @@ const YoutubeIcon = () => (
 );
 
 const formatDuration = (iso) => {
-  if (!iso) return '00:00';
+  if (!iso || iso === '--:--') return '--:--';
+  // If it's already a time string like "5:32" or "1:20:05"
+  if (iso.includes(':') && !iso.includes('P')) return iso;
+  
   const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-  if (!match) return '00:00';
+  if (!match) return iso;
   const h = parseInt(match[1] || 0);
   const m = parseInt(match[2] || 0);
   const s = parseInt(match[3] || 0);
