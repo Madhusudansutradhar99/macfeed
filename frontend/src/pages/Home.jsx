@@ -429,59 +429,57 @@ export default function Home() {
     >
       <HeroBanner videos={heroVideos} />
 
-      <div className="px-2 sm:px-4 lg:px-6 xl:px-8 space-y-3 sm:space-y-4 md:space-y-2">
+      <div className="px-4 md:px-10 pb-20">
         {/* Row 1: Trending */}
-        {trending.length > 0 && <VideoRow title="Trending Now" videos={trending} emoji="🔥" />}
+        {trending.length > 0 && (
+          <section className="mb-10 md:mb-16">
+            <h2 className="section-title">Trending Now</h2>
+            <VideoRow videos={trending} />
+          </section>
+        )}
 
         {/* Dynamic Category Rows */}
         {Object.entries(categories).map(([cat, vids]) => {
           if (cat === 'Movies') {
-            return <Movies3DSection key={cat} title={cat} videos={vids} />;
+            return (
+              <section key={cat} className="mb-10 md:mb-16">
+                <h2 className="section-title">{cat} Special</h2>
+                <Movies3DSection videos={vids} />
+              </section>
+            );
           }
           return (
-            <VideoRow key={cat} title={cat} videos={vids} emoji={CATEGORY_EMOJIS[cat] || '🎥'} />
+            <section key={cat} className="mb-10 md:mb-16">
+              <h2 className="section-title">{cat}</h2>
+              <VideoRow videos={vids} emoji={CATEGORY_EMOJIS[cat]} />
+            </section>
           );
         })}
 
         {/* Banner Ad */}
-        <div className="py-2 sm:py-4">
+        <div className="py-8">
           <AdBanner position="banner" />
         </div>
 
-        {/* Infinite Scroll Grid: More to Explore - Premium Flix.id Style */}
-        <section className="mt-32 mb-40 relative px-4 md:px-12">
-          {/* Section Glow */}
-          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-full h-[500px] bg-blue-600/[0.03] blur-[150px] rounded-full pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col gap-12">
+        {/* Explore Section */}
+        <section className="mt-10 mb-20 relative">
+          <div className="flex flex-col gap-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-0.5 bg-blue-500 rounded-full" />
-                    <span className="text-blue-500 text-[10px] font-black uppercase tracking-[0.5em]">Curated Content</span>
-                  </div>
-                  <h2 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter text-white leading-none">
-                    More to <span className="text-blue-500">Explore</span>
+                  <h2 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter text-white leading-tight">
+                    More to <span className="text-accent" style={{ color: 'var(--accent-color)' }}>Explore</span>
                   </h2>
-                </div>
-                
-                <div className="flex items-center gap-4">
-                    <button className="more-prev w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:bg-white/10 transition-all active:scale-90 backdrop-blur-xl">
-                      <ChevronLeft size={24}/>
-                    </button>
-                    <button className="more-next w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-blue-600 hover:border-blue-500 transition-all active:scale-90 backdrop-blur-xl">
-                      <ChevronRight size={24}/>
-                    </button>
+                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] mt-2">Curated for your taste</p>
                 </div>
             </div>
 
-            <div className="py-4 overflow-x-auto no-scrollbar">
+            <div className="py-2 overflow-x-auto no-scrollbar">
               <CategoryPills activeCategory={activeTab} setCategory={setActiveTab} />
             </div>
 
             <Swiper
-              modules={[Navigation, Autoplay, FreeMode]}
-              spaceBetween={30}
+              modules={[Navigation, FreeMode]}
+              spaceBetween={20}
               slidesPerView={2.2}
               breakpoints={{
                 640: { slidesPerView: 3.2 },
@@ -489,29 +487,20 @@ export default function Home() {
                 1024: { slidesPerView: 5.2 },
                 1280: { slidesPerView: 6.2 }
               }}
-              navigation={{
-                prevEl: '.more-prev',
-                nextEl: '.more-next',
-              }}
               freeMode={true}
-              grabCursor={true}
-              touchEventsTarget="container"
-              className="w-full !pt-10 !-mt-10 pb-10"
+              className="w-full pb-10"
             >
-              {videos.map((video, index) => {
-                const isLast = videos.length === index + 1;
-                return (
-                  <SwiperSlide key={video.id} ref={isLast ? lastVideoElementRef : null}>
-                    <PosterCard video={video} index={index} />
-                  </SwiperSlide>
-                );
-              })}
+              {videos.map((video, index) => (
+                <SwiperSlide key={video.id} ref={videos.length === index + 1 ? lastVideoElementRef : null}>
+                  <PosterCard video={video} index={index} />
+                </SwiperSlide>
+              ))}
             </Swiper>
           </div>
 
           {loadingMore && (
-            <div className="flex justify-center py-20">
-              <Loader subtle />
+            <div className="flex justify-center py-10">
+              <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--accent-color)', borderTopColor: 'transparent' }} />
             </div>
           )}
         </section>
