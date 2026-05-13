@@ -92,8 +92,16 @@ export default defineConfig({
     sourcemap: false,
     minify: 'esbuild',
     rollupOptions: {
+      external: [
+        '@capacitor/status-bar',
+        '@capacitor/app',
+        '@capacitor/splash-screen',
+        '@capacitor/filesystem',
+        '@capacitor/screen-orientation'
+      ],
       onwarn(warning, warn) {
         if (warning.code === 'EVAL') return;
+        if (warning.code === 'UNUSED_EXTERNAL_IMPORT') return;
         warn(warning);
       },
       output: {

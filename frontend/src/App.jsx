@@ -104,8 +104,8 @@ function AppContent() {
     const initNative = async () => {
       if (Capacitor.isNativePlatform()) {
         try {
-          const { StatusBar, Style } = await import('@capacitor/status-bar');
-          const { SplashScreen } = await import('@capacitor/splash-screen');
+          const { StatusBar, Style } = await import(/* @vite-ignore */ '@capacitor/status-bar');
+          const { SplashScreen } = await import(/* @vite-ignore */ '@capacitor/splash-screen');
           
           // 1. Style Status Bar
           await StatusBar.setStyle({ style: Style.Dark });
@@ -127,7 +127,7 @@ function AppContent() {
     const setupBackListener = async () => {
         if (Capacitor.isNativePlatform()) {
             try {
-                const { App: CapApp } = await import('@capacitor/app');
+                const { App: CapApp } = await import(/* @vite-ignore */ '@capacitor/app');
                 backListener = await CapApp.addListener('backButton', ({ canGoBack }) => {
                     const path = locationRef.current.pathname;
                     if (!canGoBack || path === '/' || path === '/intro') {
