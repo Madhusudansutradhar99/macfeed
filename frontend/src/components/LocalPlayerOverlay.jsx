@@ -14,6 +14,42 @@ import { Filesystem } from '@capacitor/filesystem';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import useVideoPlayer from './LocalVideoPlayer/useVideoPlayer';
 
+const VideoRenderer = memo(({ videoRef, aspectRatio, handleVideoMetadata, setIsLoading, setPlaying, activeSubtitle, showControls }) => {
+    return (
+        <video
+            ref={videoRef}
+            className="w-full max-w-full relative z-[10]"
+            style={{
+                width: '100%',
+                height: '100%',
+                maxHeight: '100%',
+                objectFit: aspectRatio === 'Fit' ? 'contain' : aspectRatio === 'Fill' ? 'cover' : aspectRatio === 'Stretch' ? 'fill' : 'contain',
+                aspectRatio: (aspectRatio === '16:9' || aspectRatio === '4:3') ? aspectRatio.replace(':', '/') : 'auto',
+                contain: 'strict',
+                transform: 'translateZ(0)',
+                imageRendering: 'auto',
+                backgroundColor: 'black',
+                filter: 'none',
+                transition: 'none',
+                pointerEvents: showControls ? 'auto' : 'none'
+            }}
+            onLoadedMetadata={handleVideoMetadata}
+            onCanPlay={() => setIsLoading(false)}
+            onWaiting={() => setIsLoading(true)}
+            onPlaying={() => { setIsLoading(false); setPlaying(true); }}
+            onPlay={() => setIsLoading(false)}
+            onPause={() => setPlaying(false)}
+            onEnded={() => setPlaying(false)}
+            playsInline
+            decoding="async"
+            preload="auto"
+            fetchpriority="high"
+        >
+            {activeSubtitle && <track src={activeSubtitle} kind="subtitles" srcLang="en" label="English" default />}
+        </video>
+    );
+});
+
 const formatTime = (s) => {
     if (!s || isNaN(s)) return '00:00:00';
     const hrs = Math.floor(s / 3600);
@@ -968,53 +1004,19 @@ function LocalPlayerOverlay() {
                     }
                 }}
             >
-                {/* Real-time Brightness Overlay (Must be ABOVE video z-10) */}
-                <div className="fixed inset-0 pointer-events-none z-[15] rounded-lg sm:rounded-2xl" style={{ backgroundColor: 'black', opacity: Math.max(0, 1 - (brightness / 100)) }} />
+                {brightness < 100 && (
+                    <div className="fixed inset-0 pointer-events-none z-[15] rounded-lg sm:rounded-2xl" style={{ backgroundColor: 'black', opacity: Math.max(0, 1 - (brightness / 100)) }} />
+                )}
 
-                <video
-                    ref={videoRef}
-                    className="w-full max-w-full relative z-[10]"
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                        maxHeight: '100%',
-                        objectFit: aspectRatio === 'Fit' ? 'contain' : aspectRatio === 'Fill' ? 'cover' : aspectRatio === 'Stretch' ? 'fill' : 'contain',
-                        aspectRatio: (aspectRatio === '16:9' || aspectRatio === '4:3') ? aspectRatio.replace(':', '/') : 'auto',
-                        
-                        // ── ULTRA-LIGHTWEIGHT 8K RENDERER ──
-                        contain: 'strict',
-                        willChange: 'transform',
-                        transform: 'translate3d(0,0,0)', 
-                        backgroundColor: 'black',
-                        
-                        // Disable expensive post-processing for 8K performance
-                        filter: 'none',
-                        transition: 'none',
-                        borderRadius: '12px',
-                        pointerEvents: showControls ? 'auto' : 'none'
-                    }}
-                    onLoadedMetadata={handleVideoMetadata}
-                    onCanPlay={() => setIsLoading(false)}
-                    onWaiting={() => setIsLoading(true)}
-                    onPlaying={() => { setIsLoading(false); setPlaying(true); }}
-                    onPlay={() => setIsLoading(false)}
-                    onPause={() => setPlaying(false)}
-                    onEnded={() => setPlaying(false)}
-                    playsInline
-                    decoding="async"
-                    preload="auto"
-                    fetchpriority="high"
-                    // Optimization: VLC-like hardware bypass
-                    style={{ 
-                        contain: 'strict',
-                        transform: 'translateZ(0)', // Force dedicated GPU plane with zero overhead
-                        imageRendering: 'optimizeSpeed',
-                        backfaceVisibility: 'hidden',
-                        backgroundColor: '#000'
-                    }}
-                >
-                    {activeSubtitle && <track src={activeSubtitle} kind="subtitles" srcLang="en" label="English" default />}
-                </video>
+                <VideoRenderer 
+                    videoRef={videoRef}
+                    aspectRatio={aspectRatio}
+                    handleVideoMetadata={handleVideoMetadata}
+                    setIsLoading={setIsLoading}
+                    setPlaying={setPlaying}
+                    activeSubtitle={activeSubtitle}
+                    showControls={showControls}
+                />
 
                 {(playerError || playerMaxHeight) && showControls && (
                     <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-[60] px-3 py-2 bg-black/70 text-white text-xs rounded-full">
@@ -1359,11 +1361,11 @@ function LocalPlayerOverlay() {
                                                             item.action(); 
                                                             if(!quickMenuData.title.includes('Audio') && !quickMenuData.title.includes('Subtitles')) setQuickMenuData(null); 
                                                         }}
-                                                        className={`w-full px-6 py-4 flex items-center justify-between rounded-2xl transition-all border ${item.active ? 'bg-white text-black border-white' : 'bg-white/[0.02] text-white/60 border-white/5 hover:bg-white/10 hover:text-white'}`}
+                                                        className={`w-full px-6 py-4 flex items-center justify-between rounded-2xl transition-all border ${item.active ? 'bg-blue-600 text-white border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'bg-white/[0.02] text-white/60 border-white/5 hover:bg-white/10 hover:text-white'}`}
                                                     >
                                                         <span className="text-[12px] font-black uppercase tracking-wider">{item.label}</span>
                                                         {item.active ? (
-                                                            <Check size={16} />
+                                                            <Check size={16} className="text-yellow-400" />
                                                         ) : (
                                                             <ChevronRight size={16} className="opacity-20" />
                                                         )}
@@ -1393,7 +1395,7 @@ function LocalPlayerOverlay() {
                             <motion.div
                                 initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0.98, opacity: 0 }}
                                 transition={{ duration: 0.1 }}
-                                className="bg-sky-900/40 w-[90%] sm:w-full max-w-[700px] h-[50vh] sm:h-[380px] rounded-[1rem] sm:rounded-[2rem] border-2 border-red-600/80 backdrop-blur-3xl overflow-hidden flex flex-row shadow-[0_50px_200px_rgba(220,38,38,0.5)]"
+                                className="bg-blue-900/40 w-[90%] sm:w-full max-w-[700px] h-[50vh] sm:h-[380px] rounded-[1rem] sm:rounded-[2rem] border-2 border-yellow-400 backdrop-blur-3xl overflow-hidden flex flex-row shadow-[0_0_50px_rgba(37,99,235,0.2)]"
                                 onClick={e => e.stopPropagation()}
                             >
                                 {/* Sidebar Tabs */}
@@ -1420,7 +1422,7 @@ function LocalPlayerOverlay() {
                                             <SettingRow label="Playback Speed">
                                                 <div className="flex flex-wrap gap-2">
                                                     {SPEEDS.map(s => (
-                                                        <button key={s} onClick={() => setPlaybackRate(s)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${playbackRate === s ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{s}x</button>
+                                                        <button key={s} onClick={() => setPlaybackRate(s)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${playbackRate === s ? 'bg-blue-600 text-white border border-yellow-400 shadow-[0_0_10px_rgba(37,99,235,0.4)]' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}>{s}x</button>
                                                     ))}
                                                 </div>
                                             </SettingRow>
@@ -1790,7 +1792,7 @@ const SettingsTab = memo(({ id, label, icon, active, set }) => {
     return (
         <button
             onClick={() => set(id)}
-            className={`flex items-center gap-1 sm:gap-4 px-1 sm:px-8 py-1 sm:py-3 rounded-[0.6rem] sm:rounded-[1.8rem] transition-all duration-100 outline-none border-2 ${isActive ? 'bg-yellow-200 text-black border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.4)] scale-[1.01] sm:scale-[1.05]' : 'bg-white/5 text-white/40 border-transparent hover:bg-white/10 hover:text-white'}`}
+            className={`flex items-center gap-1 sm:gap-4 px-1 sm:px-8 py-1 sm:py-3 rounded-[0.6rem] sm:rounded-[1.8rem] transition-all duration-100 outline-none border-2 ${isActive ? 'bg-blue-600 text-white border-yellow-400 shadow-[0_0_30px_rgba(37,99,235,0.4)] scale-[1.01] sm:scale-[1.05]' : 'bg-white/5 text-white/40 border-transparent hover:bg-white/10 hover:text-white'}`}
         >
             <div className={`transition-transform duration-100 ${isActive ? 'scale-110' : ''}`}>{icon}</div>
             <span className="text-[8px] sm:text-[13px] font-bold tracking-tight uppercase">{label}</span>
@@ -1801,7 +1803,7 @@ const SettingsTab = memo(({ id, label, icon, active, set }) => {
 const SettingRow = memo(({ label, children }) => {
     return (
         <div className="space-y-3 sm:space-y-6 mb-6 sm:mb-10">
-            <h4 className="text-yellow-500/40 text-[9px] font-black uppercase tracking-[0.3em] ml-1">{label}</h4>
+            <h4 className="text-yellow-400 text-[9px] font-black uppercase tracking-[0.3em] ml-1">{label}</h4>
             <div className="flex flex-wrap gap-3">
                 {children}
             </div>
@@ -1815,11 +1817,11 @@ const SettingToggle = memo(({ label, active, onToggle }) => {
             <span className="text-white/80 text-sm font-medium">{label}</span>
             <button
                 onClick={onToggle}
-                className={`w-12 h-6 rounded-full relative transition-colors outline-none ${active ? 'bg-white' : 'bg-white/10'}`}
+                className={`w-12 h-6 rounded-full relative transition-colors outline-none border ${active ? 'bg-blue-600 border-yellow-400' : 'bg-white/10 border-transparent'}`}
             >
                 <motion.div
                     animate={{ x: active ? 26 : 2 }}
-                    className={`absolute top-1 w-4 h-4 rounded-full ${active ? 'bg-black' : 'bg-white/40'}`}
+                    className={`absolute top-1 w-4 h-4 rounded-full ${active ? 'bg-yellow-400' : 'bg-white/40'}`}
                 />
             </button>
         </div>
@@ -1912,9 +1914,9 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
                 </svg>
             </div>
 
-            {/* Panel Body */}
+            {/* Panel Body - Transparent Background as requested */}
             <div
-                className={`relative ${isMobileView ? 'w-20 h-7' : 'w-36 h-14'} bg-black/95 border-l-[4px] sm:border-l-[8px] border-r-[1px] sm:border-r-[2px] border-y-[1px] sm:border-y-[2px] transition-all duration-300 flex items-center justify-between px-1.5 sm:px-4`}
+                className={`relative ${isMobileView ? 'w-20 h-7' : 'w-36 h-14'} bg-transparent backdrop-blur-[2px] border-l-[4px] sm:border-l-[8px] border-r-[1px] sm:border-r-[2px] border-y-[1px] sm:border-y-[2px] transition-all duration-300 flex items-center justify-between px-1.5 sm:px-4`}
                 style={{
                     clipPath: 'polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%)',
                     borderLeftColor: isFocused ? action.color : 'rgba(255,255,255,0.1)',
