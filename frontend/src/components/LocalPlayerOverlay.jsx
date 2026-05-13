@@ -1004,7 +1004,6 @@ function LocalPlayerOverlay() {
                     decoding="async"
                     // Optimization: Prevent UI jank by disabling layout shifts
                     style={{ 
-                        ...videoRef.current?.style, 
                         contain: 'strict',
                         willChange: 'transform',
                         transform: 'translate3d(0,0,0)',
