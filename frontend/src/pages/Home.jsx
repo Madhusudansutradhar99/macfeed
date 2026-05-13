@@ -205,59 +205,22 @@ function VideoRow({ title, videos, emoji }) {
   const prevClass = `swiper-prev-${safeTitle}`;
 
   return (
-    <section className="mb-8">
-      <div className="flex items-center justify-between mb-4 px-2">
+    <section className="mb-8 px-2">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
           {emoji && <span className="text-2xl">{emoji}</span>}
           {title}
           <span className="text-sm font-normal text-white/50 ml-2">({videos.length})</span>
         </h2>
-        <div className="flex gap-2">
-          <button className={`${prevClass} bg-secondary hover:bg-purple-600 text-primary rounded-full p-2 transition-all active:scale-90 border border-primary`}>
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button className={`${nextClass} bg-secondary hover:bg-purple-600 text-primary rounded-full p-2 transition-all active:scale-90 border border-primary`}>
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
       </div>
 
-      <Swiper
-        modules={[Navigation, Autoplay, Mousewheel, FreeMode]}
-        spaceBetween={20}
-        slidesPerView={1.5}
-        breakpoints={{
-          640: { slidesPerView: 2.2 },
-          768: { slidesPerView: 3.2 },
-          1024: { slidesPerView: 4.2 },
-          1280: { slidesPerView: 5.2 }
-        }}
-        grabCursor={true}
-        freeMode={{
-          enabled: true,
-          momentum: true,
-          momentumRatio: 3.0,
-          momentumVelocityRatio: 2.5,
-          momentumBounce: false,
-        }}
-        speed={400}
-        mousewheel={{
-          forceToAxis: true,
-          sensitivity: 2.5,
-          releaseOnEdges: true,
-        }}
-        navigation={{
-          prevEl: `.${prevClass}`,
-          nextEl: `.${nextClass}`,
-        }}
-        className="px-2 py-4 cursor-grab active:cursor-grabbing"
-      >
+      <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 scroll-smooth">
         {videos.map((video) => (
-          <SwiperSlide key={video.id}>
+          <div key={video.id} className="min-w-[200px] sm:min-w-[280px] flex-shrink-0">
             <VideoCard video={video} />
-          </SwiperSlide>
+          </div>
         ))}
-      </Swiper>
+      </div>
     </section>
   );
 }
