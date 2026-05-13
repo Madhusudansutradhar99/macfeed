@@ -16,7 +16,7 @@ import MusicMiniPlayer from './components/MusicMiniPlayer';
 import AuthModal from './components/AuthModal';
 import AdBanner from './components/AdBanner';
 import Loader from './components/Loader';
-import LocalPlayerOverlay from './components/LocalPlayerOverlay';
+const LocalPlayerOverlay = lazy(() => import('./components/LocalPlayerOverlay'));
 import InstallPWA from './components/InstallPWA';
 import OfflineStatus from './components/OfflineStatus';
 import StartupAnimation from './components/StartupAnimation';
