@@ -205,22 +205,47 @@ function VideoRow({ title, videos, emoji }) {
   const prevClass = `swiper-prev-${safeTitle}`;
 
   return (
-    <section className="mb-8 px-2">
-      <div className="flex items-center justify-between mb-4">
+    <section className="mb-8">
+      <div className="flex items-center justify-between mb-4 px-2">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
           {emoji && <span className="text-2xl">{emoji}</span>}
           {title}
           <span className="text-sm font-normal text-white/50 ml-2">({videos.length})</span>
         </h2>
+        <div className="flex gap-2">
+          <button className={`${prevClass} bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-all active:scale-90 border border-white/10`}>
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button className={`${nextClass} bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-all active:scale-90 border border-white/10`}>
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 scroll-smooth">
+      <Swiper
+        modules={[Navigation, Autoplay, Mousewheel, FreeMode]}
+        spaceBetween={20}
+        slidesPerView={1.5}
+        breakpoints={{
+          640: { slidesPerView: 2.2 },
+          768: { slidesPerView: 3.2 },
+          1024: { slidesPerView: 4.2 },
+          1280: { slidesPerView: 5.2 }
+        }}
+        navigation={{
+          prevEl: `.${prevClass}`,
+          nextEl: `.${nextClass}`,
+        }}
+        freeMode={true}
+        grabCursor={true}
+        className="px-2 py-4 cursor-grab active:cursor-grabbing"
+      >
         {videos.map((video) => (
-          <div key={video.id} className="min-w-[200px] sm:min-w-[280px] flex-shrink-0">
+          <SwiperSlide key={video.id}>
             <VideoCard video={video} />
-          </div>
+          </SwiperSlide>
         ))}
-      </div>
+      </Swiper>
     </section>
   );
 }
