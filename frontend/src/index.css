@@ -108,18 +108,31 @@ body {
   #root {
     width: 100% !important;
     max-width: 100% !important;
-    height: auto !important;
+    height: 100vh !important;
     min-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow-x: hidden !important;
+    overflow: hidden !important; /* Lock root to prevent rubber-band site scroll */
+    position: fixed;
+    top: 0;
+    left: 0;
   }
 
   body {
     width: 100% !important;
-    height: auto !important;
-    overflow-x: hidden !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    position: fixed; /* Lock body to prevent scrolling the whole page */
     font-size: 16px;
+    touch-action: none; /* Disable all browser gestures */
+  }
+
+  /* Only allow scrolling inside content containers, not the whole site */
+  .scroll-container {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
 }
 

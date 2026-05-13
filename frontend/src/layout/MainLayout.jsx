@@ -49,52 +49,20 @@ const MainLayout = () => {
   // Shorts & Music pages are immersive — different layout
   if (location.pathname === '/shorts' || location.pathname === '/music') {
     return (
-      <div 
-        className="min-h-screen bg-primary text-primary overflow-y-auto overflow-x-hidden relative"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {pullDist > 0 && (
-          <div className="absolute top-0 left-0 w-full flex justify-center pt-4 z-[10000] pointer-events-none">
-            <motion.div 
-              animate={{ rotate: refreshing ? 360 : 0 }}
-              transition={refreshing ? { repeat: Infinity, duration: 1, ease: 'linear' } : {}}
-              className="bg-accent/20 backdrop-blur-xl p-3 rounded-full border border-accent/20 shadow-xl"
-              style={{ scale: pullDist / 40, opacity: pullDist / 40 }}
-            >
-              <RefreshCw className="w-5 h-5 text-accent" />
-            </motion.div>
-          </div>
-        )}
-        <Outlet />
+      <div className="fixed inset-0 bg-primary text-primary overflow-hidden">
+        <div className="scroll-container">
+          <Outlet />
+        </div>
       </div>
     );
   }
 
   return (
-    <div 
-      className="flex flex-col min-h-screen bg-primary text-primary overflow-x-hidden relative"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      {pullDist > 0 && (
-        <div className="absolute top-0 left-0 w-full flex justify-center pt-20 z-[10000] pointer-events-none">
-          <motion.div 
-            animate={{ rotate: refreshing ? 360 : 0 }}
-            transition={refreshing ? { repeat: Infinity, duration: 1, ease: 'linear' } : {}}
-            className="bg-accent/20 backdrop-blur-xl p-3 rounded-full border border-accent/20 shadow-xl"
-            style={{ scale: pullDist / 40, opacity: pullDist / 40, y: pullDist }}
-          >
-            <RefreshCw className="w-5 h-5 text-accent" />
-          </motion.div>
-        </div>
-      )}
+    <div className="fixed inset-0 flex flex-col bg-primary text-primary overflow-hidden">
       <Header />
-      <div className="flex flex-1 relative min-w-0">
+      <div className="flex flex-1 relative min-w-0 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 p-2 sm:p-4 pt-4 sm:pt-4 md:p-6 md:pt-6 overflow-y-auto overflow-x-hidden">
+        <main className="flex-1 scroll-container p-2 sm:p-4 pt-4 sm:pt-4 md:p-6 md:pt-6">
           <ErrorBoundary resetKey={location.pathname}>
             <Outlet />
           </ErrorBoundary>
