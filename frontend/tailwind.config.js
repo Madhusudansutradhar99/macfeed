@@ -11,6 +11,8 @@ module.exports = {
         accent: '#8B5CF6',
         highlight: '#EC4899',
         text: '#FFFFFF',
+        primary: '#FFFFFF',
+        secondary: '#1F2937',
       },
       fontFamily: {
         sans: ['Inter', 'Poppins', 'ui-sans-serif', 'system-ui'],
