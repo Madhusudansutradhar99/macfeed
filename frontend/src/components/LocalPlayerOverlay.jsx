@@ -1292,8 +1292,8 @@ function LocalPlayerOverlay() {
                                             initial={{ opacity: 0, scale: 0.9, x: 20 }}
                                             animate={{ opacity: 1, scale: 1, x: 0 }}
                                             exit={{ opacity: 0, scale: 0.9, x: 20 }}
-                                            // Resized "hidden table" (Quick Menu) to be 15% smaller on mobile (90% -> 75%) as requested
-                                            className="fixed left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] z-[9999] w-[75%] md:w-[90%] max-w-[400px] bg-black/98 backdrop-blur-3xl border border-white/10 rounded-[1rem] md:rounded-[3rem] overflow-hidden shadow-[0_50px_150px_rgba(0,0,0,0.9)]"
+                                            // Resized "hidden table" (Quick Menu) to be 8% smaller on mobile (75% -> 67%) as requested
+                                            className="fixed left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] z-[9999] w-[67%] md:w-[90%] max-w-[400px] bg-black/98 backdrop-blur-3xl border border-white/10 rounded-[1rem] md:rounded-[3rem] overflow-hidden shadow-[0_50px_150px_rgba(0,0,0,0.9)]"
                                             onClick={e => e.stopPropagation()}
                                         >
                                             <div className="px-8 py-6 bg-white/5 border-b border-white/5 flex items-center justify-between">

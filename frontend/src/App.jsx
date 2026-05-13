@@ -97,6 +97,12 @@ function AppContent() {
     return () => clearTimeout(timer);
   }, [user, setAuthModalOpen, location.pathname]);
 
+  // Use a ref for location to avoid listener duplication
+  const locationRef = useRef(location);
+  useEffect(() => {
+    locationRef.current = location;
+  }, [location]);
+
   useEffect(() => {
     const initNative = async () => {
       if (Capacitor.isNativePlatform()) {
@@ -107,15 +113,6 @@ function AppContent() {
           
           // 2. Hide Splash Screen (manual control)
           await SplashScreen.hide();
-
-          // 3. Handle Back Button (Android)
-          CapApp.addListener('backButton', ({ canGoBack }) => {
-            if (!canGoBack || location.pathname === '/' || location.pathname === '/intro') {
-              CapApp.exitApp();
-            } else {
-              navigate(-1);
-            }
-          });
         } catch (e) {
           console.warn('Capacitor plugin error:', e);
         }
@@ -124,11 +121,30 @@ function AppContent() {
 
     initNative();
     CapacitorUpdater.notifyAppReady();
+
+    // 3. Handle Back Button (Android) - Setup only once
+    let backListener;
+    const setupBackListener = async () => {
+        if (Capacitor.isNativePlatform()) {
+            backListener = await CapApp.addListener('backButton', ({ canGoBack }) => {
+                const path = locationRef.current.pathname;
+                if (!canGoBack || path === '/' || path === '/intro') {
+                  CapApp.exitApp();
+                } else {
+                  navigate(-1);
+                }
+            });
+        }
+    };
+    setupBackListener();
     
     // Preload chunks after a short delay to not block initial load
     const timer = setTimeout(preloadComponents, 3000);
-    return () => clearTimeout(timer);
-  }, [navigate, location.pathname]);
+    return () => {
+        clearTimeout(timer);
+        if (backListener) backListener.remove();
+    };
+  }, [navigate]); // navigate is stable
 
   return (
     <>
