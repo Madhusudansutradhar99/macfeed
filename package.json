@@ -20,7 +20,7 @@
     "express-rate-limit": "^7.1.5",
     "google-auth-library": "^9.6.3",
     "helmet": "^7.1.0",
-    "lucide-react": "^0.344.0",
+    "lucide-react": "^0.475.0",
     "music-metadata-browser": "^2.5.11",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
