@@ -1,5 +1,8 @@
 import React, { useState, Suspense, lazy, useEffect, useRef } from 'react';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { SplashScreen } from '@capacitor/splash-screen';
+import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 
@@ -104,14 +107,11 @@ function AppContent() {
     const initNative = async () => {
       if (Capacitor.isNativePlatform()) {
         try {
-          const { StatusBar, Style } = await import(/* @vite-ignore */ '@capacitor/status-bar');
-          const { SplashScreen } = await import(/* @vite-ignore */ '@capacitor/splash-screen');
-          
           // 1. Style Status Bar
           await StatusBar.setStyle({ style: Style.Dark });
           await StatusBar.setBackgroundColor({ color: '#000000' });
           
-          // 2. Hide Splash Screen
+          // 2. Hide Splash Screen (manual control)
           await SplashScreen.hide();
         } catch (e) {
           console.warn('Capacitor plugin error:', e);
@@ -126,17 +126,14 @@ function AppContent() {
     let backListener;
     const setupBackListener = async () => {
         if (Capacitor.isNativePlatform()) {
-            try {
-                const { App: CapApp } = await import(/* @vite-ignore */ '@capacitor/app');
-                backListener = await CapApp.addListener('backButton', ({ canGoBack }) => {
-                    const path = locationRef.current.pathname;
-                    if (!canGoBack || path === '/' || path === '/intro') {
-                      CapApp.exitApp();
-                    } else {
-                      navigate(-1);
-                    }
-                });
-            } catch (e) { console.warn(e); }
+            backListener = await CapApp.addListener('backButton', ({ canGoBack }) => {
+                const path = locationRef.current.pathname;
+                if (!canGoBack || path === '/' || path === '/intro') {
+                  CapApp.exitApp();
+                } else {
+                  navigate(-1);
+                }
+            });
         }
     };
     setupBackListener();
