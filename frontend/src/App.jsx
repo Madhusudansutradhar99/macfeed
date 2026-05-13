@@ -109,7 +109,7 @@ function AppContent() {
         try {
           // 1. Style Status Bar for True Immersive Look
           await StatusBar.setOverlaysWebView({ overlay: true });
-          await StatusBar.setStyle({ style: Style.Dark });
+          await StatusBar.setStyle({ style: Style.Light }); // Light icons for Dark background
           
           // 2. Hide Splash Screen
           await SplashScreen.hide();
