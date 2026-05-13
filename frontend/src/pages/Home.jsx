@@ -362,18 +362,20 @@ export default function Home() {
       }
 
       try {
-        // 1. Fetch Main Feed (Simple & Reliable)
+        // 1. Fetch Main Feed (Ultra Safe)
         const { data: mainData, error: mainErr } = await supabase
           .from('videos')
           .select('*')
-          .order('created_at', { ascending: false })
-          .limit(24);
+          .limit(20);
         
-        if (!mainErr && mainData) {
+        if (!mainErr && mainData && mainData.length > 0) {
           setVideos(mainData);
-          setHeroVideos(mainData.filter(v => v.is_featured).slice(0, 5));
-          if (heroVideos.length === 0) setHeroVideos(mainData.slice(0, 5));
+          setHeroVideos(mainData.slice(0, 5));
           localStorage.setItem('macfeed_home_cache', JSON.stringify(mainData));
+        } else {
+          // Attempt simple order if first one worked
+          const { data: ordered } = await supabase.from('videos').select('*').order('id', { ascending: false }).limit(20);
+          if (ordered) setVideos(ordered);
         }
       } catch (err) {
         console.error("Home Load Error:", err);

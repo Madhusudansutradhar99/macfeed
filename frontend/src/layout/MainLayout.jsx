@@ -8,49 +8,18 @@ import { RefreshCw } from 'lucide-react';
 
 const MainLayout = () => {
   const location = useLocation();
-  const [refreshing, setRefreshing] = React.useState(false);
-  const [pullDist, setPullDist] = React.useState(0);
-  const touchStart = React.useRef(0);
-
-  const allowedRoutes = ['/', '/music', '/sports', '/search'];
-  const isAllowed = (allowedRoutes.includes(location.pathname) || location.pathname.startsWith('/search')) && !location.pathname.startsWith('/watch');
 
   React.useEffect(() => {
-    // Ensure body can always scroll
+    // Ensure body can always scroll and match the midnight theme
     document.body.style.overflowY = 'auto';
-    document.body.style.overscrollBehaviorY = isAllowed ? 'contain' : 'auto';
-  }, [isAllowed]);
+    document.body.style.backgroundColor = '#000000';
+  }, []);
 
-  const handleTouchStart = (e) => {
-    if (!isAllowed || window.scrollY > 0) return;
-    touchStart.current = e.touches[0].clientY;
-  };
-
-  const handleTouchMove = (e) => {
-    if (!isAllowed || window.scrollY > 0 || refreshing) return;
-    const dist = e.touches[0].clientY - touchStart.current;
-    if (dist > 0) {
-      setPullDist(Math.min(dist * 0.4, 80));
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (pullDist > 60) {
-      setRefreshing(true);
-      setPullDist(40);
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    } else {
-      setPullDist(0);
-    }
-  };
-
-  // Shorts & Music pages are immersive — different layout
-  if (location.pathname === '/shorts' || location.pathname === '/music') {
+  // Music page is immersive
+  if (location.pathname === '/music') {
     return (
-      <div className="fixed inset-0 bg-primary text-primary overflow-hidden">
-        <div className="scroll-container">
+      <div className="fixed inset-0 bg-[#000000] text-white overflow-hidden">
+        <div className="w-full h-full overflow-y-auto no-scrollbar">
           <Outlet />
         </div>
       </div>
