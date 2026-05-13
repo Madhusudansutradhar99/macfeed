@@ -360,11 +360,11 @@ export default function Home() {
         // Skip background fetch if offline and have cache
         if (!navigator.onLine && cached) return;
 
-        // 1. Fetch Hero/Featured Videos specifically
+        // 1. Fetch Featured Videos
         const { data: heroData, error: heroErr } = await supabase
           .from('videos')
           .select('*')
-          .or('is_featured.eq.true,upload_location.ilike.%header%')
+          .eq('is_featured', true)
           .order('created_at', { ascending: false })
           .limit(10);
         
