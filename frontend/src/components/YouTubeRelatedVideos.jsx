@@ -23,6 +23,17 @@ function getCachedRelated(videoId) {
   } catch { return null; }
 }
 
+const formatDuration = (iso) => {
+  if (!iso || iso === '--:--') return '00:00';
+  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return iso.includes(':') ? iso : '00:00';
+  const h = parseInt(match[1] || 0);
+  const m = parseInt(match[2] || 0);
+  const s = parseInt(match[3] || 0);
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+};
+
 function setCachedRelated(videoId, data) {
   try {
     const key = CACHE_PREFIX + videoId;
@@ -147,18 +158,57 @@ export default function YouTubeRelatedVideos({ currentVideoUrl, currentVideoId, 
 
     setSavingId(videoId);
     try {
-      const { data: existing } = await supabase.from('videos').select('id').or(`youtube_id.eq.${videoId},video_url.ilike.%${videoId}%`).limit(1);
-      if (existing?.length) navigate(`/watch/${existing[0].id}`);
-      else {
+      const { data: existing } = await supabase.from('videos').select('*').or(`youtube_id.eq.${videoId},video_url.ilike.%${videoId}%`).limit(1);
+      
+      if (existing?.length) {
+        const found = existing[0];
+        // Self-heal: If duration is missing in DB, try to fetch it now
+        if (!found.duration || found.duration === '--:--') {
+            try {
+                const { data: d } = await fetchJson(`/api/video-info?id=${videoId}`, {}, { timeoutMs: 5000 });
+                if (d?.video?.duration) {
+                    const realDur = formatDuration(d.video.duration);
+                    await supabase.from('videos').update({ duration: realDur }).eq('id', found.id);
+                }
+            } catch (e) {}
+        }
+        navigate(`/watch/${found.id}`);
+      } else {
+        let finalDuration = duration || '00:00';
+        let finalTitle = title;
+        let finalThumb = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+
+        // Fetch real duration and high-res thumb before inserting
+        try {
+            const { data: d } = await fetchJson(`/api/video-info?id=${videoId}`, {}, { timeoutMs: 5000 });
+            if (d?.video) {
+                finalDuration = d.video.duration ? formatDuration(d.video.duration) : finalDuration;
+                finalTitle = d.video.title || finalTitle;
+                finalThumb = d.video.thumbnail || finalThumb;
+            }
+        } catch (e) {}
+
         const { data: inserted } = await supabase.from('videos').insert([{
-          title, video_url: `https://www.youtube.com/embed/${videoId}`, youtube_id: videoId,
-          thumbnail_url: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`, source: 'youtube',
-          category: parentCategory || 'YouTube', duration: duration || '--:--', views: 0
+          title: finalTitle, 
+          video_url: `https://www.youtube.com/embed/${videoId}`, 
+          youtube_id: videoId,
+          thumbnail_url: finalThumb, 
+          source: 'youtube',
+          category: parentCategory || 'YouTube', 
+          duration: finalDuration, 
+          views: 0
         }]).select('id').single();
+        
         if (inserted?.id) navigate(`/watch/${inserted.id}`);
         else navigate(`/watch/yt-${videoId}`);
       }
-    } catch (e) { } finally { setSavingId(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    } catch (e) { 
+        console.error("handlePlay error:", e);
+        navigate(`/watch/yt-${videoId}`);
+    } finally { 
+        setSavingId(null); 
+        window.scrollTo({ top: 0, behavior: 'smooth' }); 
+    }
   };
 
   if (videos.length === 0 && !loading) return null;

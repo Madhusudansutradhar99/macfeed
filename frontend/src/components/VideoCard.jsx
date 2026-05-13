@@ -49,6 +49,19 @@ const VideoCard = memo(({ video }) => {
 
         if (existing?.length) {
           const found = existing[0];
+          
+          // Self-heal: If duration is missing in DB, try to fetch and update it now
+          if (!found.duration || found.duration === '00:00' || found.duration === '--:--') {
+            try {
+              const { data: d } = await fetchJson(`/api/video-info?id=${ytId}`, {}, { timeoutMs: 5000 });
+              if (d?.video?.duration) {
+                const realDur = formatDuration(d.video.duration);
+                await supabase.from('videos').update({ duration: realDur }).eq('id', found.id);
+                found.duration = realDur; // Update local object for immediate UI
+              }
+            } catch (e) { }
+          }
+
           if (found.category === 'Music' && musicPlayer?.playVideo) {
             musicPlayer.playVideo(found);
           } else {
