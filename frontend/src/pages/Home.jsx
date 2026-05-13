@@ -205,47 +205,25 @@ function VideoRow({ title, videos, emoji }) {
   const prevClass = `swiper-prev-${safeTitle}`;
 
   return (
-    <section className="mb-8">
-      <div className="flex items-center justify-between mb-4 px-2">
-        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          {emoji && <span className="text-2xl">{emoji}</span>}
-          {title}
-          <span className="text-sm font-normal text-white/50 ml-2">({videos.length})</span>
-        </h2>
-        <div className="flex gap-2">
-          <button className={`${prevClass} bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-all active:scale-90 border border-white/10`}>
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button className={`${nextClass} bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-all active:scale-90 border border-white/10`}>
-            <ChevronRight className="w-5 h-5" />
-          </button>
+    <section className="mb-12 px-4">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+            <div className="w-1 h-6 bg-blue-500 rounded-full" />
+            <h2 className="text-xl font-black text-white uppercase italic tracking-tighter flex items-center gap-2">
+              {emoji && <span className="text-2xl">{emoji}</span>}
+              {title}
+              <span className="text-xs font-normal text-white/40 ml-2">({videos.length})</span>
+            </h2>
         </div>
       </div>
 
-      <Swiper
-        modules={[Navigation, Autoplay, Mousewheel, FreeMode]}
-        spaceBetween={20}
-        slidesPerView={1.5}
-        breakpoints={{
-          640: { slidesPerView: 2.2 },
-          768: { slidesPerView: 3.2 },
-          1024: { slidesPerView: 4.2 },
-          1280: { slidesPerView: 5.2 }
-        }}
-        navigation={{
-          prevEl: `.${prevClass}`,
-          nextEl: `.${nextClass}`,
-        }}
-        freeMode={true}
-        grabCursor={true}
-        className="px-2 py-4 cursor-grab active:cursor-grabbing"
-      >
+      <div className="flex gap-6 overflow-x-auto no-scrollbar pb-8 scroll-smooth snap-x snap-mandatory">
         {videos.map((video) => (
-          <SwiperSlide key={video.id}>
+          <div key={video.id} className="min-w-[280px] sm:min-w-[320px] flex-shrink-0 snap-start">
             <VideoCard video={video} />
-          </SwiperSlide>
+          </div>
         ))}
-      </Swiper>
+      </div>
     </section>
   );
 }
