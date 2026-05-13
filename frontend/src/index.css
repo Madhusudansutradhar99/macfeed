@@ -108,11 +108,11 @@ body {
   #root {
     width: 100% !important;
     max-width: 100% !important;
-    height: 100vh !important;
     min-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
-@media (max-width: 768px) {
+  }
+
   body {
     overscroll-behavior-y: none; /* Stop pull-to-refresh */
     background-color: #020617 !important;
