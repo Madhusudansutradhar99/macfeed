@@ -37,7 +37,7 @@ function HeroBanner({ videos }) {
   if (!videos || !videos.length) return null;
 
   return (
-    <div className="relative w-full mb-8 md:mb-16 pt-20 sm:pt-24 select-none bg-primary">
+    <div className="relative w-full mb-8 md:mb-16 select-none bg-[#000000]">
       <div className="max-w-[1600px] mx-auto px-2 md:px-4">
         <Swiper
           modules={[Autoplay, Pagination, Navigation]}
@@ -430,44 +430,6 @@ export default function Home() {
     >
       <HeroBanner videos={heroVideos} />
 
-      {/* Premium Theme Selector - Restored with Blue/Yellow cards */}
-      <section className="px-4 md:px-12 mb-12">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-1 h-6 bg-blue-500 rounded-full" />
-          <h2 className="text-white text-lg font-black uppercase tracking-tighter italic">Select <span className="text-blue-500">Theme</span></h2>
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { id: 'dark', name: 'Midnight', bg: 'bg-black', border: 'border-white/10', text: 'text-white' },
-            { id: 'light', name: 'Daylight', bg: 'bg-white', border: 'border-red-500', text: 'text-black' },
-            { id: 'blue', name: 'Blue Sky', bg: 'bg-blue-100', border: 'border-yellow-400', text: 'text-blue-900' }
-          ].map(t => {
-            const { theme } = useTheme();
-            const isActive = theme === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => {
-                  const root = window.document.documentElement;
-                  root.classList.remove('light', 'dark', 'blue');
-                  root.classList.add(t.id);
-                  localStorage.setItem('theme', t.id);
-                  window.dispatchEvent(new Event('storage')); // Trigger update across tabs
-                  window.location.reload(); // Force reload for CSS variable stability
-                }}
-                className={`relative group h-24 sm:h-32 rounded-2xl border-2 transition-all duration-300 overflow-hidden ${t.bg} ${isActive ? t.border + ' scale-[1.05] shadow-[0_0_30px_rgba(59,130,246,0.3)]' : 'border-transparent opacity-60 hover:opacity-100'}`}
-              >
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <div className={`text-[10px] font-black uppercase tracking-widest ${t.text}`}>{t.name}</div>
-                  {isActive && <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />}
-                </div>
-                {/* Visual indicator of the theme's border */}
-                <div className={`absolute bottom-0 left-0 right-0 h-1 ${t.id === 'blue' ? 'bg-yellow-400' : t.id === 'light' ? 'bg-red-500' : 'bg-white/20'}`} />
-              </button>
-            )
-          })}
-        </div>
-      </section>
 
       <div className="px-2 sm:px-4 lg:px-6 xl:px-8 space-y-3 sm:space-y-4 md:space-y-2">
         {/* Row 1: Trending */}
