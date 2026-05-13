@@ -334,44 +334,17 @@ function LocalPlayerOverlay() {
                 setIsLoading(true);
 
                 try {
-                    if (currentSong.path) {
-                        const fileUri = await Filesystem.getUri({ path: currentSong.path });
-                        video.src = fileUri.uri;
-                    } else if (currentSong.file) {
-                        const objectURL = URL.createObjectURL(currentSong.file);
-                        video.src = objectURL;
-                    } else {
-                        video.src = currentSong.video_url;
+                    // ── SOURCE HANDLED BY useVideoPlayer HOOK ──
+                    const key = `mx_resume_${currentSong.name || currentSong.title}`;
+                    const resumeTime = localStorage.getItem(key);
+                    if (resumeTime) {
+                        video.currentTime = parseFloat(resumeTime);
                     }
-
-                    video.preload = 'auto';
-                    video.load();
-                    
-                    // Buffer Strategy: Native Browser Optimization
-                    // We let the browser's native media engine handle buffering for 8K
-                    video.setAttribute('preload', 'auto');
-                    video.setAttribute('fetchpriority', 'high');
-
-                    video.setAttribute('playsinline', 'true');
-
-                    // Maximum hardware acceleration for 16K support
-                    video.style.transform = 'translate3d(0,0,0) scale3d(1,1,1)';
-                    video.style.willChange = 'contents, transform';
-                    video.style.contain = 'layout style paint';
-                    video.style.backfaceVisibility = 'hidden';
-                    video.style.WebkitBackfaceVisibility = 'hidden';
-                    video.style.perspective = '1000px';
-                    video.style.imageRendering = 'optimizeQuality';
-                    
-                    // VLC-like Buffer Optimization: Force high-priority fetching and async decoding
-                    video.setAttribute('decoding', 'async');
-                    video.setAttribute('fetchpriority', 'high');
-                    video.setAttribute('preload', 'auto');
-                    
-                    // Buffer Strategy: Aggressive smart buffering for 4K/8K
-                    if ('MediaSource' in window) {
-                        // We rely on useVideoPlayer hook's hls.js config for MSE buffering
-                    }
+                    if (playing) video.play().catch(() => { });
+                } catch (e) {
+                    setIsLoading(false);
+                }
+            };
 
                     // Check slow network
                     let connectionSpeed = 'fast';

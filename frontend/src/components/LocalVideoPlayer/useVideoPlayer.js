@@ -105,17 +105,18 @@ export const useVideoPlayer = (videoRef, options = {}) => {
             try {
               const hls = hlsRef.current;
               if (hls && Hls.isSupported()) {
-                hls.startLoad(-1);
-              } else {
-                video.play().catch(() => {});
+                // Recover from stall if buffer is empty
+                if (video.buffered.length === 0 || video.currentTime >= video.buffered.end(video.buffered.length - 1)) {
+                   hls.startLoad(-1);
+                }
               }
-            } catch (e) { /* best-effort */ }
+            } catch (e) { }
           });
         }
 
         memoryIntervalRef.current = setInterval(() => {
           mitigateMemoryPressure(video);
-        }, 5000);
+        }, 15000); // 15s interval to reduce CPU load
 
       } catch (err) {
         console.error('[useVideoPlayer] init failed:', err);

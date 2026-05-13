@@ -31,22 +31,22 @@ export const getHlsConfig = () => ({
   lowInitialPlaylistSize: 2,
   smoothQualityChange: true,
   handleManifestRedirects: true,
-  // VLC-like efficiency: High forward buffer, Zero back buffer
-  maxBufferLength: 30,         // 30s is more stable for 8K on mobile than 60s
-  maxMaxBufferLength: 60,      // 1 min max
-  maxBufferSize: 256 * 1024 * 1024, // 256MB is safer for low-RAM mobile devices
-  maxBufferHole: 0.1,
+  // ── ULTRA-STABLE 8K ENGINE (VLC-STYLE) ──
+  maxBufferLength: 180,        // 3 minutes forward buffer
+  maxMaxBufferLength: 300,     // Allow up to 5 minutes
+  maxBufferSize: 1024 * 1024 * 1024, // 1GB dedicated RAM for 8K fragments
+  maxBufferHole: 0.5,          // Larger tolerance for segment gaps
   lowBufferWatchdogPeriod: 0.1,
-  highBufferWatchdogPeriod: 1,
-  nudgeOffset: 0.05,
-  nudgeMaxRetry: 10,
-  backBufferLength: 0,         // Purge back-buffer immediately
-  fragLoadingMaxRetry: 5,
-  manifestLoadingMaxRetry: 5,
-  levelLoadingMaxRetry: 5,
-  enableWorker: false,         
-  lowLatencyMode: true,
-  stable: false,
+  highBufferWatchdogPeriod: 0.5,
+  nudgeOffset: 0.1,
+  nudgeMaxRetry: 20,
+  backBufferLength: 10,        // Keep a tiny bit of history for seeking
+  fragLoadingMaxRetry: 10,     // Very aggressive retries
+  manifestLoadingMaxRetry: 10,
+  levelLoadingMaxRetry: 10,
+  enableWorker: true,          // Use worker to avoid blocking the main thread
+  lowLatencyMode: false,       // Priority: STABILITY over latency
+  stable: true,                // Force stable manifest parsing
   playlistSelector: () => {
     const maxHeight = getMaxQualityHeight();
     return (playlists) => {
