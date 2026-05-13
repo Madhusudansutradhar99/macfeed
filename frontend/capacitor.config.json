@@ -5,6 +5,16 @@
   "plugins": {
     "CapacitorUpdater": {
       "autoUpdate": true
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#000000"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 1000,
+      "backgroundColor": "#000000",
+      "androidSplashResourceName": "splash",
+      "showSpinner": false
     }
   }
 }

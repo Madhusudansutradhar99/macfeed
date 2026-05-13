@@ -1,5 +1,9 @@
 import React, { useState, Suspense, lazy, useEffect } from 'react';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { SplashScreen } from '@capacitor/splash-screen';
+import { App as CapApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 
 import { MusicProvider } from './context/MusicContext';
@@ -94,11 +98,37 @@ function AppContent() {
   }, [user, setAuthModalOpen, location.pathname]);
 
   useEffect(() => {
+    const initNative = async () => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          // 1. Style Status Bar
+          await StatusBar.setStyle({ style: Style.Dark });
+          await StatusBar.setBackgroundColor({ color: '#000000' });
+          
+          // 2. Hide Splash Screen (manual control)
+          await SplashScreen.hide();
+
+          // 3. Handle Back Button (Android)
+          CapApp.addListener('backButton', ({ canGoBack }) => {
+            if (!canGoBack || location.pathname === '/' || location.pathname === '/intro') {
+              CapApp.exitApp();
+            } else {
+              navigate(-1);
+            }
+          });
+        } catch (e) {
+          console.warn('Capacitor plugin error:', e);
+        }
+      }
+    };
+
+    initNative();
     CapacitorUpdater.notifyAppReady();
+    
     // Preload chunks after a short delay to not block initial load
     const timer = setTimeout(preloadComponents, 3000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [navigate, location.pathname]);
 
   return (
     <>
