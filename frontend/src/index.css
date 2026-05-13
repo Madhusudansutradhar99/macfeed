@@ -112,33 +112,16 @@ body {
     min-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: hidden !important; /* Lock root to prevent rubber-band site scroll */
-    position: fixed;
-    top: 0;
-    left: 0;
-  }
-
+@media (max-width: 768px) {
   body {
-    width: 100% !important;
-    height: 100% !important;
-    overflow: hidden !important;
-    position: fixed; /* Lock body to prevent scrolling the whole page */
-    font-size: 16px;
-    touch-action: none; /* Disable all browser gestures */
-    background-color: #020617 !important; /* Match splash screen exactly */
+    overscroll-behavior-y: none; /* Stop pull-to-refresh */
+    background-color: #020617 !important;
   }
+}
 
-  /* Only allow scrolling inside content containers, not the whole site */
-  .scroll-container {
-    width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
-    padding-bottom: env(safe-area-inset-bottom, 20px); /* Add padding for system bar */
-    scrollbar-width: none;
-  }
+.scroll-container {
+  width: 100%;
+  min-height: 100%;
 }
 
 .scroll-container::-webkit-scrollbar {

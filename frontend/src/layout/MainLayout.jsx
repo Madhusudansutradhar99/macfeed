@@ -58,11 +58,11 @@ const MainLayout = () => {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-primary text-primary overflow-hidden">
+    <div className="flex flex-col min-h-screen bg-primary text-primary overflow-x-hidden relative">
       <Header />
-      <div className="flex flex-1 relative min-w-0 overflow-hidden">
+      <div className="flex flex-1 relative min-w-0">
         <Sidebar />
-        <main className="flex-1 scroll-container p-2 sm:p-4 pt-20 sm:pt-20 md:p-6 md:pt-24">
+        <main className="flex-1 p-2 sm:p-4 pt-24 sm:pt-24 md:p-6 md:pt-24">
           <ErrorBoundary resetKey={location.pathname}>
             <Outlet />
           </ErrorBoundary>
