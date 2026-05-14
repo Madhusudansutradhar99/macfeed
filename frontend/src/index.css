@@ -52,13 +52,18 @@ body {
   background-color: var(--bg-primary) !important;
   color: var(--text-primary);
   scroll-behavior: smooth;
-  font-size: 13px;
+  font-size: 11px;
   width: 100%;
   min-height: 100vh;
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
+}
+
+html {
+  font-size: 14px;
+  -webkit-text-size-adjust: 100%;
 }
 
 ::-webkit-scrollbar {

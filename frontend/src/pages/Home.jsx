@@ -48,7 +48,7 @@ const HeroBanner = ({ videos }) => {
   if (!videos?.length) return null;
 
   return (
-    <div className="relative w-full h-[150px] sm:h-[220px] md:h-[380px] mb-6 sm:mb-10 px-0 sm:px-4 select-none">
+    <div className="relative w-full h-[140px] sm:h-[220px] md:h-[350px] mb-6 sm:mb-10 px-0 sm:px-4 select-none">
       <Swiper
         modules={[Autoplay, Pagination, EffectFade]}
         effect="fade"
@@ -95,9 +95,9 @@ const VideoRow = ({ title, videos, emoji }) => {
         onPrev={() => scrollRef.current?.scrollBy({ left: -400, behavior: 'smooth' })}
         onNext={() => scrollRef.current?.scrollBy({ left: 400, behavior: 'smooth' })}
       />
-      <div ref={scrollRef} className="flex gap-4 sm:gap-6 overflow-x-auto no-scrollbar px-4 sm:px-0 pb-2 scroll-smooth snap-x snap-mandatory">
+      <div ref={scrollRef} className="flex gap-3 sm:gap-6 overflow-x-auto no-scrollbar px-4 sm:px-0 pb-2 scroll-smooth snap-x snap-mandatory">
         {videos.map((video) => (
-          <div key={video.id} className="min-w-[150px] sm:min-w-[220px] md:min-w-[280px] flex-shrink-0 snap-start">
+          <div key={video.id} className="min-w-[130px] sm:min-w-[200px] md:min-w-[260px] flex-shrink-0 snap-start">
             <VideoCard video={video} />
           </div>
         ))}
@@ -213,7 +213,7 @@ export default function Home() {
     <motion.div 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
-      className="pb-32 pt-20 sm:pt-24 min-h-screen bg-black"
+      className="pb-32 pt-16 sm:pt-20 min-h-screen bg-black"
     >
       {/* 1. Hero Spotlight */}
       <HeroBanner videos={heroVideos} />
