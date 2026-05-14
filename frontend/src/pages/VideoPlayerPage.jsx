@@ -138,11 +138,32 @@ export default function VideoPlayerPage() {
   }, [video, loading]);
 
   if (loading) return <Loader />;
-  if (!video) return <div className="text-primary p-20 text-center bg-primary min-h-screen">Video Not Found</div>;
+  if (!video) {
+    return (
+      <div className="p-20 text-center min-h-screen" style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-primary)' }}>
+        Video Not Found
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-primary text-primary transition-colors duration-500">
+    <div className="min-h-screen transition-colors duration-500" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       <div className="flex flex-col w-full p-0 sm:p-6 max-w-[1400px] mx-auto">
+        <div className="px-4 pt-4 sm:px-0 sm:pt-0">
+          <button
+            onClick={() => navigate('/')}
+            className="mb-4 flex items-center gap-2 px-4 py-2 rounded-full border w-fit"
+            style={{
+              color: 'var(--text-primary)',
+              borderColor: 'var(--border-color)',
+              backgroundColor: 'var(--bg-secondary)'
+            }}
+          >
+            <ArrowLeft size={16} />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Back to Home</span>
+          </button>
+        </div>
+
         <div className="w-full mb-4">
           <VideoPlayer 
             video={video} 
@@ -154,7 +175,7 @@ export default function VideoPlayerPage() {
           <div className="flex flex-col gap-4">
             <h1 className="text-xl md:text-2xl font-bold leading-tight">{video.title}</h1>
             
-            <div className="flex items-center justify-between border-b border-white/10 pb-6">
+            <div className="flex items-center justify-between border-b pb-6" style={{ borderColor: 'var(--bg-secondary)' }}>
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => {
@@ -164,7 +185,12 @@ export default function VideoPlayerPage() {
                     localStorage.setItem('macfeed_likes', JSON.stringify(likedObj));
                     setIsLiked(!isLiked);
                   }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${isLiked ? 'bg-purple-600 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'}`}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full transition-all"
+                  style={{
+                    backgroundColor: isLiked ? 'var(--accent-color)' : 'var(--bg-secondary)',
+                    color: isLiked ? 'var(--text-on-accent)' : 'var(--text-primary)',
+                    opacity: isLiked ? 1 : 0.85
+                  }}
                 >
                   <ThumbsUp size={18} className={isLiked ? 'fill-white' : ''} />
                   <span className="text-sm font-bold">{isLiked ? 'Liked' : 'Like'}</span>
@@ -179,7 +205,8 @@ export default function VideoPlayerPage() {
                       });
                     }
                   }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition-all"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full transition-all"
+                  style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', opacity: 0.85 }}
                 >
                   <Share2 size={18} />
                   <span className="text-sm font-bold">Share</span>
@@ -196,8 +223,8 @@ export default function VideoPlayerPage() {
                 />
               ) : (
                 <>
-                  <h2 className="text-lg font-bold mb-6 flex items-center gap-2">
-                    <Sparkles size={20} className="text-purple-500" />
+                  <h2 className="text-lg font-bold mb-6 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                    <Sparkles size={20} className="" style={{ color: 'var(--accent-color)' }} />
                     Recommended For You
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -215,7 +242,7 @@ export default function VideoPlayerPage() {
   );
 }
 
-function Sparkles({ size, className }) {
+function Sparkles({ size, className, style }) {
   return (
     <svg 
       xmlns="http://www.w3.org/2000/svg" 
@@ -228,6 +255,7 @@ function Sparkles({ size, className }) {
       strokeLinecap="round" 
       strokeLinejoin="round" 
       className={className}
+      style={style}
     >
       <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
       <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>

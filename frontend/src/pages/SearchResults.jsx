@@ -126,37 +126,63 @@ export default function SearchResults() {
   useEffect(() => { performSearch(q); }, [q, performSearch]);
 
   return (
-    <div className="min-h-screen px-4 md:px-10 py-10 bg-primary">
+    <div
+      className="min-h-screen px-4 md:px-10 py-10"
+      style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+    >
       <button 
         onClick={() => navigate('/')} 
-        className="mb-8 flex items-center gap-2 text-secondary hover:text-primary transition-all group bg-secondary/30 hover:bg-secondary/50 px-4 py-2 rounded-full border border-white/5 hover:border-white/10 w-fit"
+        className="mb-8 flex items-center gap-2 transition-all group px-4 py-2 rounded-full border w-fit"
+        style={{
+          color: 'var(--text-primary)',
+          backgroundColor: 'var(--bg-secondary)',
+          borderColor: 'var(--border-color)'
+        }}
       >
          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-         <span className="text-[10px] font-black uppercase tracking-[0.3em]">Back to Discover</span>
+         <span className="text-[10px] font-black uppercase tracking-[0.3em]">Back to Home</span>
       </button>
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div>
-           <h1 className="text-5xl font-black text-primary uppercase italic tracking-tighter leading-none mb-4">Results</h1>
+           <h1 className="text-5xl font-black uppercase italic tracking-tighter leading-none mb-4" style={{ color: 'var(--text-primary)' }}>Results</h1>
            <div className="flex items-center gap-4">
               <span className="px-3 py-1 bg-red-600 rounded-lg text-[10px] font-black text-white uppercase tracking-widest italic">{q}</span>
-              {isFreeMode && <span className="flex items-center gap-2 text-green-500 text-[10px] font-black uppercase tracking-[0.2em] animate-pulse"><Zap className="w-3 h-3 fill-green-500" /> MacFeed Search Engine Online</span>}
-              {cacheSource === 'local-cache' && <span className="flex items-center gap-2 text-cyan-400 text-[10px] font-black uppercase tracking-[0.2em]">⚡ Instant Cache (0 API units)</span>}
-              {cacheSource === 'disk-cache' && <span className="flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-[0.2em]">💾 Server Cache (0 API units)</span>}
+              {isFreeMode && (
+                <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] animate-pulse" style={{ color: 'var(--border-color)' }}>
+                  <Zap className="w-3 h-3" style={{ fill: 'var(--border-color)' }} /> MacFeed Search Engine Online
+                </span>
+              )}
+              {cacheSource === 'local-cache' && (
+                <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--accent-color)' }}>
+                  ⚡ Instant Cache (0 API units)
+                </span>
+              )}
+              {cacheSource === 'disk-cache' && (
+                <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--accent-color)' }}>
+                  💾 Server Cache (0 API units)
+                </span>
+              )}
            </div>
         </div>
-        <p className="text-secondary text-[10px] font-black uppercase tracking-[0.4em]">{results.length} Matches Found</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.4em]" style={{ color: 'var(--text-primary)', opacity: 0.7 }}>{results.length} Matches Found</p>
       </div>
 
       {loading && results.length === 0 && <PremiumLoader />}
 
       {error && !loading && (
-        <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 flex items-center justify-between gap-4">
+        <div className="mb-6 rounded-2xl border p-4 flex items-center justify-between gap-4" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
           <div>
-            <p className="text-red-300 font-black uppercase tracking-[0.2em] text-[10px]">Search failed</p>
-            <p className="text-secondary text-sm mt-1">{error}</p>
+            <p className="font-black uppercase tracking-[0.2em] text-[10px]" style={{ color: 'var(--border-color)' }}>Search failed</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-primary)', opacity: 0.8 }}>{error}</p>
           </div>
-          <button onClick={() => performSearch(q)} className="px-4 py-2 rounded-full bg-white text-black font-black uppercase text-[10px] tracking-[0.2em]">Retry</button>
+          <button
+            onClick={() => performSearch(q)}
+            className="px-4 py-2 rounded-full font-black uppercase text-[10px] tracking-[0.2em]"
+            style={{ backgroundColor: 'var(--border-color)', color: '#ffffff' }}
+          >
+            Retry
+          </button>
         </div>
       )}
 
@@ -167,9 +193,19 @@ export default function SearchResults() {
               <VideoCard video={video} />
               <div className="mt-3 flex items-center gap-2 px-1">
                  {video.type === 'local' ? (
-                   <span className="text-[8px] text-purple-400 font-black uppercase flex items-center gap-1 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/10"><Database className="w-2.5 h-2.5" /> Library</span>
+                   <span
+                     className="text-[8px] font-black uppercase flex items-center gap-1 px-2 py-0.5 rounded border"
+                     style={{ color: 'var(--accent-color)', backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--accent-color)' }}
+                   >
+                     <Database className="w-2.5 h-2.5" /> Library
+                   </span>
                  ) : (
-                   <span className="text-[8px] text-red-500 font-black uppercase flex items-center gap-1 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/10"><Globe className="w-2.5 h-2.5" /> YouTube Global</span>
+                   <span
+                     className="text-[8px] font-black uppercase flex items-center gap-1 px-2 py-0.5 rounded border"
+                     style={{ color: 'var(--border-color)', backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}
+                   >
+                     <Globe className="w-2.5 h-2.5" /> YouTube Global
+                   </span>
                  )}
               </div>
             </motion.div>
@@ -177,12 +213,12 @@ export default function SearchResults() {
         </div>
       ) : !loading ? (
         <div className="py-40 text-center flex flex-col items-center">
-           <Search className="w-16 h-16 text-secondary/10 mb-6" />
-            <p className="text-secondary/20 font-black uppercase tracking-[0.5em] text-2xl italic">{error ? 'Search Unavailable' : empty ? 'No Content Matches' : 'No Results Yet'}</p>
+           <Search className="w-16 h-16 mb-6" style={{ color: 'var(--text-primary)', opacity: 0.25 }} />
+            <p className="font-black uppercase tracking-[0.5em] text-2xl italic" style={{ color: 'var(--text-primary)', opacity: 0.4 }}>{error ? 'Search Unavailable' : empty ? 'No Content Matches' : 'No Results Yet'}</p>
             <div className="mt-8 flex items-center gap-6">
-              <button onClick={() => performSearch(q)} className="text-purple-500 font-black text-[10px] uppercase tracking-widest hover:text-white transition-colors">Try Rescan</button>
+              <button onClick={() => performSearch(q)} className="font-black text-[10px] uppercase tracking-widest transition-colors" style={{ color: 'var(--accent-color)' }}>Try Rescan</button>
               <div className="w-[1px] h-4 bg-white/10" />
-              <button onClick={() => navigate('/')} className="text-secondary font-black text-[10px] uppercase tracking-widest hover:text-primary transition-colors">Go Home</button>
+              <button onClick={() => navigate('/')} className="font-black text-[10px] uppercase tracking-widest transition-colors" style={{ color: 'var(--text-primary)', opacity: 0.75 }}>Go Home</button>
             </div>
         </div>
       ) : null}
