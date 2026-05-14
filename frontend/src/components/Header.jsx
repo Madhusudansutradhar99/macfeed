@@ -175,6 +175,7 @@ export default function Header() {
             <span className="text-primary text-2xl font-black uppercase italic tracking-tighter leading-none">
               Mac<span className="text-accent" style={{ color: 'var(--accent-color)' }}>Feed</span>
             </span>
+            <span className="bg-accent/10 text-accent text-[8px] font-black px-1.5 py-0.5 rounded border border-accent/20 ml-2" style={{ color: 'var(--accent-color)' }}>v3.0.1</span>
           </Link>
         </div>
       )}
