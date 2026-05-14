@@ -63,7 +63,7 @@ export default function AdManager() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto pb-20 bg-primary min-h-screen">
+    <div className="p-6 max-w-4xl mx-auto pb-20 min-h-screen" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="flex items-center gap-3 mb-8">
         <Megaphone className="w-8 h-8 text-purple-500" />
         <h1 className="text-3xl font-black text-primary uppercase italic tracking-tighter">Ad Banner Manager</h1>

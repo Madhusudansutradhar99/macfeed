@@ -13,6 +13,7 @@ const MainLayout = () => {
     // Ensure body can always scroll and match the current theme
     document.body.style.overflowY = 'auto';
     document.body.style.backgroundColor = 'var(--bg-primary)';
+    document.documentElement.style.backgroundColor = 'var(--bg-primary)';
   }, []);
 
   // Music page is immersive
@@ -27,14 +28,16 @@ const MainLayout = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-primary text-primary overflow-x-hidden relative">
+    <div className="w-screen h-screen flex flex-col text-primary overflow-hidden" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <Header />
-      <div className="flex flex-1 relative min-w-0">
+      <div className="flex flex-1 relative min-w-0 w-full overflow-hidden">
         <Sidebar />
-        <main className="flex-1 p-2 sm:p-4 pt-20 md:p-6 md:pt-24">
-          <ErrorBoundary resetKey={location.pathname}>
-            <Outlet />
-          </ErrorBoundary>
+        <main className="flex-1 min-w-0 w-full overflow-y-auto overflow-x-hidden pt-20" style={{ backgroundColor: 'var(--bg-primary)' }}>
+          <div className="p-2 sm:p-4 md:p-6">
+            <ErrorBoundary resetKey={location.pathname}>
+              <Outlet />
+            </ErrorBoundary>
+          </div>
         </main>
       </div>
     </div>

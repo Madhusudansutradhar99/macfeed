@@ -124,36 +124,36 @@ const VideoCard = memo(({ video }) => {
 
   return (
     <motion.div
-      whileHover={{ y: -10 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ y: -12 }}
+      whileTap={{ scale: 0.96 }}
       className={`video-card group cursor-pointer flex flex-col gap-3 w-full transition-opacity duration-300 ${isSaving ? 'opacity-50 pointer-events-none' : ''}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={handleClick}
     >
-      <div className="relative aspect-video rounded-lg md:rounded-xl overflow-hidden bg-background border border-white/10 shadow-2xl transition-all duration-500 group-hover:border-accent">
-        <img src={video?.thumbnail_url || 'https://via.placeholder.com/640x360?text=No+Thumbnail'} alt={video?.title || 'Video'} loading="lazy" decoding="async" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-75" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+      <div className="relative aspect-video rounded-[1.4rem] md:rounded-[1.8rem] overflow-hidden shadow-2xl transition-all duration-500 group-hover:shadow-[0_0_50px] group-hover:drop-shadow-lg" style={{ borderWidth: '2px', borderStyle: 'solid', borderColor: 'var(--accent-color)', backgroundColor: 'var(--bg-secondary)', '--accent': 'var(--accent-color)' }}>
+        <img src={video?.thumbnail_url || 'https://via.placeholder.com/640x360?text=No+Thumbnail'} alt={video?.title || 'Video'} loading="lazy" decoding="async" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105 group-hover:brightness-60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-50 group-hover:opacity-70 transition-opacity" />
 
-        <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md px-2 py-1 rounded-lg text-[10px] font-black text-white border border-white/10">
+        <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-lg text-[9px] font-black text-white border border-white/10 shadow-lg">
           {video.duration || '00:00'}
         </div>
 
         <AnimatePresence>
           {hovered && (
-            <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }} className="absolute inset-0 flex items-center justify-center">
-              <div className="w-14 h-14 bg-accent rounded-full flex items-center justify-center shadow-2xl border-2 border-white/20" style={{ backgroundColor: 'var(--accent-color)' }}>
-                {video.category === 'Music' ? <Music className="w-6 h-6 text-white" /> : <Play className="w-6 h-6 text-white fill-white ml-1" />}
+            <motion.div initial={{ opacity: 0, scale: 0.3 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.3 }} transition={{ duration: 0.2 }} className="absolute inset-0 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(var(--accent-rgb),0.6)] border-2 border-white/30 transition-all" style={{ backgroundColor: 'var(--accent-color)' }}>
+                {video.category === 'Music' ? <Music className="w-7 h-7 text-white" /> : <Play className="w-7 h-7 text-white fill-white ml-1" />}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      <div className="px-2">
-        <h3 className="text-primary font-bold text-xs line-clamp-2 leading-tight group-hover:text-accent transition-colors uppercase tracking-tight">{video?.title || 'Untitled Video'}</h3>
-        <div className="flex items-center gap-3 mt-1.5">
-          <span className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">{video.category}</span>
+      <div className="px-1">
+        <h3 className="text-primary font-black text-xs line-clamp-2 leading-snug group-hover:text-accent transition-colors duration-300 uppercase tracking-wider" style={{ '--accent': 'var(--accent-color)' }}>{video?.title || 'Untitled Video'}</h3>
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded-full border" style={{ color: 'var(--accent-color)', borderColor: 'var(--accent-color)', backgroundColor: 'var(--accent-color)', opacity: 0.12 }}>{video.category}</span>
         </div>
       </div>
     </motion.div>

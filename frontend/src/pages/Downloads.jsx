@@ -30,7 +30,7 @@ export default function Downloads() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050014] text-white flex flex-col font-sans pb-20">
+    <div className="min-h-screen text-white flex flex-col font-sans pb-20" style={{ backgroundColor: 'var(--bg-primary)' }}>
       {/* Premium Header */}
       <div className="relative h-[250px] flex items-center px-6 md:px-12 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-900/40 to-[#050014] z-0" />

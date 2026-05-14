@@ -25,6 +25,7 @@ const navItems = [
 const DynamicNavItem = ({ item, active, onClick }) => {
   const [hover, setHover] = useState(false);
   const navigate = useNavigate();
+  const iconColor = active ? '#ffffff' : 'var(--text-primary)';
 
   return (
     <motion.div
@@ -39,14 +40,14 @@ const DynamicNavItem = ({ item, active, onClick }) => {
         }
       }}
       className={`absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-full cursor-pointer z-[2000] shadow-2xl will-change-transform
-        ${active ? 'bg-accent text-white shadow-[0_0_20px_rgba(var(--accent-rgb),0.4)]' : 'bg-secondary backdrop-blur-xl text-secondary hover:text-primary hover:bg-primary/10 border border-primary'}
+        ${active ? 'text-white shadow-[0_0_20px_rgba(var(--accent-rgb),0.4)]' : 'backdrop-blur-xl hover:bg-primary/10 border border-primary/20'}
       `}
-      style={active ? { backgroundColor: 'var(--accent-color)', boxShadow: '0 0 20px var(--accent-color)44' } : {}}
+      style={active ? { backgroundColor: 'var(--accent-color)', boxShadow: '0 0 20px var(--accent-color)44' } : { backgroundColor: 'var(--bg-secondary)' }}
       animate={{ width: hover ? 230 : 44 }}
       transition={{ type: 'tween', ease: 'circOut', duration: 0.12 }}
     >
       <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0">
-        <item.icon className="w-5 h-5" />
+        <item.icon className="w-5 h-5" style={{ color: iconColor }} />
       </div>
       <motion.span
         initial={false}
@@ -147,11 +148,12 @@ export default function Sidebar() {
                   onMouseEnter={() => setShowUserMenu(true)} 
                   onMouseLeave={() => setShowUserMenu(false)}
                   onClick={() => user ? navigate('/settings') : setAuthModalOpen(true)}
-                  className="absolute left-0 top-0 flex items-center h-10 md:h-11 bg-secondary backdrop-blur-xl rounded-full cursor-pointer overflow-hidden z-50 border border-primary shadow-lg will-change-transform"
+                  className="absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-full cursor-pointer overflow-hidden z-50 border shadow-lg will-change-transform"
+                  style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--accent-color)' }}
                   animate={{ width: showUserMenu ? 150 : 44 }}
                   transition={{ type: 'tween', ease: 'circOut', duration: 0.12 }}
                >
-                  <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0"><User className="w-5 h-5 text-accent" style={{ color: 'var(--accent-color)' }} /></div>
+                  <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0"><User className="w-5 h-5" style={{ color: 'var(--accent-color)' }} /></div>
                   <motion.span 
                     animate={{ opacity: showUserMenu ? 1 : 0 }}
                     transition={{ duration: 0.12 }}
@@ -171,7 +173,7 @@ export default function Sidebar() {
           <div className="fixed inset-0 z-[3000] pointer-events-none flex items-start justify-center pt-8">
             <motion.div
               layoutId={`nav-item-${topItem.label}`}
-              className="flex items-center px-8 h-14 rounded-full shadow-2xl bg-accent text-white pointer-events-auto border-2 border-white/20"
+              className="flex items-center px-8 h-14 rounded-full shadow-2xl text-white pointer-events-auto border-2 border-white/20"
               style={{ backgroundColor: 'var(--accent-color)' }}
               transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
             >

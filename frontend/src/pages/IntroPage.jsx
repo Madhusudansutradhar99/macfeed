@@ -15,7 +15,7 @@ const FeatureCard = ({ feature, index }) => (
     className="relative group p-px rounded-[2.5rem] overflow-hidden bg-gradient-to-b from-white/10 to-transparent"
   >
     <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-    <div className="relative h-full bg-[#020617]/90 backdrop-blur-3xl p-8 rounded-[2.5rem] border border-white/5 flex flex-col justify-between">
+    <div className="relative h-full backdrop-blur-3xl p-8 rounded-[2.5rem] border flex flex-col justify-between" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'rgba(255,255,255,0.05)' }}>
       <div>
         <div className="mb-8 w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center shadow-lg border border-white/10 group-hover:border-cyan-400/50 group-hover:scale-110 transition-all duration-500">
           {feature.icon}
@@ -64,14 +64,15 @@ export default function IntroPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white flex flex-col items-center justify-start relative overflow-hidden selection:bg-cyan-500/30">
+    <div className="min-h-screen text-white flex flex-col items-center justify-start relative overflow-hidden selection:bg-cyan-500/30" style={{ backgroundColor: 'var(--bg-primary)' }}>
       
       {/* Dynamic Background Elements */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <motion.div 
           animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] rounded-full bg-cyan-900/20 blur-[120px] mix-blend-screen"
+          className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] rounded-full blur-[120px] mix-blend-screen"
+          style={{ backgroundColor: 'var(--accent-color)', opacity: 0.18 }}
         />
         <motion.div 
           animate={{ scale: [1, 1.5, 1], rotate: [0, -90, 0] }}
@@ -88,8 +89,7 @@ export default function IntroPage() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.2 }}
-          className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-2.5 rounded-full mb-12 backdrop-blur-md shadow-2xl"
-        >
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full mb-12 backdrop-blur-md shadow-2xl border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'rgba(255,255,255,0.10)' }}>
           <Sparkles className="w-4 h-4 text-cyan-400" />
           <span className="text-[10px] font-black uppercase tracking-[0.3em] bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-400">
             Welcome to the Future
@@ -131,8 +131,7 @@ export default function IntroPage() {
         >
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse" />
           <button 
-            className="relative flex items-center gap-4 bg-[#020617] px-14 py-6 rounded-full leading-none overflow-hidden border border-white/10 group-hover:border-white/30 transition-colors"
-          >
+            className="relative flex items-center gap-4 px-14 py-6 rounded-full leading-none overflow-hidden border transition-colors" style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'rgba(255,255,255,0.10)' }}>
             <span className="text-white font-black uppercase tracking-[0.2em] text-sm md:text-base z-10 group-hover:text-cyan-300 transition-colors">
               Unlock MacFeed
             </span>

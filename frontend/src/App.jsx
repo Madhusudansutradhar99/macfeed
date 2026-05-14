@@ -16,14 +16,14 @@ import MusicMiniPlayer from './components/MusicMiniPlayer';
 import AuthModal from './components/AuthModal';
 import AdBanner from './components/AdBanner';
 import Loader from './components/Loader';
-const LocalPlayerOverlay = lazy(() => import('./components/LocalPlayerOverlay'));
+import LocalPlayerOverlay from './components/LocalPlayerOverlay';
 import InstallPWA from './components/InstallPWA';
 import OfflineStatus from './components/OfflineStatus';
 import StartupAnimation from './components/StartupAnimation';
 import InstantFeedbackProvider from './components/InstantFeedbackProvider';
 
 // Lazy load pages for performance optimization
-const Home = lazy(() => import('./pages/Home'));
+import Home from './pages/Home';
 const VideoPlayerPage = lazy(() => import('./pages/VideoPlayerPage'));
 const Admin = lazy(() => import('./pages/Admin'));
 const AdManager = lazy(() => import('./pages/AdManager'));
@@ -79,23 +79,21 @@ function AppContent() {
   const { user, setAuthModalOpen } = useAuth();
   
   // Redirect to intro if not logged in and trying to access the root
-  useEffect(() => {
-    if (!user && location.pathname === '/') {
-      navigate('/intro', { replace: true });
-    }
-  }, [user, location.pathname, navigate]);
+  // useEffect(() => {
+  //   if (!user && location.pathname === '/') {
+  //     navigate('/intro', { replace: true });
+  //   }
+  // }, [user, location.pathname, navigate]);
 
   // Strict Auth Guard: If no user and not on intro page, force open auth modal
-  useEffect(() => {
-    // Give auth a tiny delay to initialize from localStorage to avoid flashing modal
-    const timer = setTimeout(() => {
-      // Allow both /intro and exact match
-      if (!user && location.pathname !== '/intro') {
-        setAuthModalOpen(true);
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [user, setAuthModalOpen, location.pathname]);
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     if (!user && location.pathname !== '/intro') {
+  //       setAuthModalOpen(true);
+  //     }
+  //   }, 100);
+  //   return () => clearTimeout(timer);
+  // }, [user, setAuthModalOpen, location.pathname]);
 
   // Use a ref for location to avoid listener duplication
   const locationRef = useRef(location);

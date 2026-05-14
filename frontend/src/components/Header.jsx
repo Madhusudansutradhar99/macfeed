@@ -83,6 +83,16 @@ export default function Header() {
     setQuery(''); setResults([]); setIsFocused(false);
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      const q = query.trim();
+      if (!q) return;
+      navigate(`/search?q=${encodeURIComponent(q)}`);
+      setIsFocused(false);
+      setResults([]);
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (e) => { if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setIsFocused(false); };
     document.addEventListener('mousedown', handleClickOutside);
@@ -95,42 +105,44 @@ export default function Header() {
     <motion.header
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className="fixed top-0 left-0 right-0 h-[80px] bg-secondary/90 backdrop-blur-2xl z-[5000] flex items-center px-4 md:px-10 border-b border-primary/5 shadow-2xl"
+      className="fixed top-0 left-0 right-0 h-[86px] z-[5000] flex items-center px-4 md:px-10 border-b border-primary/10 shadow-none"
+      style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.18) 100%)', backdropFilter: 'blur(18px)' }}
     >
-      <div className="flex items-center gap-4 shrink-0">
+      <div className="flex items-center gap-3 shrink-0">
         {!isSearchPage && (
-          <button onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))} className="p-3 bg-primary/5 rounded-2xl hover:bg-yellow-400 hover:text-black transition-all text-primary border border-primary/10">
-            <Layout className="w-6 h-6" />
+          <button onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))} className="w-14 h-14 rounded-2xl hover:text-white transition-all duration-300 border active:scale-90 flex items-center justify-center" style={{ backgroundColor: 'var(--accent-color)', borderColor: 'var(--accent-color)', color: '#ffffff', boxShadow: '0 12px 30px rgba(0,0,0,0.08)' }}>
+            <Layout className="w-5 h-5" />
           </button>
         )}
-        <Link to="/" className="hidden sm:flex items-center gap-3">
-          <img src="/macfeed-logo.png" className="h-10 w-10 drop-shadow-lg" />
-          <span className="text-primary text-2xl font-black uppercase italic tracking-tighter leading-none">
-            MAC<span className="text-yellow-400">FEED</span>
+        <Link to="/" className="hidden sm:flex items-center gap-3 pl-1">
+          <img src="/macfeed-logo.png" className="h-9 w-9 drop-shadow-lg" />
+          <span className="text-primary text-[1.45rem] font-black uppercase italic tracking-tighter leading-none">
+            MAC<span style={{ color: 'var(--accent-color)' }}>FEED</span>
           </span>
-          <span className="bg-yellow-400/10 text-yellow-400 text-[8px] font-black px-1.5 py-0.5 rounded border border-yellow-400/20">v3.0.6</span>
+          <span className="text-[7px] font-black px-1.5 py-0.5 rounded border" style={{ color: 'var(--accent-color)', borderColor: 'var(--accent-color)', backgroundColor: 'var(--accent-color)', opacity: 0.12 }}>v3.0.6</span>
         </Link>
       </div>
 
-      <div ref={dropdownRef} className="flex-grow flex justify-center max-w-3xl mx-auto px-4">
-        <div className={`relative flex items-center transition-all duration-500 px-6 py-2.5 rounded-full border-2 w-full ${isFocused ? 'bg-secondary border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.2)]' : 'bg-primary/5 border-yellow-400/40'}`}>
-          <Search className="w-5 h-5 text-yellow-400 shrink-0" />
+      <div ref={dropdownRef} className="flex-grow flex justify-center max-w-4xl mx-auto px-4">
+        <div className={`relative flex items-center transition-all duration-300 px-6 py-4 rounded-[1.6rem] w-full ${isFocused ? 'shadow-[0_0_40px] drop-shadow-lg' : ''}`} style={{ borderWidth: '2px', borderStyle: 'solid', borderColor: 'var(--accent-color)', boxShadow: isFocused ? `0 0 40px var(--accent-color)44` : 'none', backgroundColor: 'rgba(255,255,255,0.30)' }}>
+          <Search className="w-5 h-5 shrink-0" style={{ color: 'var(--accent-color)' }} />
           <input 
             value={query} 
             onChange={(e) => setQuery(e.target.value)} 
             onFocus={() => setIsFocused(true)} 
+            onKeyDown={handleKeyDown}
             placeholder="SEARCH PREMIUM CONTENT..." 
-            className="bg-transparent outline-none text-primary text-[12px] md:text-sm font-black uppercase tracking-tight w-full px-4 placeholder:text-secondary/40" 
+            className="bg-transparent outline-none text-primary text-[12px] md:text-sm font-black uppercase tracking-tight w-full px-4 placeholder:text-primary/35" 
           />
         </div>
         <AnimatePresence>
           {isFocused && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 15 }} exit={{ opacity: 0, y: 10 }} className="absolute top-full left-4 right-4 bg-secondary border-2 border-yellow-400 rounded-3xl shadow-2xl overflow-hidden z-[7000] mt-2">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 15 }} exit={{ opacity: 0, y: 10 }} className="absolute top-full left-4 right-4 rounded-[1.5rem] shadow-2xl overflow-hidden z-[7000] mt-2" style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid rgba(255,255,255,0.10)' }}>
               <div className="max-h-[60vh] overflow-y-auto no-scrollbar">
                 {results.length > 0 ? results.map((r, idx) => (
-                  <div key={r.id + idx} onClick={() => handleResultClick(r)} className="flex items-center gap-4 px-6 py-4 hover:bg-yellow-400 group cursor-pointer transition-all border-b border-primary/5 last:border-0">
+                  <div key={r.id + idx} onClick={() => handleResultClick(r)} className="flex items-center gap-4 px-6 py-4 group cursor-pointer transition-all border-b border-primary/5 last:border-0" style={{ backgroundColor: 'transparent' }}>
                     <img src={r.thumbnail_url} className="w-20 h-12 rounded-lg object-cover" />
-                    <p className="text-primary group-hover:text-black text-[13px] font-black uppercase italic tracking-tighter truncate">{r.title}</p>
+                    <p className="text-primary group-hover:text-primary text-[13px] font-black uppercase italic tracking-tighter truncate">{r.title}</p>
                   </div>
                 )) : <div className="p-10 text-center text-secondary/40 font-black uppercase text-[10px] tracking-[0.5em]">Searching...</div>}
               </div>
@@ -139,14 +151,14 @@ export default function Header() {
         </AnimatePresence>
       </div>
 
-      <div className="flex items-center gap-3 md:gap-5 shrink-0">
+      <div className="flex items-center gap-2 md:gap-4 shrink-0">
         <ThemeToggle />
         {user ? (
-          <button onClick={() => navigate('/settings')} className="w-11 h-11 rounded-full border-2 border-yellow-400/20 flex items-center justify-center bg-primary/5 hover:border-yellow-400 transition-all overflow-hidden p-0.5">
-            {user.picture ? <img src={user.picture} className="w-full h-full rounded-full object-cover" /> : <span className="font-black text-[14px] text-primary">{user.email?.[0]?.toUpperCase()}</span>}
+          <button onClick={() => navigate('/settings')} className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-80 transition-all duration-300 overflow-hidden p-0.5 active:scale-90" style={{ borderWidth: '2px', borderStyle: 'solid', borderColor: 'var(--accent-color)', backgroundColor: 'var(--accent-color)' }}>
+            {user.picture ? <img src={user.picture} className="w-full h-full rounded-full object-cover" /> : <span className="font-black text-[12px] text-white">{user.email?.[0]?.toUpperCase()}</span>}
           </button>
         ) : (
-          <button onClick={() => setAuthModalOpen(true)} className="px-6 py-2.5 bg-yellow-400 text-blue-900 rounded-full font-black text-[11px] uppercase tracking-widest shadow-lg hover:bg-white hover:text-black transition-all">SIGN IN</button>
+          <button onClick={() => setAuthModalOpen(true)} className="px-5 py-2 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:scale-105 transition-all duration-300 active:scale-95" style={{ backgroundColor: 'var(--accent-color)' }}>SIGN IN</button>
         )}
       </div>
     </motion.header>

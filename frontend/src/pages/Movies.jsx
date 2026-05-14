@@ -27,7 +27,7 @@ export default function Movies() {
     return <Loader />;
 
   return (
-    <div className="min-h-screen bg-primary text-primary pt-24 px-6 md:px-12 pb-40 overflow-x-hidden relative transition-colors duration-500">
+    <div className="min-h-screen text-primary pt-24 px-6 md:px-12 pb-40 overflow-x-hidden relative transition-colors duration-500" style={{ backgroundColor: 'var(--bg-primary)' }}>
       {/* Background Decor */}
       <div className="fixed inset-0 pointer-events-none opacity-5 z-0">
         <h1 className="text-[25vw] font-black italic uppercase -rotate-12 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">

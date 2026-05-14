@@ -23,7 +23,8 @@ const ThemeToggle = () => {
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       onClick={toggleTheme}
-      className="p-2 rounded-xl bg-secondary border border-primary hover:bg-primary/10 transition-colors shadow-lg"
+      className="p-2 rounded-xl bg-secondary hover:bg-primary/10 transition-colors shadow-lg"
+      style={{ borderWidth: '1.5px', borderStyle: 'solid', borderColor: 'rgba(239, 68, 68, 0.65)' }}
       title={getTitle()}
     >
       {getIcon()}

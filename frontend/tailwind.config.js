@@ -7,12 +7,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: '#0A0A0F',
-        accent: '#8B5CF6',
-        highlight: '#EC4899',
-        text: '#FFFFFF',
-        primary: '#FFFFFF',
-        secondary: '#1F2937',
+        background: 'var(--bg-primary)',
+        accent: 'var(--accent-color)',
+        highlight: 'var(--accent-color)',
+        text: 'var(--text-primary)',
+        primary: 'var(--text-primary)',
+        secondary: 'var(--bg-secondary)',
       },
       fontFamily: {
         sans: ['Inter', 'Poppins', 'ui-sans-serif', 'system-ui'],

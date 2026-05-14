@@ -36,7 +36,7 @@ export default function History() {
   if (loading) return <Loader />;
 
   return (
-    <div className="min-h-screen bg-[#00050a] text-white p-4 md:p-12 pb-40 relative overflow-x-hidden">
+    <div className="min-h-screen text-white p-4 md:p-12 pb-40 relative overflow-x-hidden" style={{ backgroundColor: 'var(--bg-primary)' }}>
       {/* Cinematic Background Text */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden select-none">
         <h1 className="text-[25vw] font-black italic uppercase text-white/[0.02] leading-none absolute -top-10 -left-10 rotate-[-5deg] whitespace-nowrap">
