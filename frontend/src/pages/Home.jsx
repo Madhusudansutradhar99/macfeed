@@ -9,64 +9,42 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PosterCard from '../components/PosterCard';
 import CategoryPills from '../components/CategoryPills';
 
-// ── Hero Banner (Native Framer Motion) ──
+// Swiper imports
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Pagination, EffectFade } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/effect-fade';
+
 function HeroBanner({ videos }) {
   const navigate = useNavigate();
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    if (!videos.length) return;
-    const timer = setInterval(() => {
-      setIndex((prev) => (prev + 1) % videos.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [videos.length]);
-
   if (!videos || !videos.length) return null;
-  const video = videos[index];
 
   return (
-    <div className="relative w-full h-[180px] md:h-[350px] mb-8 px-4 select-none">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={video.id}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.8 }}
-          onClick={() => navigate('/watch/' + video.id)}
-          className="relative w-full h-full rounded-2xl overflow-hidden cursor-pointer border border-white/10 group shadow-2xl"
-        >
-          <img src={video.thumbnail_url} className="absolute inset-0 w-full h-full object-cover object-top" alt="" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-          
-          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
-            <motion.h2 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="text-lg md:text-3xl font-black italic uppercase tracking-tighter text-white line-clamp-1 max-w-[80%]"
-            >
-              {video.title}
-            </motion.h2>
-            <motion.button 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="mt-4 bg-white text-black px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:scale-105 transition-transform"
-            >
-              <Play className="w-4 h-4 fill-black" /> Play Now
-            </motion.button>
-          </div>
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Pagination Dots */}
-      <div className="absolute bottom-6 right-12 flex gap-2 z-10">
-        {videos.map((_, i) => (
-          <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === index ? 'w-8 bg-white' : 'w-2 bg-white/20'}`} />
+    <div className="relative w-full h-[220px] md:h-[400px] mb-8 px-4 select-none">
+      <Swiper
+        modules={[Autoplay, Pagination, EffectFade]}
+        effect="fade"
+        pagination={{ clickable: true, bulletClass: 'swiper-pagination-bullet !bg-white/30', bulletActiveClass: 'swiper-pagination-bullet-active !bg-white !w-8' }}
+        autoplay={{ delay: 5000, disableOnInteraction: false }}
+        loop={true}
+        className="w-full h-full rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+      >
+        {videos.map((video) => (
+          <SwiperSlide key={video.id} onClick={() => navigate('/watch/' + video.id)} className="cursor-pointer">
+            <img src={video.thumbnail_url} className="absolute inset-0 w-full h-full object-cover object-center" alt="" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12">
+               <h2 className="text-xl md:text-5xl font-black italic uppercase tracking-tighter text-white line-clamp-1 max-w-[85%] mb-4 drop-shadow-2xl">
+                 {video.title}
+               </h2>
+               <button className="bg-white text-black px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:scale-105 transition-transform shadow-xl">
+                 <Play className="w-4 h-4 fill-black" /> Play Now
+               </button>
+            </div>
+          </SwiperSlide>
         ))}
-      </div>
+      </Swiper>
     </div>
   );
 }
@@ -186,7 +164,7 @@ export default function Home() {
   const trending = [...videos].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 pt-4">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 pt-20 md:pt-24">
       <HeroBanner videos={heroVideos} />
 
       <div className="px-2 md:px-6">
