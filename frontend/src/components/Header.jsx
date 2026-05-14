@@ -162,7 +162,7 @@ export default function Header() {
       onMouseEnter={() => setIsHeaderHovered(true)}
       onMouseLeave={() => setIsHeaderHovered(false)}
       transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-      className={`fixed top-0 left-0 right-0 h-[75px] bg-transparent z-[5000] flex items-center px-4 transition-colors duration-500 pointer-events-none ${isSearchPage ? 'justify-center' : 'md:px-10'}`}
+      className={`fixed top-0 left-0 right-0 h-[60px] bg-transparent z-[5000] flex items-center px-4 transition-colors duration-500 pointer-events-none ${isSearchPage ? 'justify-center' : 'md:px-10'}`}
       style={isSearchPage ? { backgroundColor: 'transparent', backdropFilter: 'none', WebkitBackdropFilter: 'none', borderBottom: 'none' } : {}}
     >
       {!isSearchPage && (
@@ -171,8 +171,8 @@ export default function Header() {
             <Layout className="w-5 h-5" />
           </button>
           <Link to="/" className="hidden md:flex items-center gap-2">
-            <img src="/macfeed-logo.png" className="h-10 w-10" />
-            <span className="text-primary text-2xl font-black uppercase italic tracking-tighter leading-none">
+            <img src="/macfeed-logo.png" className="h-8 w-8" />
+            <span className="text-primary text-xl font-black uppercase italic tracking-tighter leading-none">
               Mac<span className="text-accent" style={{ color: 'var(--accent-color)' }}>Feed</span>
             </span>
           </Link>
@@ -193,7 +193,7 @@ export default function Header() {
             onFocus={() => setIsFocused(true)}
             onKeyDown={(e) => e.key === 'Enter' && (navigate(`/search?q=${encodeURIComponent(query)}`), setIsFocused(false))}
             placeholder="Search..."
-            className="bg-transparent outline-none text-primary text-[10px] md:text-lg font-black italic uppercase tracking-tight transition-all duration-500 w-full min-w-0 px-2 md:px-4 placeholder:text-secondary"
+            className="bg-transparent outline-none text-primary text-[10px] md:text-sm font-black italic uppercase tracking-tight transition-all duration-500 w-full min-w-0 px-2 md:px-4 placeholder:text-secondary"
           />
           {loading && isFocused && <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin ml-3" style={{ borderColor: 'var(--accent-color)', borderTopColor: 'transparent' }} />}
         </div>

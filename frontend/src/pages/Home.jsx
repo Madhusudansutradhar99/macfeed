@@ -26,7 +26,7 @@ function HeroBanner({ videos }) {
   const video = videos[index];
 
   return (
-    <div className="relative w-full h-[180px] md:h-[350px] mb-8 px-4 select-none">
+    <div className="relative w-full h-[150px] md:h-[280px] mb-6 px-4 select-none">
       <AnimatePresence mode="wait">
         <motion.div
           key={video.id}
@@ -45,7 +45,7 @@ function HeroBanner({ videos }) {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-2xl md:text-5xl font-black italic uppercase tracking-tighter text-white line-clamp-1"
+              className="text-lg md:text-3xl font-black italic uppercase tracking-tighter text-white line-clamp-1"
             >
               {video.title}
             </motion.h2>
@@ -53,9 +53,9 @@ function HeroBanner({ videos }) {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="mt-6 bg-white text-black px-10 py-3.5 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:scale-105 transition-transform"
+              className="mt-4 bg-white text-black px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-transform"
             >
-              <Play className="w-4 h-4 fill-black" /> Play Now
+              <Play className="w-3 h-3 fill-black" /> Play Now
             </motion.button>
           </div>
         </motion.div>
@@ -99,7 +99,7 @@ function VideoRow({ title, videos, emoji }) {
 
       <div ref={scrollRef} className="flex gap-6 overflow-x-auto no-scrollbar px-4 pb-4 scroll-smooth snap-x snap-mandatory">
         {videos.map((video) => (
-          <div key={video.id} className="min-w-[280px] sm:min-w-[340px] flex-shrink-0 snap-start">
+          <div key={video.id} className="min-w-[200px] sm:min-w-[260px] flex-shrink-0 snap-start">
             <VideoCard video={video} />
           </div>
         ))}
@@ -129,7 +129,7 @@ function Movies3DSection({ title, videos }) {
           <div 
             key={video.id} 
             onClick={() => navigate(`/watch/${video.id}`)}
-            className="min-w-[220px] md:min-w-[300px] aspect-video rounded-2xl overflow-hidden border border-white/10 cursor-pointer group shadow-2xl snap-start flex-shrink-0"
+            className="min-w-[160px] md:min-w-[240px] aspect-video rounded-xl overflow-hidden border border-white/10 cursor-pointer group shadow-2xl snap-start flex-shrink-0"
           >
             <img src={video.thumbnail_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -206,7 +206,7 @@ export default function Home() {
                 <div className="w-12 h-1 bg-blue-500 rounded-full" />
                 <span className="text-blue-500 text-xs font-black uppercase tracking-[0.6em]">Curated</span>
               </div>
-              <h2 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter text-white leading-none">
+              <h2 className="text-2xl md:text-3xl font-black italic uppercase tracking-tighter text-white leading-none">
                 More to <span className="text-blue-500">Explore</span>
               </h2>
             </div>
