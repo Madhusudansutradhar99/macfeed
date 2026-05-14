@@ -21,7 +21,7 @@ function HeroBanner({ videos }) {
   if (!videos || !videos.length) return null;
 
   return (
-    <div className="relative w-full h-[220px] md:h-[400px] mb-8 px-4 select-none">
+    <div className="relative w-full h-[160px] md:h-[350px] mb-6 px-3 select-none">
       <Swiper
         modules={[Autoplay, Pagination, EffectFade]}
         effect="fade"
@@ -59,10 +59,10 @@ function VideoRow({ title, videos, emoji }) {
       <div className="flex items-center justify-between mb-6 px-4">
         <div className="flex items-center gap-2">
           <div className="w-1 h-6 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-          <h2 className="text-lg font-black text-white uppercase italic tracking-tighter flex items-center gap-2">
-            {emoji && <span className="text-xl">{emoji}</span>}
+          <h2 className="text-base font-black text-white uppercase italic tracking-tighter flex items-center gap-2">
+            {emoji && <span className="text-lg">{emoji}</span>}
             {title}
-            <span className="text-[9px] font-normal text-white/40 ml-2 tracking-widest italic">({videos.length})</span>
+            <span className="text-[8px] font-normal text-white/40 ml-1 tracking-widest italic">({videos.length})</span>
           </h2>
         </div>
         <div className="flex gap-2">
@@ -77,7 +77,7 @@ function VideoRow({ title, videos, emoji }) {
 
       <div ref={scrollRef} className="flex gap-6 overflow-x-auto no-scrollbar px-4 pb-4 scroll-smooth snap-x snap-mandatory">
         {videos.map((video) => (
-          <div key={video.id} className="min-w-[200px] sm:min-w-[260px] flex-shrink-0 snap-start">
+          <div key={video.id} className="min-w-[160px] sm:min-w-[240px] flex-shrink-0 snap-start">
             <VideoCard video={video} />
           </div>
         ))}
@@ -164,7 +164,7 @@ export default function Home() {
   const trending = [...videos].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 pt-20 md:pt-24">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 pt-16 md:pt-24">
       <HeroBanner videos={heroVideos} />
 
       <div className="px-2 md:px-6">
@@ -194,7 +194,7 @@ export default function Home() {
             <CategoryPills activeCategory={activeTab} setCategory={setActiveTab} />
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-6">
             {videos.map((video, index) => (
               <PosterCard key={video.id} video={video} index={index} />
             ))}

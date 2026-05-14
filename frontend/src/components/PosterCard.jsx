@@ -50,7 +50,7 @@ export default function PosterCard({ video, index }) {
 
       {/* Info Section */}
       <div className="mt-4 px-2">
-        <h3 className="text-white/90 font-black text-sm uppercase italic tracking-tighter leading-tight line-clamp-1 group-hover:text-blue-400 transition-colors">
+        <h3 className="text-white/90 font-black text-[11px] uppercase italic tracking-tighter leading-tight line-clamp-1 group-hover:text-blue-400 transition-colors">
           {video.title}
         </h3>
         <div className="flex items-center gap-3 mt-1.5">
