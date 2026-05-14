@@ -48,32 +48,31 @@ const HeroBanner = ({ videos }) => {
   if (!videos?.length) return null;
 
   return (
-    <div className="relative w-full h-[180px] sm:h-[280px] md:h-[400px] mb-6 sm:mb-10 px-0 sm:px-4 select-none">
+    <div className="relative w-full h-[150px] sm:h-[220px] md:h-[380px] mb-6 sm:mb-10 px-0 sm:px-4 select-none">
       <Swiper
         modules={[Autoplay, Pagination, EffectFade]}
         effect="fade"
-        pagination={{ clickable: true, bulletClass: 'swiper-pagination-bullet !bg-white/20 !w-2 !h-2', bulletActiveClass: 'swiper-pagination-bullet-active !bg-white !w-6' }}
+        fadeEffect={{ crossFade: true }}
+        pagination={{ clickable: true, bulletClass: 'swiper-pagination-bullet !bg-white/20 !w-1.5 !h-1.5', bulletActiveClass: 'swiper-pagination-bullet-active !bg-white !w-6' }}
         autoplay={{ delay: 5000, disableOnInteraction: false }}
         loop={true}
         className="w-full h-full rounded-none sm:rounded-2xl overflow-hidden border-b sm:border border-white/5 shadow-2xl"
       >
         {videos.map((video) => (
-          <SwiperSlide key={video.id} onClick={() => navigate('/watch/' + video.id)} className="cursor-pointer group">
-            <img src={video.thumbnail_url} className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-[20s] ease-linear group-hover:scale-110" alt="" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-12">
-               <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}>
-                 <div className="flex items-center gap-2 mb-2 sm:mb-4">
-                   <div className="px-2 py-0.5 bg-accent/20 border border-accent/30 rounded text-[8px] sm:text-[10px] font-black text-accent uppercase tracking-widest" style={{ color: 'var(--accent-color)', borderColor: 'var(--accent-color)' }}>Featured</div>
-                   <span className="text-[8px] sm:text-[10px] font-bold text-white/50 uppercase tracking-widest">{video.category}</span>
-                 </div>
-                 <h2 className="text-lg sm:text-3xl md:text-5xl font-black italic uppercase tracking-tighter text-white line-clamp-1 max-w-[90%] mb-3 sm:mb-6 drop-shadow-2xl">
-                   {video.title}
-                 </h2>
-                 <button className="bg-white text-black px-6 sm:px-10 py-2 sm:py-3.5 rounded-full font-black text-[9px] sm:text-xs uppercase tracking-widest flex items-center gap-3 hover:bg-accent hover:text-white transition-all shadow-xl active:scale-95">
-                   <Play className="w-3 h-3 sm:w-5 sm:h-5 fill-current" /> Play Now
-                 </button>
-               </motion.div>
+          <SwiperSlide key={video.id} onClick={() => navigate('/watch/' + video.id)} className="cursor-pointer relative overflow-hidden">
+            <img src={video.thumbnail_url} className="absolute inset-0 w-full h-full object-cover object-center" alt="" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8">
+               <div className="flex items-center gap-2 mb-1 sm:mb-3">
+                 <div className="px-1.5 py-0.5 bg-accent/20 border border-accent/40 rounded-[4px] text-[7px] sm:text-[9px] font-black text-accent uppercase tracking-widest" style={{ color: 'var(--accent-color)', borderColor: 'var(--accent-color)' }}>Featured</div>
+                 <span className="text-[7px] sm:text-[9px] font-bold text-white/50 uppercase tracking-widest">{video.category}</span>
+               </div>
+               <h2 className="text-sm sm:text-2xl md:text-4xl font-black italic uppercase tracking-tighter text-white line-clamp-1 max-w-[85%] mb-2 sm:mb-4 drop-shadow-2xl">
+                 {video.title}
+               </h2>
+               <button className="bg-white text-black px-4 sm:px-8 py-1.5 sm:py-2.5 rounded-full font-black text-[8px] sm:text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-accent hover:text-white transition-all shadow-xl active:scale-95">
+                 <Play className="w-2.5 h-2.5 sm:w-4 sm:h-4 fill-current" /> PLAY
+               </button>
             </div>
           </SwiperSlide>
         ))}
@@ -270,6 +269,10 @@ export default function Home() {
               ))}
             </motion.div>
           </AnimatePresence>
+
+          <div className="mt-20 pb-10 text-center opacity-20">
+            <p className="text-[10px] font-black uppercase tracking-[1em]">MacFeed v2.0.1 Redesign</p>
+          </div>
         </section>
       </div>
     </motion.div>
