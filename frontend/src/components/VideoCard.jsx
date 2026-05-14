@@ -151,7 +151,7 @@ const VideoCard = memo(({ video }) => {
       </div>
 
       <div className="px-2">
-        <h3 className="text-white font-bold text-xs line-clamp-2 leading-tight group-hover:text-accent transition-colors uppercase tracking-tight">{video?.title || 'Untitled Video'}</h3>
+        <h3 className="text-primary font-bold text-xs line-clamp-2 leading-tight group-hover:text-accent transition-colors uppercase tracking-tight">{video?.title || 'Untitled Video'}</h3>
         <div className="flex items-center gap-3 mt-1.5">
           <span className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">{video.category}</span>
         </div>
