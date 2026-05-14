@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import VideoCard from '../components/VideoCard';
 import Loader from '../components/Loader';
-import { Play, Flame, Star, LayoutGrid, Palette } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Play } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
+
+// Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Autoplay, Pagination, FreeMode } from 'swiper/modules';
+import { Autoplay, Navigation, Pagination, FreeMode } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -17,7 +19,7 @@ export default function Home() {
   const [heroVideos, setHeroVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
 
   useEffect(() => {
     async function loadData() {
@@ -58,31 +60,28 @@ export default function Home() {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      className="max-w-full overflow-x-hidden pb-32 pt-4 bg-primary min-h-screen"
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      className="max-w-full overflow-x-hidden pb-32 pt-4 bg-primary"
     >
-      {/* ── 1. PREMIUM HERO BANNER ── */}
+      {/* ── 1. HERO BANNER (As per Image) ── */}
       {heroVideos.length > 0 && (
-        <section className="px-4 md:px-12 mb-16">
+        <section className="px-4 md:px-12 mb-10">
           <Swiper
             modules={[Autoplay, Pagination]}
             pagination={{ clickable: true }}
-            autoplay={{ delay: 6000 }}
-            className="w-full h-[250px] md:h-[450px] rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10"
+            autoplay={{ delay: 5000 }}
+            className="w-full h-[220px] md:h-[400px] rounded-[2rem] overflow-hidden shadow-2xl border-2 border-accent/20"
           >
             {heroVideos.map(video => (
-              <SwiperSlide key={video.id} onClick={() => navigate('/watch/' + video.id)} className="cursor-pointer">
-                <div className="relative w-full h-full group">
-                  <img src={video.thumbnail_url} className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110" alt="" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-                  <div className="absolute bottom-10 left-10 right-10 flex flex-col items-start gap-4">
-                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 px-3 py-1 bg-accent rounded-full text-[8px] font-black uppercase tracking-widest text-white shadow-xl">
-                      <Flame size={12} fill="white" /> Featured Content
-                    </motion.div>
-                    <h2 className="text-white text-2xl md:text-5xl font-black italic uppercase tracking-tighter leading-none max-w-2xl drop-shadow-2xl">{video.title}</h2>
-                    <button className="bg-white text-black px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:bg-accent hover:text-white transition-all transform hover:scale-105 active:scale-95 shadow-2xl">
-                      <Play size={18} fill="currentColor" /> Watch Now
+              <SwiperSlide key={video.id} onClick={() => navigate('/watch/' + video.id)}>
+                <div className="relative w-full h-full bg-black">
+                  <img src={video.thumbnail_url} className="w-full h-full object-cover" alt="" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute bottom-6 left-6 right-6">
+                    <h2 className="text-white text-base md:text-2xl font-black italic uppercase tracking-tighter mb-4 line-clamp-1">{video.title}</h2>
+                    <button className="bg-white text-black px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-yellow-500 transition-all">
+                      <Play size={14} fill="black" /> PLAY NOW
                     </button>
                   </div>
                 </div>
@@ -92,22 +91,17 @@ export default function Home() {
         </section>
       )}
 
-      {/* ── 2. DYNAMIC THEME ENGINE ── */}
-      <section className="px-4 md:px-12 mb-16">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-2 h-8 bg-accent rounded-full" />
-            <h1 className="text-primary text-2xl font-black uppercase italic tracking-tighter">Experience <span className="text-accent">Modes</span></h1>
-          </div>
-          <div className="hidden md:flex items-center gap-2 text-secondary text-[10px] font-bold uppercase tracking-widest opacity-50">
-            <Palette size={14} /> Personalize your view
-          </div>
+      {/* ── 2. SELECT THEME (As per Image) ── */}
+      <section className="px-4 md:px-12 mb-10">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="w-1 h-6 bg-blue-500 rounded-full" />
+          <h1 className="text-primary text-xl font-black uppercase italic tracking-tighter">SELECT <span className="text-blue-500">THEME</span></h1>
         </div>
-        <div className="flex gap-6 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
           {[
-            { id: 'dark', name: 'NIGHT OWL', bg: 'bg-[#0a0a0a]', text: 'text-white/40', accent: 'bg-white' },
-            { id: 'light', name: 'DAYLIGHT', bg: 'bg-white', text: 'text-black/40', accent: 'bg-red-500' },
-            { id: 'blue', name: 'OCEANIC', bg: 'bg-[#dbeafe]', text: 'text-blue-900/40', accent: 'bg-blue-600' }
+            { id: 'dark', name: 'MIDNIGHT', bg: 'bg-[#4a4a4a]', text: 'text-white' },
+            { id: 'light', name: 'DAYLIGHT', bg: 'bg-white', text: 'text-gray-400' },
+            { id: 'blue', name: 'BLUE SKY', bg: 'bg-[#dbeafe]', text: 'text-blue-900', active: true }
           ].map(t => (
             <button
               key={t.id}
@@ -116,34 +110,29 @@ export default function Home() {
                 root.classList.remove('light', 'dark', 'blue');
                 root.classList.add(t.id);
                 localStorage.setItem('theme', t.id);
-                if(setTheme) setTheme(t.id);
-                else window.location.reload();
+                window.location.reload();
               }}
-              className={`relative min-w-[150px] md:min-w-[220px] h-32 md:h-40 rounded-[2.5rem] border-2 transition-all duration-500 flex flex-col items-center justify-center gap-3 shadow-2xl overflow-hidden group ${t.bg} ${theme === t.id ? 'border-accent scale-105 ring-4 ring-accent/20' : 'border-white/5 opacity-60 grayscale hover:grayscale-0 hover:opacity-100'}`}
+              className={`min-w-[120px] md:min-w-[180px] h-28 md:h-36 rounded-[2rem] border-4 transition-all flex flex-col items-center justify-center gap-2 shadow-xl ${t.bg} ${theme === t.id ? 'border-yellow-400 scale-105' : 'border-transparent opacity-80'}`}
             >
-              <div className={`absolute top-0 left-0 w-full h-1 ${t.accent}`} />
-              <span className={`text-[10px] md:text-xs font-black tracking-[0.2em] uppercase transition-colors ${theme === t.id ? 'text-accent' : t.text}`}>{t.name}</span>
-              <div className={`w-3 h-3 rounded-full transition-all duration-500 ${theme === t.id ? 'bg-accent scale-125' : 'bg-white/10'}`} />
+              <span className={`text-xs md:text-sm font-black ${t.text}`}>{t.name}</span>
+              {theme === t.id && <div className="w-2 h-2 rounded-full bg-blue-500" />}
             </button>
           ))}
         </div>
       </section>
 
-      {/* ── 3. CURATED COLLECTIONS ── */}
-      <div className="px-4 md:px-12 space-y-20">
+      {/* ── 3. CATEGORY ROWS (As per Image) ── */}
+      <div className="px-4 md:px-12 space-y-12">
         {/* Trending Now */}
         {trending.length > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
-                <Flame className="w-8 h-8 text-accent animate-pulse" />
-                <h2 className="text-2xl font-black text-primary uppercase italic tracking-tighter">Global <span className="text-accent">Trending</span></h2>
-              </div>
-              <button onClick={() => navigate('/trending')} className="text-accent text-[10px] font-black uppercase tracking-widest hover:underline">View All</button>
+            <div className="flex items-center gap-3 mb-6">
+              <span className="text-2xl">🔥</span>
+              <h2 className="text-xl font-black text-primary uppercase italic tracking-tighter">Trending <span className="text-blue-500">Now</span></h2>
             </div>
             <Swiper
               modules={[FreeMode]}
-              spaceBetween={20}
+              spaceBetween={15}
               slidesPerView={2.2}
               freeMode={true}
               breakpoints={{
@@ -162,18 +151,16 @@ export default function Home() {
           </section>
         )}
 
-        {/* Dynamic Categories */}
+        {/* Dynamic Categories from DB */}
         {Object.entries(categories).map(([cat, vids]) => (
           <section key={cat}>
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
-                <LayoutGrid className="w-7 h-7 text-secondary opacity-50" />
-                <h2 className="text-2xl font-black text-primary uppercase italic tracking-tighter">{cat}</h2>
-              </div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-1 h-6 bg-accent rounded-full" style={{ backgroundColor: 'var(--accent-color)' }} />
+              <h2 className="text-xl font-black text-primary uppercase italic tracking-tighter">{cat}</h2>
             </div>
             <Swiper
               modules={[FreeMode]}
-              spaceBetween={20}
+              spaceBetween={15}
               slidesPerView={2.2}
               freeMode={true}
               breakpoints={{
@@ -193,16 +180,8 @@ export default function Home() {
         ))}
       </div>
 
-      {/* FOOTER METADATA */}
-      <div className="mt-32 border-t border-white/5 pt-12 pb-20 text-center">
-        <div className="flex items-center justify-center gap-4 mb-6 opacity-20">
-            <div className="h-[1px] w-12 bg-white" />
-            <LayoutGrid size={16} className="text-white" />
-            <div className="h-[1px] w-12 bg-white" />
-        </div>
-        <p className="text-secondary text-[8px] font-black uppercase tracking-[0.8em] opacity-30">
-          MACFEED ADVANCED PLAYER v3.1.0 • PREMIUM EDITION
-        </p>
+      <div className="mt-20 text-center opacity-10 text-[8px] font-black uppercase tracking-[1em]">
+        MACFEED v3.0.6 - RESTORED
       </div>
     </motion.div>
   );
