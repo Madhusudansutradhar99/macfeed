@@ -1,12 +1,10 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import VideoCard from '../components/VideoCard';
 import Loader from '../components/Loader';
-import { ChevronLeft, ChevronRight, Play, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import PosterCard from '../components/PosterCard';
-import CategoryPills from '../components/CategoryPills';
+import { Play } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 
 // Swiper imports
@@ -50,6 +48,7 @@ export default function Home() {
 
   if (loading) return <Loader />;
 
+  // Group by category
   const categories = {};
   videos.forEach((v) => {
     if (!v.category) return;
@@ -63,32 +62,26 @@ export default function Home() {
     <motion.div 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
-      className="max-w-full overflow-x-hidden pb-32"
+      className="max-w-full overflow-x-hidden pb-32 pt-4 bg-primary"
     >
-      {/* Hero Section - Strict Container */}
+      {/* ── 1. HERO BANNER (As per Image) ── */}
       {heroVideos.length > 0 && (
-        <section className="w-full px-4 md:px-12 mb-8 mt-4 overflow-hidden">
+        <section className="px-4 md:px-12 mb-10">
           <Swiper
-            modules={[Autoplay, Pagination, Navigation]}
+            modules={[Autoplay, Pagination]}
             pagination={{ clickable: true }}
-            autoplay={{ delay: 4000 }}
-            spaceBetween={15}
-            slidesPerView={1}
-            breakpoints={{
-              640: { slidesPerView: 1.2 },
-              1024: { slidesPerView: 2.2 },
-            }}
-            className="w-full h-[180px] md:h-[320px] rounded-2xl md:rounded-[2rem] overflow-hidden shadow-2xl"
+            autoplay={{ delay: 5000 }}
+            className="w-full h-[220px] md:h-[400px] rounded-[2rem] overflow-hidden shadow-2xl border-2 border-accent/20"
           >
             {heroVideos.map(video => (
               <SwiperSlide key={video.id} onClick={() => navigate('/watch/' + video.id)}>
-                <div className="relative w-full h-full bg-black rounded-2xl md:rounded-[2rem] overflow-hidden border border-white/10">
-                  <img src={video.thumbnail_url} className="w-full h-full object-cover opacity-80" alt="" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
-                  <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8 right-4">
-                    <h2 className="text-white text-sm md:text-2xl font-black italic uppercase tracking-tighter mb-2 line-clamp-1">{video.title}</h2>
-                    <button className="bg-white text-black px-4 py-1.5 md:px-6 md:py-2 rounded-full font-black text-[8px] md:text-[10px] uppercase tracking-widest flex items-center gap-2">
-                      <Play size={10} fill="black" /> PLAY NOW
+                <div className="relative w-full h-full bg-black">
+                  <img src={video.thumbnail_url} className="w-full h-full object-cover" alt="" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute bottom-6 left-6 right-6">
+                    <h2 className="text-white text-base md:text-2xl font-black italic uppercase tracking-tighter mb-4 line-clamp-1">{video.title}</h2>
+                    <button className="bg-white text-black px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-yellow-500 transition-all">
+                      <Play size={14} fill="black" /> PLAY NOW
                     </button>
                   </div>
                 </div>
@@ -98,17 +91,17 @@ export default function Home() {
         </section>
       )}
 
-      {/* Theme Selector - Strict Container */}
-      <section className="w-full px-4 md:px-12 mb-8 overflow-hidden">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-1 h-4 bg-blue-500 rounded-full" />
-          <h2 className="text-primary text-xs md:text-sm font-black uppercase tracking-tighter italic">CHOOSE STYLE</h2>
+      {/* ── 2. SELECT THEME (As per Image) ── */}
+      <section className="px-4 md:px-12 mb-10">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="w-1 h-6 bg-blue-500 rounded-full" />
+          <h1 className="text-primary text-xl font-black uppercase italic tracking-tighter">SELECT <span className="text-blue-500">THEME</span></h1>
         </div>
-        <div className="grid grid-cols-3 gap-3 max-w-full md:max-w-xl">
+        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
           {[
-            { id: 'dark', name: 'DARK', bg: 'bg-black', text: 'text-white' },
-            { id: 'light', name: 'LIGHT', bg: 'bg-white', text: 'text-black' },
-            { id: 'blue', name: 'BLUE', bg: 'bg-blue-100', text: 'text-blue-900' }
+            { id: 'dark', name: 'MIDNIGHT', bg: 'bg-[#4a4a4a]', text: 'text-white' },
+            { id: 'light', name: 'DAYLIGHT', bg: 'bg-white', text: 'text-gray-400' },
+            { id: 'blue', name: 'BLUE SKY', bg: 'bg-[#dbeafe]', text: 'text-blue-900', active: true }
           ].map(t => (
             <button
               key={t.id}
@@ -119,23 +112,27 @@ export default function Home() {
                 localStorage.setItem('theme', t.id);
                 window.location.reload();
               }}
-              className={`h-14 md:h-20 rounded-xl border-2 transition-all flex flex-col items-center justify-center ${t.bg} ${theme === t.id ? 'border-blue-500 shadow-lg' : 'border-transparent opacity-60'}`}
+              className={`min-w-[120px] md:min-w-[180px] h-28 md:h-36 rounded-[2rem] border-4 transition-all flex flex-col items-center justify-center gap-2 shadow-xl ${t.bg} ${theme === t.id ? 'border-yellow-400 scale-105' : 'border-transparent opacity-80'}`}
             >
-              <span className={`text-[8px] md:text-[9px] font-black ${t.text}`}>{t.name}</span>
+              <span className={`text-xs md:text-sm font-black ${t.text}`}>{t.name}</span>
+              {theme === t.id && <div className="w-2 h-2 rounded-full bg-blue-500" />}
             </button>
           ))}
         </div>
       </section>
 
-      {/* Video Rows - Strict Containers */}
-      <div className="w-full px-4 md:px-12 space-y-8 overflow-hidden">
-        {/* Trending */}
+      {/* ── 3. CATEGORY ROWS (As per Image) ── */}
+      <div className="px-4 md:px-12 space-y-12">
+        {/* Trending Now */}
         {trending.length > 0 && (
-          <section className="w-full overflow-hidden">
-            <h2 className="text-xs md:text-sm font-black text-primary uppercase italic tracking-widest mb-3">Trending</h2>
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <span className="text-2xl">🔥</span>
+              <h2 className="text-xl font-black text-primary uppercase italic tracking-tighter">Trending <span className="text-blue-500">Now</span></h2>
+            </div>
             <Swiper
               modules={[FreeMode]}
-              spaceBetween={10}
+              spaceBetween={15}
               slidesPerView={2.2}
               freeMode={true}
               breakpoints={{
@@ -143,7 +140,7 @@ export default function Home() {
                 1024: { slidesPerView: 4.5 },
                 1280: { slidesPerView: 5.5 }
               }}
-              className="w-full overflow-visible"
+              className="w-full !overflow-visible"
             >
               {trending.map(v => (
                 <SwiperSlide key={v.id}>
@@ -154,13 +151,16 @@ export default function Home() {
           </section>
         )}
 
-        {/* Categories */}
+        {/* Dynamic Categories from DB */}
         {Object.entries(categories).map(([cat, vids]) => (
-          <section key={cat} className="w-full overflow-hidden">
-            <h2 className="text-xs md:text-sm font-black text-primary uppercase italic tracking-widest mb-3">{cat}</h2>
+          <section key={cat}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-1 h-6 bg-accent rounded-full" style={{ backgroundColor: 'var(--accent-color)' }} />
+              <h2 className="text-xl font-black text-primary uppercase italic tracking-tighter">{cat}</h2>
+            </div>
             <Swiper
               modules={[FreeMode]}
-              spaceBetween={10}
+              spaceBetween={15}
               slidesPerView={2.2}
               freeMode={true}
               breakpoints={{
@@ -168,7 +168,7 @@ export default function Home() {
                 1024: { slidesPerView: 4.5 },
                 1280: { slidesPerView: 5.5 }
               }}
-              className="w-full overflow-visible"
+              className="w-full !overflow-visible"
             >
               {vids.map(v => (
                 <SwiperSlide key={v.id}>
@@ -180,8 +180,8 @@ export default function Home() {
         ))}
       </div>
 
-      <div className="mt-12 text-center opacity-10 text-[7px] font-black uppercase tracking-[0.5em]">
-        MACFEED v3.0.3
+      <div className="mt-20 text-center opacity-10 text-[8px] font-black uppercase tracking-[1em]">
+        MACFEED v3.0.6 - PURANA STYLE
       </div>
     </motion.div>
   );

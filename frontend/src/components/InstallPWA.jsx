@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, X, Sparkles } from 'lucide-react';
+import { X, Sparkles } from 'lucide-react';
 
 export default function InstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -10,26 +10,18 @@ export default function InstallPWA() {
     const handler = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // Only show if not already installed
       if (!window.matchMedia('(display-mode: standalone)').matches) {
         setIsVisible(true);
       }
     };
-
     window.addEventListener('beforeinstallprompt', handler);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
-    };
+    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      console.log('User accepted the PWA install prompt');
-    }
     setDeferredPrompt(null);
     setIsVisible(false);
   };
@@ -38,47 +30,32 @@ export default function InstallPWA() {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          className="fixed bottom-6 left-6 right-6 md:left-auto md:right-10 z-[5000] max-w-md"
+          initial={{ scale: 0.8, opacity: 0, y: 50 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.8, opacity: 0, y: 50 }}
+          className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-black/20 backdrop-blur-sm"
         >
-          <div className="bg-secondary/80 backdrop-blur-2xl border border-accent/30 p-4 sm:p-6 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col sm:flex-row items-center sm:justify-between gap-4 sm:gap-6" style={{ borderColor: 'var(--accent-color)' }}>
-             <div className="flex items-center justify-between w-full sm:w-auto">
-               <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-accent/20 shrink-0" style={{ backgroundColor: 'var(--accent-color)', color: 'var(--text-on-accent)' }}>
-                     <Download className="w-5 h-5 sm:w-7 sm:h-7" />
-                  </div>
-                  <div>
-                     <h3 className="text-primary font-black uppercase italic tracking-tighter text-[11px] sm:text-sm">Install MacFeed Pro</h3>
-                     <p className="text-[9px] sm:text-[10px] text-secondary font-bold uppercase tracking-widest opacity-60">Experience full screen power</p>
-                  </div>
-               </div>
-               {/* Mobile Close Button */}
-               <button
-                  onClick={() => setIsVisible(false)}
-                  className="sm:hidden p-2 text-secondary hover:text-primary transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-             </div>
+          <div className="relative w-full max-w-[320px] bg-white rounded-[3rem] p-10 shadow-[0_30px_100px_rgba(0,0,0,0.3)] flex flex-col items-center text-center gap-6 border border-gray-100">
+            <button 
+              onClick={() => setIsVisible(false)}
+              className="absolute top-6 right-6 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition-all"
+            >
+              <X size={16} />
+            </button>
 
-             <div className="flex items-center w-full sm:w-auto gap-2">
-                <button
-                  onClick={handleInstall}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:scale-105 transition-all active:scale-95 flex items-center justify-center gap-2"
-                  style={{ backgroundColor: 'var(--accent-color)', color: 'var(--text-on-accent)' }}
-                >
-                  <Sparkles className="w-3 h-3" /> INSTALL
-                </button>
-                {/* Desktop Close Button */}
-                <button
-                  onClick={() => setIsVisible(false)}
-                  className="hidden sm:block p-3 text-secondary hover:text-primary transition-colors shrink-0"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-             </div>
+            <img src="/apple-logo.png" className="w-20 h-20 object-contain" alt="MacFeed" />
+            
+            <div className="flex flex-col gap-1">
+              <h3 className="text-blue-900 text-2xl font-black tracking-tight">MacFeed</h3>
+              <p className="text-blue-400 text-[11px] font-bold uppercase tracking-widest">Your Entertainment Hub</p>
+            </div>
+
+            <button
+              onClick={handleInstall}
+              className="w-full py-4 bg-yellow-400 text-blue-900 rounded-2xl font-black uppercase text-[12px] tracking-widest shadow-xl shadow-yellow-400/20 hover:scale-105 transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              Watch Now
+            </button>
           </div>
         </motion.div>
       )}

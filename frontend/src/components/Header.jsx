@@ -139,14 +139,14 @@ export default function Header() {
           <span className="text-primary text-lg font-black uppercase italic tracking-tighter leading-none">
             MAC<span className="text-accent" style={{ color: 'var(--accent-color)' }}>FEED</span>
           </span>
-          <span className="bg-accent/10 text-accent text-[6px] font-black px-1 py-0.5 rounded border border-accent/20" style={{ color: 'var(--accent-color)' }}>v3.0.5</span>
+          <span className="bg-accent/10 text-accent text-[6px] font-black px-1 py-0.5 rounded border border-accent/20" style={{ color: 'var(--accent-color)' }}>v3.0.6</span>
         </Link>
       </div>
 
       <div ref={dropdownRef} className="flex-grow flex justify-center max-w-2xl mx-auto px-2 pointer-events-auto">
-        <div className={`relative flex items-center transition-all duration-500 px-3 py-1 rounded-full border w-full max-w-full ${isFocused ? 'bg-secondary border-accent ring-2 ring-accent/10' : 'bg-primary/5 border-primary/20'}`} style={isFocused ? { borderColor: 'var(--accent-color)' } : {}}>
+        <div className={`relative flex items-center transition-all duration-500 px-4 py-1.5 rounded-full border-2 w-full max-w-full ${isFocused ? 'bg-secondary border-yellow-400 ring-4 ring-yellow-400/20' : 'bg-primary/5 border-yellow-400/60'}`} style={{ borderColor: '#facc15' }}>
           <Search className="w-4 h-4 text-secondary/40 shrink-0" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} onFocus={() => setIsFocused(true)} onKeyDown={(e) => e.key === 'Enter' && (navigate(`/search?q=${encodeURIComponent(query)}`), setIsFocused(false))} placeholder="SEARCH MACFEED..." className="bg-transparent outline-none text-primary text-[10px] md:text-xs font-black uppercase tracking-tight w-full px-3 placeholder:text-secondary/30" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} onFocus={() => setIsFocused(true)} onKeyDown={(e) => e.key === 'Enter' && (navigate(`/search?q=${encodeURIComponent(query)}`), setIsFocused(false))} placeholder="SEARCH..." className="bg-transparent outline-none text-primary text-[10px] md:text-xs font-black uppercase tracking-tight w-full px-3 placeholder:text-secondary/30" />
         </div>
         <AnimatePresence>
           {isFocused && !isSearchPage && (
