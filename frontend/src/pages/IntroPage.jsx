@@ -64,7 +64,7 @@ export default function IntroPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white flex flex-col items-center justify-start relative overflow-x-hidden selection:bg-cyan-500/30">
+    <div className="min-h-screen bg-[#020617] text-white flex flex-col items-center justify-start relative overflow-hidden selection:bg-cyan-500/30">
       
       {/* Dynamic Background Elements */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
