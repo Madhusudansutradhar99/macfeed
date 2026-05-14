@@ -3,22 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import VideoCard from '../components/VideoCard';
 import Loader from '../components/Loader';
-import { Play, Flame, Search, Bell, User, Layout, Filter, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useTheme } from '../context/ThemeContext';
+import { Play, Flame, Search, Bell, ChevronRight, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 // Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Pagination, FreeMode, EffectCoverflow } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
-import 'swiper/css/effect-coverflow';
+import 'swiper/css/free-mode';
 
 export default function Home() {
   const [videos, setVideos] = useState([]);
   const [heroVideos, setHeroVideos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('Trending');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,82 +43,72 @@ export default function Home() {
   }, []);
 
   const categories = useMemo(() => {
-    const cats = ['Trending', ...new Set(videos.map(v => v.category).filter(Boolean))];
-    return cats.slice(0, 12);
+    const groups = {};
+    videos.forEach(v => {
+      const cat = v.category || 'More Videos';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(v);
+    });
+    return groups;
   }, [videos]);
-
-  const filteredVideos = useMemo(() => {
-    if (activeCategory === 'Trending') return videos.slice(0, 24);
-    return videos.filter(v => v.category === activeCategory);
-  }, [activeCategory, videos]);
 
   if (loading) return <Loader />;
 
   return (
-    <div className="min-h-screen bg-[#0b0c10] text-white pb-40 overflow-x-hidden">
+    <div className="min-h-screen bg-[#08090d] text-white pb-40 overflow-x-hidden">
       
       {/* ── HEADER ── */}
-      <header className="px-6 md:px-12 py-8 flex items-center justify-between sticky top-0 z-[100] bg-[#0b0c10]/80 backdrop-blur-3xl border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg rotate-12 flex items-center justify-center font-black">M</div>
-          <h1 className="text-2xl font-black italic tracking-tighter">MAC<span className="text-blue-500">FEED</span></h1>
-        </div>
-        
-        <div className="hidden lg:flex items-center bg-white/5 rounded-2xl px-6 py-3 border border-white/10 w-full max-w-xl mx-12">
-          <Search size={18} className="text-gray-400" />
-          <input placeholder="Search movies, games, trends..." className="bg-transparent border-none outline-none px-4 text-sm w-full font-bold placeholder:text-gray-600" />
-          <button className="p-1.5 bg-blue-600 rounded-lg shadow-lg shadow-blue-600/20"><Search size={14} /></button>
+      <header className="px-6 md:px-12 py-6 flex items-center justify-between sticky top-0 z-[100] bg-[#08090d]/90 backdrop-blur-2xl border-b border-white/5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg shadow-blue-600/30">M</div>
+          <h1 className="text-2xl font-black italic tracking-tighter uppercase">MAC<span className="text-blue-500">FEED</span></h1>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="hidden md:flex flex-col items-end gap-0.5">
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Premium Plan</span>
-            <span className="text-xs font-bold text-blue-500">Active</span>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 border-2 border-white/10 flex items-center justify-center font-black shadow-xl">L</div>
+        <div className="hidden lg:flex items-center bg-white/5 rounded-full px-6 py-3 border border-white/10 w-full max-w-xl mx-12">
+          <Search size={18} className="text-gray-500" />
+          <input placeholder="Search Premium Content..." className="bg-transparent border-none outline-none px-4 text-sm w-full font-bold" />
+        </div>
+
+        <div className="flex items-center gap-4">
+          <Bell size={22} className="text-gray-400 cursor-pointer hover:text-white transition-all" />
+          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 border border-white/10 flex items-center justify-center font-bold">L</div>
         </div>
       </header>
 
-      {/* ── CINEMATIC HERO (Image 1 Style - GIANT) ── */}
-      <section className="mt-8 mb-16 overflow-hidden">
+      {/* ── GIANT HERO (Image 1 Style) ── */}
+      <section className="mt-6 mb-20 overflow-hidden">
         <Swiper
-          modules={[EffectCoverflow, Autoplay, Pagination]}
-          effect={'coverflow'}
-          grabCursor={true}
+          modules={[Autoplay, Pagination]}
+          spaceBetween={30}
+          slidesPerView={1.2}
           centeredSlides={true}
-          slidesPerView={'auto'}
-          coverflowEffect={{
-            rotate: 0,
-            stretch: 80,
-            depth: 150,
-            modifier: 1.5,
-            slideShadows: false,
-          }}
           autoplay={{ delay: 5000 }}
           loop={true}
           pagination={{ clickable: true }}
-          className="w-full py-10"
+          breakpoints={{
+            1024: { slidesPerView: 1.5, spaceBetween: 50 }
+          }}
+          className="w-full py-6"
         >
           {heroVideos.map(video => (
             <SwiperSlide 
               key={video.id} 
-              className="w-[85vw] md:w-[800px] h-[250px] md:h-[450px] rounded-[3rem] overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)] relative group border-2 border-white/5"
+              className="relative w-full h-[300px] md:h-[500px] rounded-[3rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.7)] group border border-white/10"
               onClick={() => navigate('/watch/' + video.id)}
             >
-              <img src={video.thumbnail_url} className="w-full h-full object-cover transition-transform duration-[6s] group-hover:scale-110" alt="" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent" />
+              <img src={video.thumbnail_url} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" alt="" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
               
-              <div className="absolute bottom-10 left-10 right-10 z-20">
-                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-                  <h3 className="text-2xl md:text-5xl font-black italic uppercase tracking-tighter mb-6 drop-shadow-2xl line-clamp-1">{video.title}</h3>
-                  <div className="flex items-center gap-4">
-                    <button className="bg-white text-black px-10 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:bg-blue-600 hover:text-white transition-all shadow-2xl">
-                      <Play size={18} fill="currentColor" /> Play Now
-                    </button>
-                    <button className="p-4 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 hover:bg-white/20 transition-all">
-                      <Flame size={20} className="text-orange-500" fill="currentColor" />
-                    </button>
+              <div className="absolute bottom-10 left-10 right-10">
+                <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles size={16} className="text-yellow-400" fill="currentColor" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-yellow-400">Featured Content</span>
                   </div>
+                  <h3 className="text-3xl md:text-6xl font-black italic uppercase tracking-tighter mb-8 drop-shadow-2xl line-clamp-1">{video.title}</h3>
+                  <button className="bg-white text-black px-12 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:bg-blue-600 hover:text-white transition-all shadow-2xl active:scale-95">
+                    <Play size={18} fill="currentColor" /> Watch Now
+                  </button>
                 </motion.div>
               </div>
             </SwiperSlide>
@@ -128,67 +116,55 @@ export default function Home() {
         </Swiper>
       </section>
 
-      {/* ── CATEGORY BAR (Image 2 Style - NEAT) ── */}
-      <section className="px-6 md:px-12 mb-12">
-        <div className="flex items-center gap-4 overflow-x-auto no-scrollbar pb-2">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-8 py-3.5 rounded-2xl whitespace-nowrap font-bold text-xs uppercase tracking-widest transition-all ${activeCategory === cat ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/30 border-blue-500' : 'bg-white/5 text-gray-500 border border-white/5 hover:bg-white/10'}`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* ── CONTENT GRID (Image 2 Style - SMALL POSTERS) ── */}
-      <section className="px-6 md:px-12">
-        <div className="flex items-center justify-between mb-10 border-l-4 border-blue-600 pl-6">
-          <div>
-            <h2 className="text-2xl font-black uppercase italic tracking-tighter leading-none mb-2">
-              {activeCategory} <span className="text-blue-500">Collection</span>
-            </h2>
-            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Handpicked for your profile</p>
-          </div>
-          <button className="p-3 bg-white/5 rounded-2xl border border-white/10 group hover:bg-blue-600 transition-all">
-            <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 md:gap-10">
-          {filteredVideos.map(video => (
-            <motion.div 
-              layout
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              key={video.id} 
-              onClick={() => navigate('/watch/' + video.id)}
-              className="cursor-pointer group"
-            >
-              <div className="relative aspect-[3/4.5] rounded-[2.5rem] overflow-hidden mb-5 shadow-2xl border border-white/5 bg-[#1a1d23] group-hover:border-blue-500/50 transition-all">
-                <img src={video.thumbnail_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="absolute bottom-6 left-6 right-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                   <button className="w-full py-2.5 bg-blue-600 rounded-xl font-black text-[9px] uppercase tracking-widest">Details</button>
-                </div>
+      {/* ── SLIDING ROWS (Image 2 Style - SMALL CARDS) ── */}
+      <div className="px-6 md:px-12 space-y-24">
+        {Object.entries(categories).map(([cat, vids]) => (
+          <section key={cat} className="group">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="w-1.5 h-8 bg-blue-600 rounded-full group-hover:h-10 transition-all" />
+                <h2 className="text-2xl font-black uppercase italic tracking-tighter">{cat}</h2>
               </div>
-              <h3 className="font-bold text-xs uppercase tracking-tighter line-clamp-1 group-hover:text-blue-500 transition-colors mb-1.5">{video.title}</h3>
-              <div className="flex items-center justify-between text-[9px] font-black text-gray-600 uppercase tracking-widest">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-yellow-500">★</span>
-                  <span>9.2</span>
-                </div>
-                <span>2024</span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+              <button className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-blue-500 transition-all">
+                Explore All <ChevronRight size={14} />
+              </button>
+            </div>
 
-      <div className="mt-40 text-center opacity-5 text-[8px] font-black uppercase tracking-[2.5em] pointer-events-none">
-        MACFEED HYBRID PRO v4.2
+            <Swiper
+              modules={[FreeMode]}
+              spaceBetween={20}
+              slidesPerView={2.5}
+              freeMode={true}
+              breakpoints={{
+                768: { slidesPerView: 4.5 },
+                1024: { slidesPerView: 6.5 },
+                1440: { slidesPerView: 8.5 }
+              }}
+              className="!overflow-visible"
+            >
+              {vids.map(video => (
+                <SwiperSlide key={video.id} onClick={() => navigate('/watch/' + video.id)} className="cursor-pointer group/card">
+                  <div className="relative aspect-[2/3] rounded-[2.5rem] overflow-hidden mb-4 shadow-xl border border-white/5 bg-[#14151a] group-hover/card:border-blue-600/50 transition-all">
+                    <img src={video.thumbnail_url} className="w-full h-full object-cover grayscale-[30%] group-hover/card:grayscale-0 transition-all duration-500" alt="" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 scale-50 group-hover/card:scale-100 transition-all">
+                      <div className="p-3 bg-blue-600 rounded-full shadow-2xl shadow-blue-600/50"><Play size={16} fill="white" /></div>
+                    </div>
+                  </div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-tighter line-clamp-1 mb-1 group-hover/card:text-blue-500 transition-colors">{video.title}</h4>
+                  <div className="flex items-center justify-between text-[8px] font-black text-gray-600 uppercase tracking-widest">
+                    <span>9.5 Rating</span>
+                    <span>2024</span>
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </section>
+        ))}
+      </div>
+
+      <div className="mt-40 text-center opacity-5 text-[8px] font-black uppercase tracking-[3em] pointer-events-none">
+        MACFEED HYBRID v5.0 - ABSOLUTE PROPORTIONS
       </div>
     </div>
   );

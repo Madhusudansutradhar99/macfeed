@@ -183,7 +183,7 @@ function AppContent() {
           <MusicMiniPlayer />
           <LocalPlayerOverlay />
           <AuthModal />
-          <InstallPWA />
+          {/* <InstallPWA /> */}
           <OfflineStatus />
         </VideoPlayerProvider>
       </MusicProvider>
