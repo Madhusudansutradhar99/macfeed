@@ -1345,7 +1345,7 @@ function LocalPlayerOverlay() {
                             onClick={() => setShowSettings(false)}
                         >
                             <motion.div
-                                initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0.98, opacity: 0 }}
+                                initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.98, opacity: 0 }}
                                 transition={{ duration: 0.1 }}
                                 className="bg-blue-900/40 w-[90%] sm:w-full max-w-[700px] h-[50vh] sm:h-[380px] rounded-[1rem] sm:rounded-[2rem] border-2 border-yellow-400 backdrop-blur-3xl overflow-hidden flex flex-row shadow-[0_0_50px_rgba(37,99,235,0.2)]"
                                 onClick={e => e.stopPropagation()}
