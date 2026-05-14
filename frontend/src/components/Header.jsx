@@ -46,18 +46,10 @@ export default function Header() {
   const dropdownRef = useRef();
   const [isVisible, setIsVisible] = useState(true);
 
+  // Header is now always visible for Purana Style stability
   useEffect(() => {
-    if (location.pathname === '/' || location.pathname === '/search') {
-      setIsVisible(true);
-      return;
-    }
-    const handleMouseMove = (e) => {
-      if (e.clientY < 80) setIsVisible(true);
-      else if (e.clientY > 120 && !isFocused) setIsVisible(false);
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [isFocused, location.pathname]);
+    setIsVisible(true);
+  }, [location.pathname]);
 
   const scrapeGlobal = async (q) => {
     if (!q) return [];
@@ -147,7 +139,7 @@ export default function Header() {
           <span className="text-primary text-lg font-black uppercase italic tracking-tighter leading-none">
             MAC<span className="text-accent" style={{ color: 'var(--accent-color)' }}>FEED</span>
           </span>
-          <span className="bg-accent/10 text-accent text-[6px] font-black px-1 py-0.5 rounded border border-accent/20" style={{ color: 'var(--accent-color)' }}>v3.0.4</span>
+          <span className="bg-accent/10 text-accent text-[6px] font-black px-1 py-0.5 rounded border border-accent/20" style={{ color: 'var(--accent-color)' }}>v3.0.5</span>
         </Link>
       </div>
 
