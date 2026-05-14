@@ -285,13 +285,19 @@ export default function Home() {
       .order('created_at', { ascending: false })
       .range(from, to);
 
-    if (!error && data) {
+    if (error) {
+      console.error("FetchVideos Error:", error);
+      setHasMore(false);
+      if (!isInitial) setLoadingMore(false);
+      return { error };
+    }
+
+    if (data) {
       if (isInitial) {
         setVideos(data);
         localStorage.setItem('macfeed_home_cache', JSON.stringify(data));
       } else {
         setVideos((prev) => {
-          // Prevent duplicates
           const newIds = new Set(data.map((d) => d.id));
           const filteredPrev = prev.filter((p) => !newIds.has(p.id));
           return [...filteredPrev, ...data];
@@ -299,9 +305,12 @@ export default function Home() {
       }
       if (data.length < PAGE_SIZE) setHasMore(false);
       else setHasMore(true);
+      if (!isInitial) setLoadingMore(false);
+      return { data };
     }
-
+    
     if (!isInitial) setLoadingMore(false);
+    return { data: [] };
   }, []);
 
   const lastVideoElementRef = useCallback(
@@ -379,8 +388,8 @@ export default function Home() {
           if (mainData?.length) setHeroVideos(mainData);
         }
 
-        // 2. Fetch main feed
-        await fetchVideos(0, true);
+        const { data: resData, error: resError } = await fetchVideos(0, true);
+        if (resError) console.error("Initial fetch failed:", resError);
       } catch (err) {
         console.error("Home Load Error:", err);
       } finally {
@@ -392,7 +401,8 @@ export default function Home() {
     // ── Supabase Realtime ──
     const channel = supabase
       .channel('home-videos-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos' }, (payload) => {
+        console.log("Realtime Update:", payload);
         setPage(0);
         fetchVideos(0, true);
       })

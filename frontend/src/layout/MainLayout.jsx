@@ -10,15 +10,15 @@ const MainLayout = () => {
   const location = useLocation();
 
   React.useEffect(() => {
-    // Ensure body can always scroll and match the midnight theme
+    // Ensure body can always scroll and match the current theme
     document.body.style.overflowY = 'auto';
-    document.body.style.backgroundColor = '#000000';
+    document.body.style.backgroundColor = 'var(--bg-primary)';
   }, []);
 
   // Music page is immersive
   if (location.pathname === '/music') {
     return (
-      <div className="fixed inset-0 bg-[#000000] text-white overflow-hidden">
+      <div className="fixed inset-0 bg-primary text-primary overflow-hidden">
         <div className="w-full h-full overflow-y-auto no-scrollbar">
           <Outlet />
         </div>
@@ -27,7 +27,7 @@ const MainLayout = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#000000] text-white overflow-x-hidden relative">
+    <div className="flex flex-col min-h-screen bg-primary text-primary overflow-x-hidden relative">
       <Header />
       <div className="flex flex-1 relative min-w-0">
         <Sidebar />
