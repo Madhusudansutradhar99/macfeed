@@ -26,7 +26,7 @@ function HeroBanner({ videos }) {
   const video = videos[index];
 
   return (
-    <div className="relative w-full h-[220px] md:h-[450px] mb-12 px-4 select-none">
+    <div className="relative w-full h-[180px] md:h-[350px] mb-8 px-4 select-none">
       <AnimatePresence mode="wait">
         <motion.div
           key={video.id}
@@ -77,7 +77,7 @@ function VideoRow({ title, videos, emoji }) {
   if (!videos.length) return null;
 
   return (
-    <section className="mb-16">
+    <section className="mb-10">
       <div className="flex items-center justify-between mb-6 px-4">
         <div className="flex items-center gap-3">
           <div className="w-1.5 h-8 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
@@ -115,7 +115,7 @@ function Movies3DSection({ title, videos }) {
   if (!videos || !videos.length) return null;
 
   return (
-    <div className="relative w-full bg-gradient-to-br from-blue-950/40 via-black to-black rounded-[3rem] py-10 px-8 mb-16 border border-white/5 shadow-3xl overflow-hidden">
+    <div className="relative w-full bg-gradient-to-br from-blue-950/40 via-black to-black rounded-[2rem] py-8 px-6 mb-10 border border-white/5 shadow-3xl overflow-hidden">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">{title}</h2>
@@ -199,14 +199,14 @@ export default function Home() {
 
         <div className="py-12"><AdBanner position="banner" /></div>
 
-        <section className="mt-20 px-4">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+        <section className="mt-12 px-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-1 bg-blue-500 rounded-full" />
                 <span className="text-blue-500 text-xs font-black uppercase tracking-[0.6em]">Curated</span>
               </div>
-              <h2 className="text-5xl md:text-8xl font-black italic uppercase tracking-tighter text-white leading-none">
+              <h2 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter text-white leading-none">
                 More to <span className="text-blue-500">Explore</span>
               </h2>
             </div>
@@ -216,7 +216,7 @@ export default function Home() {
             <CategoryPills activeCategory={activeTab} setCategory={setActiveTab} />
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
             {videos.map((video, index) => (
               <PosterCard key={video.id} video={video} index={index} />
             ))}
