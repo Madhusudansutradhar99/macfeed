@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PosterCard from '../components/PosterCard';
 import CategoryPills from '../components/CategoryPills';
 
-// Swiper imports for Premium Hero
+// Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Pagination, EffectFade } from 'swiper/modules';
 import 'swiper/css';
@@ -25,7 +25,7 @@ const SectionHeader = ({ title, emoji, count, onPrev, onNext }) => (
         {emoji && <span>{emoji}</span>}
         {title}
         {count !== undefined && (
-          <span className="text-[9px] font-normal text-white/30 ml-2 tracking-widest italic">({count})</span>
+          <span className="text-[9px] font-normal text-white/40 ml-2 tracking-widest italic">({count})</span>
         )}
       </h2>
     </div>
@@ -114,7 +114,6 @@ const MovieTheaterRow = ({ title, videos }) => {
   return (
     <section className="mb-8 sm:mb-12">
       <div className="relative w-full bg-[#0a0a0a] rounded-none sm:rounded-3xl py-6 sm:py-10 px-4 sm:px-8 border-y sm:border border-white/5 shadow-inner overflow-hidden">
-        {/* Cinematic Backdrop */}
         <div className="absolute top-0 right-0 w-1/3 h-full bg-accent/5 blur-[100px] pointer-events-none" />
         
         <div className="flex items-end justify-between mb-6 sm:mb-8">
@@ -183,7 +182,6 @@ export default function Home() {
     loadData();
   }, []);
 
-  // Filtered logic
   const trending = useMemo(() => 
     [...videos].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 12),
   [videos]);
@@ -215,28 +213,22 @@ export default function Home() {
       animate={{ opacity: 1 }} 
       className="pb-32 pt-16 sm:pt-20 min-h-screen bg-black"
     >
-      {/* 1. Hero Spotlight */}
       <HeroBanner videos={heroVideos} />
 
       <div className="max-w-[1800px] mx-auto sm:px-6">
-        
-        {/* 2. Trending Section */}
         {trending.length > 0 && (
           <VideoRow title="Trending Now" videos={trending} emoji="🔥" />
         )}
 
-        {/* 3. Categorized Sections */}
         {Object.entries(categories).map(([cat, vids]) => {
           if (cat === 'Movies') return <MovieTheaterRow key={cat} title={cat} videos={vids} />;
           return <VideoRow key={cat} title={cat} videos={vids} emoji={CATEGORY_ICONS[cat] || '🎥'} />;
         })}
 
-        {/* 4. Visual Break / Ad */}
         <div className="py-12 px-4 sm:px-0">
           <AdBanner position="banner" />
         </div>
 
-        {/* 5. Exploration Engine */}
         <section className="mt-12 px-4 sm:px-0">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-8 border-l-4 border-accent pl-4" style={{ borderColor: 'var(--accent-color)' }}>
             <div>
@@ -254,7 +246,7 @@ export default function Home() {
           <AnimatePresence mode="popLayout">
             <motion.div 
               layout
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3 sm:gap-6"
+              className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3 sm:gap-6"
             >
               {filteredExplore.map((video, index) => (
                 <motion.div
