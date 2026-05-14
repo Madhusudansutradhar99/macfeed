@@ -30,7 +30,7 @@ const CategoryPills = ({ activeCategory, setCategory }) => {
             whileTap={{ scale: 0.95 }}
             onClick={() => setCategory(cat.id)}
             className={`
-              flex items-center gap-3 px-6 py-3 rounded-full border transition-all duration-300 whitespace-nowrap
+              flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 whitespace-nowrap
               ${isActive 
                 ? 'bg-accent text-on-accent border-accent shadow-lg' 
                 : 'bg-secondary/40 border-primary text-secondary hover:bg-secondary/60 hover:text-primary'
