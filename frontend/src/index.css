@@ -14,11 +14,6 @@
 html,
 body {
   caret-color: transparent;
-  user-select: none;
-  -webkit-user-select: none;
-  overscroll-behavior-y: none;
-  -webkit-touch-callout: none;
-  -webkit-user-drag: none;
 }
 
 input,
@@ -41,47 +36,38 @@ textarea,
 }
 
 .light {
-  --bg-primary: #f4f7ff;
+  --bg-primary: #f8fafc;
   --bg-secondary: #ffffff;
-  --text-primary: #1e293b;
+  --text-primary: #0f172a;
   --text-secondary: #64748b;
-  --border-color: #e2e8f0;
-  --accent-color: #f59e0b;
+  --border-color: #ef4444;
+  --accent-color: #ef4444;
   --text-on-accent: #ffffff;
-  --accent-hover: #d97706;
-  --sidebar-bg: #ffffff;
-  --header-bg: rgba(255, 255, 255, 0.9);
+  --accent-hover: #dc2626;
 }
 
 .blue {
   --bg-primary: #eff6ff;
-  --bg-secondary: #ffffff;
-  --text-primary: #1e3a8a;
+  --bg-secondary: #dbeafe;
+  --text-primary: #1e40af;
   --text-secondary: #3b82f6;
-  --border-color: #dbeafe;
-  --accent-color: #eab308;
+  --border-color: #fbbf24;
+  --accent-color: #fbbf24;
   --text-on-accent: #1e3a8a;
-  --accent-hover: #facc15;
-  --sidebar-bg: #ffffff;
-  --header-bg: rgba(239, 246, 255, 0.9);
+  --accent-hover: #f59e0b;
 }
 
 /* ── BASE DESKTOP STYLES ── */
 html {
   height: auto !important;
-  font-size: 16px;
-  -webkit-text-size-adjust: 100%;
 }
-
 body {
   margin: 0 !important;
   padding: 0 !important;
-  padding-top: env(safe-area-inset-top, 0px) !important;
-  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
   background-color: var(--bg-primary) !important;
   color: var(--text-primary);
   scroll-behavior: smooth;
-  font-size: 14px;
+  font-size: 13px;
   width: 100%;
   min-height: 100vh;
   overflow-x: hidden;
@@ -115,24 +101,19 @@ body {
   #root {
     width: 100% !important;
     max-width: 100% !important;
+    height: auto !important;
     min-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
+    overflow-x: hidden !important;
   }
 
   body {
-    overscroll-behavior-y: none;
-    background-color: var(--bg-primary) !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow-x: hidden !important;
+    font-size: 16px;
   }
-}
-
-.scroll-container {
-  width: 100%;
-  min-height: 100%;
-}
-
-.scroll-container::-webkit-scrollbar {
-  display: none;
 }
 
 header {
@@ -140,7 +121,7 @@ header {
   background-color: var(--header-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: none !important;
 }
 
 .glass {

@@ -1,225 +1,448 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import VideoCard from '../components/VideoCard';
 import Loader from '../components/Loader';
 import AdBanner from '../components/AdBanner';
-import { Play, ChevronLeft, ChevronRight, Sparkles, Flame, Zap } from 'lucide-react';
+import { 
+  Play, ArrowLeft, Music as MusicIcon, Search, Flame, Clock, Sparkles, 
+  Download, Heart, ChevronLeft, ChevronRight, AlertTriangle, Folder, 
+  Upload, Settings 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMusicPlayer } from '../context/MusicContext';
 import PosterCard from '../components/PosterCard';
 import CategoryPills from '../components/CategoryPills';
 import { useTheme } from '../context/ThemeContext';
 
 // Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Autoplay, Pagination, EffectFade, Navigation, FreeMode } from 'swiper/modules';
+import { Autoplay, Navigation, Pagination, Mousewheel, FreeMode } from 'swiper/modules';
 import 'swiper/css';
-import 'swiper/css/pagination';
-import 'swiper/css/effect-fade';
 import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 import 'swiper/css/free-mode';
 
-// ── Shared Section Title ──
-const SectionHeader = ({ title, emoji, count, onPrev, onNext }) => (
-  <div className="flex items-center justify-between mb-4 px-4 sm:px-0">
-    <div className="flex items-center gap-2">
-      <div className="w-1 h-5 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-      <h2 className="text-sm sm:text-lg font-black text-primary uppercase italic tracking-tighter flex items-center gap-2">
-        {emoji && <span>{emoji}</span>}
-        {title}
-        {count !== undefined && (
-          <span className="text-[9px] font-normal opacity-30 ml-2 tracking-widest italic">({count})</span>
-        )}
-      </h2>
-    </div>
-    {(onPrev || onNext) && (
-      <div className="hidden sm:flex gap-2">
-        <button onClick={onPrev} className="w-8 h-8 rounded-full bg-secondary border border-primary flex items-center justify-center text-primary hover:bg-primary/10 transition-all active:scale-90">
-          <ChevronLeft size={16} />
-        </button>
-        <button onClick={onNext} className="w-8 h-8 rounded-full bg-secondary border border-primary flex items-center justify-center text-primary hover:bg-blue-600 transition-all active:scale-90">
-          <ChevronRight size={16} />
-        </button>
-      </div>
-    )}
-  </div>
-);
+function formatViews(n) {
+  if (!n) return '0';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
+}
 
-// ── Premium Hero Banner ──
-const HeroBanner = ({ videos }) => {
+// ── CAKRABOLA Style Static Hero Banner ──
+function HeroBanner({ videos }) {
   const navigate = useNavigate();
-  if (!videos?.length) return null;
+  
+  if (!videos || !videos.length) return null;
 
   return (
-    <div className="relative w-full h-[220px] sm:h-[300px] md:h-[450px] mb-10 px-4 sm:px-8 md:px-12 select-none">
+    <div className="relative w-full mb-8 md:mb-16 pt-20 sm:pt-24 select-none bg-primary">
+      <div className="max-w-[1600px] mx-auto px-2 md:px-4">
+        <Swiper
+          modules={[Autoplay, Pagination, Navigation]}
+          spaceBetween={20}
+          slidesPerView={1.2}
+          centeredSlides={true}
+          breakpoints={{
+            768: { slidesPerView: 2, centeredSlides: false },
+          }}
+          pagination={{ clickable: true, el: '.hero-pagination' }}
+          navigation={{
+            prevEl: '.hero-prev',
+            nextEl: '.hero-next',
+          }}
+          autoplay={{ delay: 2500, disableOnInteraction: false }}
+          className="w-full"
+        >
+          {videos.map((video) => (
+            <SwiperSlide key={video.id}>
+              <div className="hero-card relative w-full h-[160px] md:h-[280px] flex flex-col justify-end overflow-hidden cursor-pointer group rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl border border-primary" onClick={() => navigate('/watch/' + video.id)}>
+                
+                {/* Full Fit Pro Thumbnail */}
+                <div className="absolute inset-0 z-0 overflow-hidden bg-black">
+                  <img 
+                    src={video.thumbnail_url} 
+                    alt={video.title} 
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent z-20" />
+                </div>
+
+                {/* Ultra-Slim Bottom Glass Bar */}
+                <div className="relative z-30 w-full bg-white/10 backdrop-blur-xl border-t border-white/10 px-5 md:px-8 py-2 md:py-3 flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <h1 className="text-sm md:text-lg font-black italic text-white leading-tight uppercase tracking-tighter line-clamp-1">
+                      {video.title}
+                    </h1>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); navigate('/watch/' + video.id); }} 
+                        className="bg-white text-black font-black uppercase tracking-widest text-[8px] md:text-[10px] px-4 md:px-7 py-1.5 md:py-2.5 rounded-full flex items-center gap-2 hover:bg-yellow-500 transition-all"
+                      >
+                        <Play className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 fill-black" /> Play Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </SwiperSlide>
+          ))}
+          
+          {/* Navigation Controls Overlay */}
+          <div className="absolute top-1/2 -translate-y-1/2 left-6 right-6 z-40 hidden md:flex items-center justify-between pointer-events-none">
+            <button className="hero-prev w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white flex items-center justify-center backdrop-blur-xl transition-all pointer-events-auto">
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button className="hero-next w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white flex items-center justify-center backdrop-blur-xl transition-all pointer-events-auto">
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="hero-pagination absolute bottom-6 right-10 z-40 flex items-center gap-2"></div>
+        </Swiper>
+      </div>
+
+      {/* Hero section padding bottom */}
+      <div className="pb-8"></div>
+      
+      {/* Custom Styles for Pagination */}
+      <style>{`
+        .hero-pagination .swiper-pagination-bullet {
+          width: 8px !important;
+          height: 8px !important;
+          background: rgba(255, 255, 255, 0.3) !important;
+          opacity: 1 !important;
+          border-radius: 50% !important;
+          transition: all 0.3s ease !important;
+          margin: 0 4px !important;
+        }
+        .hero-pagination .swiper-pagination-bullet-active {
+          background: #ff0000 !important;
+          width: 24px !important;
+          border-radius: 4px !important;
+          box-shadow: 0 0 10px rgba(255, 0, 0, 0.5) !important;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ── 3D Movies Section (Premium Scattered Grid) ──
+function Movies3DSection({ title, videos }) {
+  const navigate = useNavigate();
+  if (!videos || !videos.length) return null;
+
+  return (
+    <div className="relative w-full bg-gradient-to-br from-[#001b2e] to-[#000d17] rounded-3xl py-6 px-4 md:px-8 mt-2 border border-blue-500/10 shadow-2xl overflow-hidden">
+      {/* Background Subtle Label */}
+      <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+        <h2 className="text-6xl font-black italic text-blue-500 uppercase">CINEMA</h2>
+      </div>
+
+      <div className="flex items-center justify-between mb-6 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-8 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+          <div>
+            <h2 className="text-white text-xl sm:text-2xl font-black italic tracking-tighter uppercase leading-none">
+              {title}
+            </h2>
+            <p className="text-blue-400 font-bold tracking-[0.2em] text-[8px] mt-1 uppercase">
+              The MacFeed Experience
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => navigate('/movies')}
+          className="bg-blue-600/10 hover:bg-blue-600 border border-blue-500/20 text-white px-4 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all active:scale-95"
+        >
+          View All
+        </button>
+      </div>
+
+      {/* SWIPER FOR ALL VIDEOS */}
       <Swiper
-        modules={[Autoplay, Pagination, EffectFade]}
-        effect="fade"
-        fadeEffect={{ crossFade: true }}
-        pagination={{ clickable: true }}
-        autoplay={{ delay: 5000, disableOnInteraction: false }}
-        loop={true}
-        className="w-full h-full rounded-[2rem] overflow-hidden border-4 border-accent shadow-2xl"
-        style={{ borderColor: 'var(--accent-color)' }}
+        modules={[Navigation, FreeMode]}
+        spaceBetween={15}
+        slidesPerView={2.2}
+        breakpoints={{
+          640: { slidesPerView: 3.2 },
+          768: { slidesPerView: 4.2 },
+          1024: { slidesPerView: 5.2 }
+        }}
+        freeMode={true}
+        className="w-full pb-2"
       >
         {videos.map((video) => (
-          <SwiperSlide key={video.id} onClick={() => navigate('/watch/' + video.id)} className="cursor-pointer relative">
-            <img src={video.thumbnail_url} className="absolute inset-0 w-full h-full object-cover object-center" alt="" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-12">
-               <div className="flex items-center gap-2 mb-2 sm:mb-4">
-                 <div className="px-2 py-0.5 bg-accent text-on-accent rounded text-[8px] sm:text-[10px] font-black uppercase tracking-widest" style={{ backgroundColor: 'var(--accent-color)', color: 'var(--text-on-accent)' }}>Featured</div>
-               </div>
-               <h2 className="text-xl sm:text-3xl md:text-5xl font-black italic uppercase tracking-tighter text-white line-clamp-1 max-w-[90%] mb-4 sm:mb-8 drop-shadow-2xl">
-                 {video.title}
-               </h2>
-               <button className="bg-white text-black px-6 sm:px-10 py-2 sm:py-3.5 rounded-full font-black text-[10px] sm:text-xs uppercase tracking-widest flex items-center gap-3 hover:scale-105 transition-all shadow-xl active:scale-95">
-                 <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" /> PLAY NOW
-               </button>
+          <SwiperSlide key={video.id}>
+            <div 
+                onClick={() => navigate(`/watch/${video.id}`)}
+                className="relative aspect-video rounded-xl overflow-hidden border border-white/5 cursor-pointer group shadow-lg"
+            >
+                <img src={video.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute bottom-1 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="text-white text-[8px] font-black uppercase italic truncate">{video.title}</p>
+                </div>
             </div>
           </SwiperSlide>
         ))}
       </Swiper>
     </div>
   );
-};
+}
 
-// ── Video Carousel Row ──
-const VideoRow = ({ title, videos, emoji }) => {
-  const scrollRef = useRef(null);
-  if (!videos?.length) return null;
-
-  return (
-    <section className="mb-12">
-      <SectionHeader 
-        title={title} 
-        emoji={emoji} 
-        count={videos.length} 
-        onPrev={() => scrollRef.current?.scrollBy({ left: -400, behavior: 'smooth' })}
-        onNext={() => scrollRef.current?.scrollBy({ left: 400, behavior: 'smooth' })}
-      />
-      <div ref={scrollRef} className="flex gap-6 overflow-x-auto no-scrollbar px-4 sm:px-0 pb-2 scroll-smooth snap-x snap-mandatory">
-        {videos.map((video) => (
-          <div key={video.id} className="min-w-[180px] sm:min-w-[240px] md:min-w-[300px] flex-shrink-0 snap-start">
-            <VideoCard video={video} />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-};
-
-// ── 3D Movie Section ──
-const Movies3DSection = ({ title, videos }) => {
+// ── Horizontal Row ──
+function VideoRow({ title, videos, emoji }) {
   const navigate = useNavigate();
-  if (!videos?.length) return null;
+  if (!videos.length) return null;
+
+  // Create unique navigation class names for this specific row
+  const safeTitle = (title || 'videos').replace(/\s+/g, '-').toLowerCase();
+  const nextClass = `swiper-next-${safeTitle}`;
+  const prevClass = `swiper-prev-${safeTitle}`;
 
   return (
-    <section className="mb-16 py-10 bg-accent/5 rounded-3xl border border-accent/10 relative overflow-hidden px-4 md:px-10" style={{ backgroundColor: 'var(--accent-color)11', borderColor: 'var(--accent-color)22' }}>
-      <div className="flex items-end justify-between mb-10">
-        <div>
-          <h2 className="text-3xl md:text-5xl font-black italic text-primary uppercase tracking-tighter mb-2">{title}</h2>
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-accent" style={{ color: 'var(--accent-color)' }} />
-            <p className="text-accent text-[10px] font-black uppercase tracking-[0.4em]" style={{ color: 'var(--accent-color)' }}>Cinematic Experience</p>
-          </div>
+    <section className="mb-8">
+      <div className="flex items-center justify-between mb-4 px-2">
+        <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+          {emoji && <span className="text-2xl">{emoji}</span>}
+          {title}
+          <span className="text-sm font-normal text-secondary ml-2">({videos.length})</span>
+        </h2>
+        <div className="flex gap-2">
+          <button className={`${prevClass} bg-secondary hover:bg-purple-600 text-primary rounded-full p-2 transition-all active:scale-90 border border-primary`}>
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button className={`${nextClass} bg-secondary hover:bg-purple-600 text-primary rounded-full p-2 transition-all active:scale-90 border border-primary`}>
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
-        <button onClick={() => navigate('/movies')} className="text-accent font-black text-xs uppercase tracking-widest hover:underline" style={{ color: 'var(--accent-color)' }}>Explore All</button>
       </div>
 
-      <div className="flex gap-6 overflow-x-auto no-scrollbar scroll-smooth snap-x">
+      <Swiper
+        modules={[Navigation, Autoplay, Mousewheel, FreeMode]}
+        spaceBetween={20}
+        slidesPerView={1.5}
+        breakpoints={{
+          640: { slidesPerView: 2.2 },
+          768: { slidesPerView: 3.2 },
+          1024: { slidesPerView: 4.2 },
+          1280: { slidesPerView: 5.2 }
+        }}
+        grabCursor={true}
+        freeMode={{
+          enabled: true,
+          momentum: true,
+          momentumRatio: 3.0,
+          momentumVelocityRatio: 2.5,
+          momentumBounce: false,
+        }}
+        speed={400}
+        mousewheel={{
+          forceToAxis: true,
+          sensitivity: 2.5,
+          releaseOnEdges: true,
+        }}
+        navigation={{
+          prevEl: `.${prevClass}`,
+          nextEl: `.${nextClass}`,
+        }}
+        className="px-2 !pt-10 !-mt-10 cursor-grab active:cursor-grabbing"
+      >
         {videos.map((video) => (
-          <div 
-            key={video.id} 
-            onClick={() => navigate(`/watch/${video.id}`)}
-            className="min-w-[150px] sm:min-w-[220px] aspect-[2/3] rounded-2xl overflow-hidden border-2 border-primary/20 cursor-pointer transition-all hover:scale-105 hover:border-accent snap-center flex-shrink-0 relative group"
-            style={{ '--hover-border': 'var(--accent-color)' }}
-          >
-            <img src={video.thumbnail_url} className="w-full h-full object-cover" alt="" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
+          <SwiperSlide key={video.id}>
+            <VideoCard video={video} />
+          </SwiperSlide>
         ))}
-      </div>
+      </Swiper>
     </section>
   );
-};
+}
 
 export default function Home() {
   const [videos, setVideos] = useState([]);
-  const [heroVideos, setHeroVideos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const [activeTab, setActiveTab] = useState('Trending');
-  const { theme, toggleTheme } = useTheme();
+  const observer = useRef();
+  const PAGE_SIZE = 12;
+
+  const fetchVideos = useCallback(async (pageIndex, isInitial = false) => {
+    if (isInitial) setLoading(true);
+    else setLoadingMore(true);
+
+    const from = pageIndex * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    const { data, error } = await supabase
+      .from('videos')
+      .select('*')
+      .neq('category', 'Music')
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (!error && data) {
+      if (isInitial) {
+        setVideos(data);
+        localStorage.setItem('macfeed_home_cache', JSON.stringify(data));
+      } else {
+        setVideos((prev) => {
+          // Prevent duplicates
+          const newIds = new Set(data.map((d) => d.id));
+          const filteredPrev = prev.filter((p) => !newIds.has(p.id));
+          return [...filteredPrev, ...data];
+        });
+      }
+      if (data.length < PAGE_SIZE) setHasMore(false);
+      else setHasMore(true);
+    }
+
+    if (!isInitial) setLoadingMore(false);
+  }, []);
+
+  const lastVideoElementRef = useCallback(
+    (node) => {
+      if (loading || loadingMore) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        // Disable infinite scroll on mobile (screen width < 768px)
+        const isMobile = window.innerWidth <= 768;
+        if (entries[0].isIntersecting && !loadingMore && hasMore && !isMobile) {
+          setPage((prevPage) => prevPage + 1);
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [loading, loadingMore, hasMore]
+  );
+
+  // Handle page changes for infinite scroll
+  useEffect(() => {
+    if (page > 0) {
+      fetchVideos(page, false);
+    }
+  }, [page, fetchVideos]);
+
+  const [heroVideos, setHeroVideos] = useState([]);
+
+  // Background sync hero videos if they appear in main list
+  useEffect(() => {
+    const featured = videos.filter(v => v.is_featured === true);
+    if (featured.length > 0) {
+      setHeroVideos(prev => {
+        const existingIds = new Set(prev.map(v => v.id));
+        const newOnes = featured.filter(v => !existingIds.has(v.id));
+        if (newOnes.length > 0) return [...prev, ...newOnes];
+        return prev;
+      });
+    }
+  }, [videos]);
 
   useEffect(() => {
-    async function loadData() {
-      setLoading(true);
+    async function init() {
+      const cached = localStorage.getItem('macfeed_home_cache');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          setVideos(parsed);
+          setLoading(false); // Skip loader if we have cache
+        } catch (e) { }
+      } else {
+        setLoading(true);
+      }
+
       try {
-        const { data, error } = await supabase
+        // Skip background fetch if offline and have cache
+        if (!navigator.onLine && cached) return;
+
+        // 1. Fetch Hero/Featured Videos specifically
+        const { data: heroData, error: heroErr } = await supabase
           .from('videos')
           .select('*')
+          .or('is_featured.eq.true,upload_location.ilike.%header%')
           .order('created_at', { ascending: false })
-          .limit(100);
-
-        if (data) {
-          setVideos(data);
-          const featured = data.filter(v => v.is_featured);
-          setHeroVideos(featured.length > 0 ? featured.slice(0, 8) : data.slice(0, 8));
+          .limit(10);
+        
+        if (!heroErr && heroData && heroData.length > 0) {
+          setHeroVideos(heroData);
+        } else {
+          // If dedicated fetch empty, try to extract from main feed as second attempt
+          const { data: mainData } = await supabase
+            .from('videos')
+            .select('*')
+            .eq('is_featured', true)
+            .limit(5);
+          if (mainData?.length) setHeroVideos(mainData);
         }
-      } catch (e) {
-        console.error('Home data load error:', e);
+
+        // 2. Fetch main feed
+        await fetchVideos(0, true);
+      } catch (err) {
+        console.error("Home Load Error:", err);
       } finally {
         setLoading(false);
       }
     }
-    loadData();
-  }, []);
+    init();
 
-  const trending = useMemo(() => 
-    [...videos].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 12),
-  [videos]);
+    // ── Supabase Realtime ──
+    const channel = supabase
+      .channel('home-videos-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos' }, () => {
+        setPage(0);
+        fetchVideos(0, true);
+      })
+      .subscribe();
 
-  const categories = useMemo(() => {
-    const cats = {};
-    videos.forEach((v) => {
-      if (!v.category) return;
-      if (!cats[v.category]) cats[v.category] = [];
-      cats[v.category].push(v);
-    });
-    return cats;
-  }, [videos]);
-
-  const filteredExplore = useMemo(() => {
-    if (activeTab === 'Trending') return videos;
-    return videos.filter(v => v.category === activeTab);
-  }, [videos, activeTab]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchVideos]);
 
   if (loading) return <Loader />;
 
-  const CATEGORY_ICONS = {
-    Movies: '🎬', Music: '🎵', Series: '📺', Shorts: '⚡', Gaming: '🎮', Comedy: '😂', Sports: '⚽'
+  // Group videos by category
+  const categories = {};
+  videos.forEach((v) => {
+    if (!categories[v.category]) categories[v.category] = [];
+    categories[v.category].push(v);
+  });
+
+  const CATEGORY_EMOJIS = {
+    Movies: '🎬', Music: '🎵', Series: '📺', Shorts: '⚡', Gaming: '🎮', 
+    Comedy: '😂', Sports: '⚽', Vlogs: '📹', Trending: '🔥', Cartoon: '🐼', 
+    News: '📰', Viral: '🚀',
   };
+
+  const trending = [...videos].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
 
   return (
     <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      className="pb-32 pt-20 sm:pt-24 min-h-screen"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+      className="flex flex-col"
     >
       <HeroBanner videos={heroVideos} />
 
-      {/* Theme Selector Section - RESTORED */}
-      <section className="px-4 md:px-12 mb-16">
-        <div className="flex items-center gap-3 mb-8">
+      {/* Premium Theme Selector - Restored with Blue/Yellow cards */}
+      <section className="px-4 md:px-12 mb-12">
+        <div className="flex items-center gap-3 mb-6">
           <div className="w-1 h-6 bg-blue-500 rounded-full" />
-          <h2 className="text-primary text-xl font-black uppercase tracking-tighter italic">SELECT <span className="text-blue-500">THEME</span></h2>
+          <h2 className="text-white text-lg font-black uppercase tracking-tighter italic">Select <span className="text-blue-500">Theme</span></h2>
         </div>
-        <div className="grid grid-cols-3 gap-4 md:gap-8 max-w-4xl">
+        <div className="grid grid-cols-3 gap-4">
           {[
-            { id: 'dark', name: 'MIDNIGHT', bg: 'bg-[#1e293b]', border: 'border-white/20', text: 'text-white' },
-            { id: 'light', name: 'DAYLIGHT', bg: 'bg-white', border: 'border-red-500', text: 'text-black' },
-            { id: 'blue', name: 'BLUE SKY', bg: 'bg-blue-100', border: 'border-yellow-400', text: 'text-blue-900' }
+            { id: 'dark', name: 'Midnight', bg: 'bg-black', border: 'border-white/10', text: 'text-white' },
+            { id: 'light', name: 'Daylight', bg: 'bg-white', border: 'border-red-500', text: 'text-black' },
+            { id: 'blue', name: 'Blue Sky', bg: 'bg-blue-100', border: 'border-yellow-400', text: 'text-blue-900' }
           ].map(t => {
+            const { theme, toggleTheme } = useTheme(); // Note: useTheme needs to be imported/used correctly
             const isActive = theme === t.id;
             return (
               <button
@@ -229,53 +452,108 @@ export default function Home() {
                   root.classList.remove('light', 'dark', 'blue');
                   root.classList.add(t.id);
                   localStorage.setItem('theme', t.id);
-                  window.location.reload();
+                  window.dispatchEvent(new Event('storage')); // Trigger update across tabs
+                  window.location.reload(); // Force reload for CSS variable stability
                 }}
-                className={`relative h-24 sm:h-32 rounded-[2rem] border-4 transition-all duration-500 shadow-xl ${t.bg} ${isActive ? t.border + ' scale-105 ring-4 ring-blue-500/20' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                className={`relative group h-24 sm:h-32 rounded-2xl border-2 transition-all duration-300 overflow-hidden ${t.bg} ${isActive ? t.border + ' scale-[1.05] shadow-[0_0_30px_rgba(59,130,246,0.3)]' : 'border-transparent opacity-60 hover:opacity-100'}`}
               >
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className={`text-[9px] sm:text-xs font-black uppercase tracking-widest ${t.text}`}>{t.name}</span>
-                  {isActive && <div className="mt-2 w-2 h-2 rounded-full bg-blue-500 animate-pulse" />}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                  <div className={`text-[10px] font-black uppercase tracking-widest ${t.text}`}>{t.name}</div>
+                  {isActive && <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />}
                 </div>
+                {/* Visual indicator of the theme's border */}
+                <div className={`absolute bottom-0 left-0 right-0 h-1 ${t.id === 'blue' ? 'bg-yellow-400' : t.id === 'light' ? 'bg-red-500' : 'bg-white/20'}`} />
               </button>
             )
           })}
         </div>
       </section>
 
-      <div className="max-w-[1800px] mx-auto sm:px-6">
-        {trending.length > 0 && (
-          <VideoRow title="Trending Now" videos={trending} emoji="🔥" />
-        )}
+      <div className="px-2 sm:px-4 lg:px-6 xl:px-8 space-y-3 sm:space-y-4 md:space-y-2">
+        {/* Row 1: Trending */}
+        {trending.length > 0 && <VideoRow title="Trending Now" videos={trending} emoji="🔥" />}
 
+        {/* Dynamic Category Rows */}
         {Object.entries(categories).map(([cat, vids]) => {
-          if (cat === 'Movies') return <Movies3DSection key={cat} title={cat} videos={vids} />;
-          return <VideoRow key={cat} title={cat} videos={vids} emoji={CATEGORY_ICONS[cat] || '🎥'} />;
+          if (cat === 'Movies') {
+            return <Movies3DSection key={cat} title={cat} videos={vids} />;
+          }
+          return (
+            <VideoRow key={cat} title={cat} videos={vids} emoji={CATEGORY_EMOJIS[cat] || '🎥'} />
+          );
         })}
 
-        <div className="py-12 px-4 sm:px-0">
+        {/* Banner Ad */}
+        <div className="py-2 sm:py-4">
           <AdBanner position="banner" />
         </div>
 
-        <section className="mt-20 px-4 sm:px-0">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12 border-l-8 border-blue-500 pl-6">
-            <div>
-              <p className="text-blue-500 text-[10px] font-black uppercase tracking-[0.5em] mb-2">Limitless Content</p>
-              <h2 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter text-primary leading-none">
-                More to <span className="text-blue-500">Explore</span>
-              </h2>
+        {/* Infinite Scroll Grid: More to Explore - Premium Flix.id Style */}
+        <section className="mt-32 mb-40 relative px-4 md:px-12">
+          {/* Section Glow */}
+          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-full h-[500px] bg-blue-600/[0.03] blur-[150px] rounded-full pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col gap-12">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-0.5 bg-blue-500 rounded-full" />
+                    <span className="text-blue-500 text-[10px] font-black uppercase tracking-[0.5em]">Curated Content</span>
+                  </div>
+                  <h2 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter text-white leading-none">
+                    More to <span className="text-blue-500">Explore</span>
+                  </h2>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                    <button className="more-prev w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:bg-white/10 transition-all active:scale-90 backdrop-blur-xl">
+                      <ChevronLeft size={24}/>
+                    </button>
+                    <button className="more-next w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-blue-600 hover:border-blue-500 transition-all active:scale-90 backdrop-blur-xl">
+                      <ChevronRight size={24}/>
+                    </button>
+                </div>
             </div>
+
+            <div className="py-4 overflow-x-auto no-scrollbar">
+              <CategoryPills activeCategory={activeTab} setCategory={setActiveTab} />
+            </div>
+
+            <Swiper
+              modules={[Navigation, Autoplay, FreeMode]}
+              spaceBetween={30}
+              slidesPerView={2.2}
+              breakpoints={{
+                640: { slidesPerView: 3.2 },
+                768: { slidesPerView: 4.2 },
+                1024: { slidesPerView: 5.2 },
+                1280: { slidesPerView: 6.2 }
+              }}
+              navigation={{
+                prevEl: '.more-prev',
+                nextEl: '.more-next',
+              }}
+              freeMode={true}
+              grabCursor={true}
+              touchEventsTarget="container"
+              className="w-full !pt-10 !-mt-10 pb-10"
+            >
+              {videos.map((video, index) => {
+                const isLast = videos.length === index + 1;
+                return (
+                  <SwiperSlide key={video.id} ref={isLast ? lastVideoElementRef : null}>
+                    <PosterCard video={video} index={index} />
+                  </SwiperSlide>
+                );
+              })}
+            </Swiper>
           </div>
 
-          <div className="mb-12 overflow-x-auto no-scrollbar">
-            <CategoryPills activeCategory={activeTab} setCategory={setActiveTab} />
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-6">
-            {filteredExplore.map((video, index) => (
-              <PosterCard key={video.id} video={video} index={index} />
-            ))}
-          </div>
+          {loadingMore && (
+            <div className="flex justify-center py-20">
+              <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--accent-color)', borderTopColor: 'transparent' }} />
+            </div>
+          )}
         </section>
       </div>
     </motion.div>
