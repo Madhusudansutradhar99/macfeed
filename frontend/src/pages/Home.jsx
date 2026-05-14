@@ -26,7 +26,7 @@ function HeroBanner({ videos }) {
   const video = videos[index];
 
   return (
-    <div className="relative w-full h-[140px] md:h-[260px] mb-4 px-4 select-none">
+    <div className="relative w-full h-[200px] md:h-[380px] mb-8 px-4 select-none">
       <AnimatePresence mode="wait">
         <motion.div
           key={video.id}
@@ -40,12 +40,12 @@ function HeroBanner({ videos }) {
           <img src={video.thumbnail_url} className="absolute inset-0 w-full h-full object-cover" alt="" />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
           
-          <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8">
+          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
             <motion.h2 
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-lg md:text-3xl font-black italic uppercase tracking-tighter text-white line-clamp-1"
+              className="text-xl md:text-4xl font-black italic uppercase tracking-tighter text-white line-clamp-1"
             >
               {video.title}
             </motion.h2>
@@ -53,9 +53,9 @@ function HeroBanner({ videos }) {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="mt-3 bg-white text-black px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-transform"
+              className="mt-4 bg-white text-black px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:scale-105 transition-transform"
             >
-              <Play className="w-2.5 h-2.5 fill-black" /> Play Now
+              <Play className="w-4 h-4 fill-black" /> Play Now
             </motion.button>
           </div>
         </motion.div>
