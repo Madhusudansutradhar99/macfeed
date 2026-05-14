@@ -11,28 +11,9 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-:root {
-  --bg-primary: #000000;
-  --bg-secondary: #0A0A0F;
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.5);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --accent-color: #facc15; /* Yellow Accent for v3.0.6 */
-  --header-bg: rgba(0, 0, 0, 0.9);
-}
-
-.light {
-  --bg-primary: #f8fafc;
-  --bg-secondary: #ffffff;
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --border-color: #ef4444;
-  --accent-color: #ef4444;
-}
-
 body {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+  background-color: #0f1115;
+  color: #ffffff;
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -40,8 +21,6 @@ body {
 
 #root {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -56,18 +35,24 @@ body {
 /* Swiper Bullet Customization */
 .swiper-pagination-bullet {
   background: white !important;
-  opacity: 0.5;
+  opacity: 0.3;
 }
 .swiper-pagination-bullet-active {
-  background: #facc15 !important;
+  background: #3b82f6 !important;
   opacity: 1;
-  width: 20px !important;
+  width: 15px !important;
   border-radius: 4px !important;
 }
 
-header {
-  height: 80px;
-  background-color: var(--header-bg);
+/* Custom 3D Card Shadows */
+.swiper-slide-active {
+  box-shadow: 0 50px 100px -20px rgba(0,0,0,0.5), 0 30px 60px -30px rgba(0,0,0,0.3);
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
