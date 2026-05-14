@@ -26,7 +26,7 @@ function HeroBanner({ videos }) {
   const video = videos[index];
 
   return (
-    <div className="relative w-full h-[150px] md:h-[280px] mb-6 px-4 select-none">
+    <div className="relative w-full h-[140px] md:h-[260px] mb-4 px-4 select-none">
       <AnimatePresence mode="wait">
         <motion.div
           key={video.id}
@@ -35,12 +35,12 @@ function HeroBanner({ videos }) {
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.8 }}
           onClick={() => navigate('/watch/' + video.id)}
-          className="relative w-full h-full rounded-[2.5rem] overflow-hidden cursor-pointer border border-white/10 group shadow-2xl"
+          className="relative w-full h-full rounded-2xl overflow-hidden cursor-pointer border border-white/10 group shadow-2xl"
         >
           <img src={video.thumbnail_url} className="absolute inset-0 w-full h-full object-cover" alt="" />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
           
-          <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12">
+          <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8">
             <motion.h2 
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -53,9 +53,9 @@ function HeroBanner({ videos }) {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="mt-4 bg-white text-black px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-transform"
+              className="mt-3 bg-white text-black px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-transform"
             >
-              <Play className="w-3 h-3 fill-black" /> Play Now
+              <Play className="w-2.5 h-2.5 fill-black" /> Play Now
             </motion.button>
           </div>
         </motion.div>
@@ -81,10 +81,10 @@ function VideoRow({ title, videos, emoji }) {
       <div className="flex items-center justify-between mb-6 px-4">
         <div className="flex items-center gap-3">
           <div className="w-1.5 h-8 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
-          <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter flex items-center gap-2">
-            {emoji && <span className="text-3xl">{emoji}</span>}
+          <h2 className="text-xl font-black text-white uppercase italic tracking-tighter flex items-center gap-2">
+            {emoji && <span className="text-2xl">{emoji}</span>}
             {title}
-            <span className="text-xs font-normal text-white/40 ml-2 tracking-widest italic">({videos.length})</span>
+            <span className="text-[10px] font-normal text-white/40 ml-2 tracking-widest italic">({videos.length})</span>
           </h2>
         </div>
         <div className="flex gap-2">
