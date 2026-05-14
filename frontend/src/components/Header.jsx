@@ -248,7 +248,7 @@ export default function Header() {
           )}
         </div>
       )}
-      <AnimatePresence>{isFocused && !isSearchPage && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-primary/80 backdrop-blur-sm z-[4500] pointer-events-none" />}</AnimatePresence>
+      <AnimatePresence>{isFocused && !isSearchPage && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-primary/20 z-[4500] pointer-events-none" />}</AnimatePresence>
     </motion.header>
   );
 }

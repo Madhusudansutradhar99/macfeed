@@ -282,7 +282,6 @@ export default function Home() {
     const { data, error } = await supabase
       .from('videos')
       .select('*')
-      .neq('category', 'Music')
       .order('created_at', { ascending: false })
       .range(from, to);
 
@@ -364,7 +363,7 @@ export default function Home() {
         const { data: heroData, error: heroErr } = await supabase
           .from('videos')
           .select('*')
-          .or('is_featured.eq.true,upload_location.ilike.%header%')
+          .eq('is_featured', true)
           .order('created_at', { ascending: false })
           .limit(10);
         
