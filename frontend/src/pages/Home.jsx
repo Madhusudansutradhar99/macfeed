@@ -26,7 +26,7 @@ function HeroBanner({ videos }) {
   const video = videos[index];
 
   return (
-    <div className="relative w-full h-[200px] md:h-[380px] mb-8 px-4 select-none">
+    <div className="relative w-full h-[180px] md:h-[350px] mb-8 px-4 select-none">
       <AnimatePresence mode="wait">
         <motion.div
           key={video.id}
@@ -37,7 +37,7 @@ function HeroBanner({ videos }) {
           onClick={() => navigate('/watch/' + video.id)}
           className="relative w-full h-full rounded-2xl overflow-hidden cursor-pointer border border-white/10 group shadow-2xl"
         >
-          <img src={video.thumbnail_url} className="absolute inset-0 w-full h-full object-cover" alt="" />
+          <img src={video.thumbnail_url} className="absolute inset-0 w-full h-full object-cover object-top" alt="" />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
           
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
@@ -45,7 +45,7 @@ function HeroBanner({ videos }) {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-xl md:text-4xl font-black italic uppercase tracking-tighter text-white line-clamp-1"
+              className="text-lg md:text-3xl font-black italic uppercase tracking-tighter text-white line-clamp-1 max-w-[80%]"
             >
               {video.title}
             </motion.h2>
@@ -79,12 +79,12 @@ function VideoRow({ title, videos, emoji }) {
   return (
     <section className="mb-10">
       <div className="flex items-center justify-between mb-6 px-4">
-        <div className="flex items-center gap-3">
-          <div className="w-1.5 h-8 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
-          <h2 className="text-xl font-black text-white uppercase italic tracking-tighter flex items-center gap-2">
-            {emoji && <span className="text-2xl">{emoji}</span>}
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-6 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+          <h2 className="text-lg font-black text-white uppercase italic tracking-tighter flex items-center gap-2">
+            {emoji && <span className="text-xl">{emoji}</span>}
             {title}
-            <span className="text-[10px] font-normal text-white/40 ml-2 tracking-widest italic">({videos.length})</span>
+            <span className="text-[9px] font-normal text-white/40 ml-2 tracking-widest italic">({videos.length})</span>
           </h2>
         </div>
         <div className="flex gap-2">

@@ -182,7 +182,6 @@ function AppContent() {
           {/* Global persistent overlays */}
           <MusicMiniPlayer />
           <LocalPlayerOverlay />
-          <AdBanner />
           <AuthModal />
           <InstallPWA />
           <OfflineStatus />
