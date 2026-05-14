@@ -27,7 +27,7 @@ export default function PosterCard({ video, index }) {
       className="relative flex flex-col group cursor-pointer"
     >
       {/* Poster Image Container */}
-      <div className="relative aspect-[2/3] rounded-[2rem] md:rounded-[2.5rem] overflow-hidden bg-[#111] border border-white/5 shadow-2xl transition-all duration-500 group-hover:border-blue-500/50 group-hover:shadow-[0_20px_50px_rgba(59,130,246,0.2)]">
+      <div className="relative aspect-[2/3] rounded-xl md:rounded-2xl overflow-hidden bg-[#111] border border-white/5 shadow-2xl transition-all duration-500 group-hover:border-blue-500/50 group-hover:shadow-[0_20px_50px_rgba(59,130,246,0.2)]">
         <img
           src={video.thumbnail_url}
           alt={video.title}
