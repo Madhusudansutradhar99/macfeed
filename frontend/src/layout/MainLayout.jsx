@@ -10,10 +10,11 @@ const MainLayout = () => {
   const location = useLocation();
 
   React.useEffect(() => {
-    // Ensure body can always scroll and match the current theme
-    document.body.style.overflowY = 'auto';
+    // Ensure full viewport coverage and no scrollbar issues on mobile
+    document.body.style.overflow = 'hidden';
     document.body.style.backgroundColor = 'var(--bg-primary)';
     document.documentElement.style.backgroundColor = 'var(--bg-primary)';
+    document.documentElement.style.overflow = 'hidden';
   }, []);
 
   // Music page is immersive
@@ -28,7 +29,7 @@ const MainLayout = () => {
   }
 
   return (
-    <div className="w-screen h-screen flex flex-col text-primary overflow-hidden" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="w-full h-full flex flex-col text-primary overflow-hidden fixed inset-0" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <Header />
       <div className="flex flex-1 relative min-w-0 w-full overflow-hidden">
         <Sidebar />

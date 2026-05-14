@@ -21,23 +21,39 @@ body {
   background-color: var(--bg-primary, #0f1115) !important;
   color: var(--text-primary, #ffffff) !important;
   font-family: 'Inter', sans-serif;
-  overflow-x: hidden;
+  overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 html,
 body {
   width: 100%;
+  height: 100%;
   background-color: var(--bg-primary, #0f1115) !important;
   color: var(--text-primary, #ffffff) !important;
   min-width: 0;
   overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-top: max(0px, env(safe-area-inset-top));
+  padding-bottom: max(0px, env(safe-area-inset-bottom));
+  padding-left: max(0px, env(safe-area-inset-left));
+  padding-right: max(0px, env(safe-area-inset-right));
 }
 
 #root {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
   background-color: var(--bg-primary, #0f1115) !important;
+  display: flex;
+  flex-direction: column;
 }
 
 .no-scrollbar::-webkit-scrollbar {
