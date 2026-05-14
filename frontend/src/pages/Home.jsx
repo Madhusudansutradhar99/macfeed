@@ -20,7 +20,6 @@ export default function Home() {
   const [videos, setVideos] = useState([]);
   const [heroVideos, setHeroVideos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('Trending');
   const navigate = useNavigate();
   const { theme } = useTheme();
 
@@ -28,7 +27,6 @@ export default function Home() {
     async function loadData() {
       setLoading(true);
       try {
-        console.log("Fetching Home Data...");
         const { data, error } = await supabase
           .from('videos')
           .select('*')
@@ -37,10 +35,9 @@ export default function Home() {
         if (error) throw error;
 
         if (data) {
-          console.log("Data fetched:", data.length);
           setVideos(data);
           const featured = data.filter(v => v.is_featured);
-          setHeroVideos(featured.length > 0 ? featured.slice(0, 5) : data.slice(0, 5));
+          setHeroVideos(featured.length > 0 ? featured.slice(0, 10) : data.slice(0, 10));
         }
       } catch (e) {
         console.error('Home data load error:', e);
@@ -66,27 +63,33 @@ export default function Home() {
     <motion.div 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
-      className="pb-32 pt-20"
+      className="pb-32 pt-2"
     >
-      {/* Hero Section */}
+      {/* Hero Section - Compact CAKRABOLA Style */}
       {heroVideos.length > 0 && (
-        <section className="px-4 md:px-12 mb-12">
+        <section className="px-4 md:px-12 mb-8 mt-2">
           <Swiper
             modules={[Autoplay, Pagination, Navigation]}
             pagination={{ clickable: true }}
             autoplay={{ delay: 4000 }}
-            className="w-full h-[200px] md:h-[450px] rounded-[2rem] overflow-hidden border-4 border-accent shadow-2xl"
-            style={{ borderColor: 'var(--accent-color)' }}
+            spaceBetween={15}
+            slidesPerView={1.1}
+            centeredSlides={true}
+            breakpoints={{
+              768: { slidesPerView: 1.5, centeredSlides: false },
+              1024: { slidesPerView: 2.2 },
+            }}
+            className="w-full h-[180px] md:h-[320px] rounded-2xl md:rounded-[2rem] overflow-hidden shadow-2xl"
           >
             {heroVideos.map(video => (
               <SwiperSlide key={video.id} onClick={() => navigate('/watch/' + video.id)}>
-                <div className="relative w-full h-full bg-black">
+                <div className="relative w-full h-full bg-black rounded-2xl md:rounded-[2rem] overflow-hidden border-2 border-accent/20" style={{ borderColor: 'var(--accent-color)44' }}>
                   <img src={video.thumbnail_url} className="w-full h-full object-cover opacity-80" alt="" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-                  <div className="absolute bottom-6 left-6 md:bottom-12 md:left-12">
-                    <h2 className="text-white text-xl md:text-5xl font-black italic uppercase tracking-tighter mb-4 line-clamp-1">{video.title}</h2>
-                    <button className="bg-white text-black px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
-                      <Play size={16} fill="black" /> PLAY NOW
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+                  <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8 right-4">
+                    <h2 className="text-white text-sm md:text-3xl font-black italic uppercase tracking-tighter mb-2 line-clamp-1">{video.title}</h2>
+                    <button className="bg-white text-black px-4 py-1.5 md:px-6 md:py-2 rounded-full font-black text-[8px] md:text-[10px] uppercase tracking-widest flex items-center gap-2">
+                      <Play size={12} fill="black" /> PLAY NOW
                     </button>
                   </div>
                 </div>
@@ -96,17 +99,17 @@ export default function Home() {
         </section>
       )}
 
-      {/* Theme Selector */}
-      <section className="px-4 md:px-12 mb-12">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-1 h-6 bg-blue-500 rounded-full" />
-          <h2 className="text-primary text-xl font-black uppercase tracking-tighter italic">SELECT <span className="text-blue-500">THEME</span></h2>
+      {/* Theme Selector - Compact Cards */}
+      <section className="px-4 md:px-12 mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-1 h-5 bg-blue-500 rounded-full" />
+          <h2 className="text-primary text-sm md:text-lg font-black uppercase tracking-tighter italic">CHOOSE <span className="text-blue-500">STYLE</span></h2>
         </div>
-        <div className="grid grid-cols-3 gap-4 max-w-4xl">
+        <div className="grid grid-cols-3 gap-3 max-w-2xl">
           {[
-            { id: 'dark', name: 'MIDNIGHT', bg: 'bg-black', text: 'text-white' },
-            { id: 'light', name: 'DAYLIGHT', bg: 'bg-white', text: 'text-black' },
-            { id: 'blue', name: 'BLUE SKY', bg: 'bg-blue-100', text: 'text-blue-900' }
+            { id: 'dark', name: 'MIDNIGHT', bg: 'bg-black', border: 'border-white/10', text: 'text-white' },
+            { id: 'light', name: 'DAYLIGHT', bg: 'bg-white', border: 'border-red-500', text: 'text-black' },
+            { id: 'blue', name: 'BLUE SKY', bg: 'bg-blue-100', border: 'border-yellow-400', text: 'text-blue-900' }
           ].map(t => (
             <button
               key={t.id}
@@ -117,51 +120,75 @@ export default function Home() {
                 localStorage.setItem('theme', t.id);
                 window.location.reload();
               }}
-              className={`h-20 md:h-32 rounded-3xl border-2 transition-all ${t.bg} ${theme === t.id ? 'border-blue-500 scale-105 shadow-xl' : 'border-transparent opacity-60'}`}
+              className={`h-16 md:h-24 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1 ${t.bg} ${theme === t.id ? t.border + ' scale-[1.03] shadow-lg' : 'border-transparent opacity-60'}`}
             >
-              <span className={`text-[10px] md:text-xs font-black ${t.text}`}>{t.name}</span>
+              <span className={`text-[8px] md:text-[10px] font-black ${t.text}`}>{t.name}</span>
+              {theme === t.id && <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse" />}
             </button>
           ))}
         </div>
       </section>
 
-      <div className="px-4 md:px-12 space-y-12">
+      <div className="px-4 md:px-12 space-y-8">
         {/* Trending */}
         {trending.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">🔥</span>
-              <h2 className="text-xl font-black text-primary uppercase italic">Trending Now</h2>
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xl">🔥</span>
+              <h2 className="text-sm md:text-base font-black text-primary uppercase italic tracking-widest">Trending</h2>
             </div>
-            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4">
+            <Swiper
+              modules={[FreeMode]}
+              spaceBetween={12}
+              slidesPerView={2.2}
+              freeMode={true}
+              breakpoints={{
+                768: { slidesPerView: 3.2 },
+                1024: { slidesPerView: 4.2 },
+                1280: { slidesPerView: 5.2 }
+              }}
+              className="w-full"
+            >
               {trending.map(v => (
-                <div key={v.id} className="min-w-[160px] md:min-w-[280px]">
+                <SwiperSlide key={v.id}>
                   <VideoCard video={v} />
-                </div>
+                </SwiperSlide>
               ))}
-            </div>
-          </div>
+            </Swiper>
+          </section>
         )}
 
         {/* Categories */}
         {Object.entries(categories).map(([cat, vids]) => (
-          <div key={cat}>
-            <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-xl font-black text-primary uppercase italic">{cat}</h2>
+          <section key={cat}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1 h-4 bg-accent rounded-full" style={{ backgroundColor: 'var(--accent-color)' }} />
+              <h2 className="text-sm md:text-base font-black text-primary uppercase italic tracking-widest">{cat}</h2>
             </div>
-            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4">
+            <Swiper
+              modules={[FreeMode]}
+              spaceBetween={12}
+              slidesPerView={2.2}
+              freeMode={true}
+              breakpoints={{
+                768: { slidesPerView: 3.2 },
+                1024: { slidesPerView: 4.2 },
+                1280: { slidesPerView: 5.2 }
+              }}
+              className="w-full"
+            >
               {vids.map(v => (
-                <div key={v.id} className="min-w-[160px] md:min-w-[280px]">
+                <SwiperSlide key={v.id}>
                   <VideoCard video={v} />
-                </div>
+                </SwiperSlide>
               ))}
-            </div>
-          </div>
+            </Swiper>
+          </section>
         ))}
       </div>
 
-      <div className="mt-20 text-center opacity-10 text-[10px] font-black uppercase tracking-[1em]">
-        MACFEED STABLE v3.0.1
+      <div className="mt-20 text-center opacity-20 text-[8px] font-black uppercase tracking-[0.5em]">
+        MACFEED STABLE v3.0.2
       </div>
     </motion.div>
   );

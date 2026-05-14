@@ -158,34 +158,34 @@ export default function Header() {
   return (
     <motion.header
       initial={{ y: 0 }}
-      animate={{ y: isVisible || isFocused ? 0 : -80 }}
+      animate={{ y: isVisible || isFocused ? 0 : -70 }}
       onMouseEnter={() => setIsHeaderHovered(true)}
       onMouseLeave={() => setIsHeaderHovered(false)}
       transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-      className={`fixed top-0 left-0 right-0 h-[75px] bg-transparent z-[5000] flex items-center px-4 transition-colors duration-500 pointer-events-none ${isSearchPage ? 'justify-center' : 'md:px-10'}`}
+      className={`fixed top-0 left-0 right-0 h-[65px] bg-transparent z-[5000] flex items-center px-4 md:px-8 transition-colors duration-500 pointer-events-none ${isSearchPage ? 'justify-center' : ''}`}
       style={isSearchPage ? { backgroundColor: 'transparent', backdropFilter: 'none', WebkitBackdropFilter: 'none', borderBottom: 'none' } : {}}
     >
       {!isSearchPage && (
-        <div className="flex items-center gap-6 shrink-0 mr-10 pointer-events-auto">
-          <button onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))} className="p-3 bg-secondary rounded-2xl hover:bg-primary/10 border border-primary transition-all text-primary">
+        <div className="flex items-center gap-4 shrink-0 mr-6 pointer-events-auto">
+          <button onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))} className="p-2.5 bg-secondary rounded-xl hover:bg-primary/10 border border-primary transition-all text-primary">
             <Layout className="w-5 h-5" />
           </button>
           <Link to="/" className="hidden md:flex items-center gap-2">
-            <img src="/macfeed-logo.png" className="h-10 w-10" />
-            <span className="text-primary text-2xl font-black uppercase italic tracking-tighter leading-none">
+            <img src="/macfeed-logo.png" className="h-8 w-8" />
+            <span className="text-primary text-xl font-black uppercase italic tracking-tighter leading-none">
               Mac<span className="text-accent" style={{ color: 'var(--accent-color)' }}>Feed</span>
             </span>
-            <span className="bg-accent/10 text-accent text-[8px] font-black px-1.5 py-0.5 rounded border border-accent/20 ml-2" style={{ color: 'var(--accent-color)' }}>v3.0.1</span>
+            <span className="bg-accent/10 text-accent text-[7px] font-black px-1.5 py-0.5 rounded border border-accent/20 ml-1" style={{ color: 'var(--accent-color)' }}>v3.0.2</span>
           </Link>
         </div>
       )}
 
-      <div ref={dropdownRef} className="flex-1 min-w-[100px] max-w-4xl mx-2 md:mx-auto relative z-[6000] pointer-events-auto">
+      <div ref={dropdownRef} className="flex-1 min-w-[80px] max-w-2xl mx-auto relative z-[6000] pointer-events-auto">
         <div
-          className={`search-container flex items-center transition-all duration-500 px-2 md:px-4 py-1.5 rounded-full border-2 ${isFocused ? 'bg-secondary/95 border-accent ring-4 ring-accent/20 w-full shadow-2xl' : 'bg-secondary/40 border-primary w-full hover:bg-secondary/60 hover:border-accent/40'}`}
-          style={isFocused ? { borderColor: '#ff0000', boxShadow: '0 0 20px rgba(255, 0, 0, 0.3)' } : {}}
+          className={`search-container flex items-center transition-all duration-500 px-3 py-1 rounded-full border ${isFocused ? 'bg-secondary/95 border-accent ring-4 ring-accent/20 w-full shadow-2xl' : 'bg-secondary/40 border-primary w-full hover:bg-secondary/60'}`}
+          style={isFocused ? { borderColor: 'var(--accent-color)', boxShadow: `0 0 20px ${'var(--accent-color)'}33` } : {}}
         >
-          <div className={`flex items-center justify-center p-2 rounded-full transition-all ${isFocused || isHeaderHovered ? 'text-accent' : 'text-secondary'}`} style={isFocused || isHeaderHovered ? { color: 'var(--accent-color)' } : {}}>
+          <div className={`flex items-center justify-center p-1.5 rounded-full transition-all ${isFocused || isHeaderHovered ? 'text-accent' : 'text-secondary'}`} style={isFocused || isHeaderHovered ? { color: 'var(--accent-color)' } : {}}>
             <Search className="w-4 h-4 md:w-5 md:h-5" />
           </div>
           <input
@@ -193,10 +193,9 @@ export default function Header() {
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onKeyDown={(e) => e.key === 'Enter' && (navigate(`/search?q=${encodeURIComponent(query)}`), setIsFocused(false))}
-            placeholder="Search..."
-            className="bg-transparent outline-none text-primary text-[10px] md:text-lg font-black italic uppercase tracking-tight transition-all duration-500 w-full min-w-0 px-2 md:px-4 placeholder:text-secondary"
+            placeholder="SEARCH..."
+            className="bg-transparent outline-none text-primary text-[10px] md:text-sm font-black italic uppercase tracking-tight transition-all duration-500 w-full min-w-0 px-2 md:px-4 placeholder:text-secondary/50"
           />
-          {loading && isFocused && <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin ml-3" style={{ borderColor: 'var(--accent-color)', borderTopColor: 'transparent' }} />}
         </div>
         <AnimatePresence>
           {isFocused && !isSearchPage && (
@@ -204,17 +203,16 @@ export default function Header() {
                 initial={{ opacity: 0, y: 15 }} 
                 animate={{ opacity: 1, y: 10 }} 
                 exit={{ opacity: 0, y: 15 }} 
-                className="fixed md:absolute top-[80px] md:top-full left-4 right-4 md:left-0 md:right-0 mx-auto w-auto md:w-full max-w-4xl bg-secondary/95 backdrop-blur-3xl border border-primary rounded-[2rem] shadow-2xl overflow-hidden"
+                className="fixed md:absolute top-[70px] md:top-full left-4 right-4 md:left-0 md:right-0 mx-auto w-auto md:w-full max-w-2xl bg-secondary/95 backdrop-blur-3xl border border-primary rounded-[1.5rem] shadow-2xl overflow-hidden"
             >
-              <div className="max-h-[70vh] overflow-y-auto pb-6">
-                {isFreeMode && <div className="mx-8 mt-4 p-3 bg-accent/10 border border-accent/20 rounded-2xl flex items-center gap-2 shadow-lg" style={{ backgroundColor: 'var(--accent-color)22', borderColor: 'var(--accent-color)44' }}><Zap className="w-4 h-4 text-accent animate-pulse" style={{ color: 'var(--accent-color)' }} /><span className="text-[10px] font-black text-accent uppercase tracking-widest italic" style={{ color: 'var(--accent-color)' }}>Global Free Engine Active</span></div>}
-                <div className="px-10 py-5 text-[10px] font-black text-secondary uppercase tracking-[0.4em] border-b border-primary">Results for "{query}"</div>
+              <div className="max-h-[60vh] overflow-y-auto pb-4">
+                <div className="px-8 py-3 text-[9px] font-black text-secondary uppercase tracking-[0.4em] border-b border-primary">Results for "{query}"</div>
                 {results.length > 0 ? results.map((r, idx) => (
-                  <div key={r.id + idx} onClick={() => handleResultClick(r)} className="flex items-center gap-6 px-10 py-5 hover:bg-accent/10 cursor-pointer border-b border-primary last:border-0 group transition-all">
-                    <div className="relative w-36 h-20 rounded-xl overflow-hidden bg-black shrink-0 shadow-lg border border-primary"><img src={r.thumbnail_url} decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500" />{r.duration && <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/10">{r.duration}</span>}</div>
-                    <div className="flex-1 min-w-0"><p className="text-primary text-lg font-black truncate group-hover:text-accent transition-colors uppercase italic tracking-tighter leading-none" style={{ '--accent': 'var(--accent-color)' }}>{r.title}</p><div className="flex items-center gap-3 mt-2">{r.type === 'local' ? <span className="text-[9px] text-accent font-black uppercase flex items-center gap-1 bg-accent/10 px-2 py-1 rounded-lg" style={{ color: 'var(--accent-color)', backgroundColor: 'var(--accent-color)22' }}>MacFeed</span> : <span className="text-[9px] text-red-500 font-black uppercase flex items-center gap-2 bg-red-500/10 px-2 py-1 rounded-lg"><YoutubeIcon /> YouTube Global</span>}</div></div>
+                  <div key={r.id + idx} onClick={() => handleResultClick(r)} className="flex items-center gap-4 px-8 py-3 hover:bg-accent/10 cursor-pointer border-b border-primary last:border-0 group transition-all">
+                    <div className="relative w-24 h-14 rounded-lg overflow-hidden bg-black shrink-0 shadow border border-primary"><img src={r.thumbnail_url} decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500" /></div>
+                    <div className="flex-1 min-w-0"><p className="text-primary text-sm font-black truncate group-hover:text-accent transition-colors uppercase italic tracking-tighter leading-none" style={{ color: 'var(--accent-color)' }}>{r.title}</p></div>
                   </div>
-                )) : !loading && <div className="p-20 text-center text-secondary font-black uppercase italic tracking-[0.5em]">Searching...</div>}
+                )) : !loading && <div className="p-10 text-center text-secondary font-black uppercase italic tracking-[0.5em] text-[10px]">Searching...</div>}
               </div>
             </motion.div>
           )}
@@ -222,16 +220,15 @@ export default function Header() {
       </div>
 
       {!isSearchPage && (
-        <div className="shrink-0 ml-2 md:ml-10 flex items-center gap-2 md:gap-4 pointer-events-auto">
+        <div className="shrink-0 ml-4 md:ml-8 flex items-center gap-2 md:gap-3 pointer-events-auto">
           <ThemeToggle />
-          
           {user ? (
             <button 
               onClick={() => navigate('/settings')}
-              className="w-11 h-11 rounded-full bg-gradient-to-br from-accent via-purple-500 to-accent p-[2px] shadow-xl transition-transform active:scale-90"
+              className="w-9 h-9 rounded-full bg-gradient-to-br from-accent via-purple-500 to-accent p-[1.5px] shadow-xl transition-transform active:scale-90"
               style={{ backgroundImage: 'linear-gradient(to bottom right, var(--accent-color), #a855f7, var(--accent-color))' }}
             >
-              <div className="w-full h-full rounded-full bg-secondary flex items-center justify-center font-black text-xs text-primary uppercase">
+              <div className="w-full h-full rounded-full bg-secondary flex items-center justify-center font-black text-[10px] text-primary uppercase">
                 {user.email?.[0] || <User className="w-4 h-4" />}
               </div>
             </button>
@@ -240,10 +237,10 @@ export default function Header() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setAuthModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-2.5 bg-accent rounded-full font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-accent/30 transition-all border border-white/20"
+              className="flex items-center gap-2 px-4 py-2 bg-accent rounded-full font-black text-[9px] uppercase tracking-[0.2em] shadow-lg shadow-accent/30 transition-all border border-white/20"
               style={{ backgroundColor: 'var(--accent-color)', color: 'var(--text-on-accent)' }}
             >
-              <LogIn className="w-4 h-4" />
+              <LogIn className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Sign In</span>
             </motion.button>
           )}
