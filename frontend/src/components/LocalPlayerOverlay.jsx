@@ -1064,19 +1064,24 @@ function LocalPlayerOverlay() {
 
                 {/* CENTER CONTROLS */}
                 <AnimatePresence>
-                    {showControls && !isLocked && !showExtraPanel && (
+                    {showControls && !isLocked && (
                         <motion.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            initial={{ opacity: 0 }} 
+                            animate={{ 
+                                opacity: showExtraPanel ? 0.2 : 1,
+                                scale: showExtraPanel ? 0.95 : 1
+                            }} 
+                            exit={{ opacity: 0 }}
                             transition={{ duration: 0.15 }}
-                            className="absolute inset-0 flex items-center justify-center gap-16 z-[500] pointer-events-none"
+                            className={`absolute inset-0 flex items-center justify-center gap-16 z-[500] ${showExtraPanel ? 'pointer-events-none' : 'pointer-events-none'}`}
                         >
-                            <button onClick={e => { e.stopPropagation(); if (videoRef.current) videoRef.current.currentTime -= 10; }} className="pointer-events-auto text-white p-4">
+                            <button onClick={e => { e.stopPropagation(); if (videoRef.current) videoRef.current.currentTime -= 10; }} className={`pointer-events-auto text-white p-4 transition-opacity ${showExtraPanel ? 'opacity-20' : 'opacity-100'}`}>
                                 <ChevronsLeft size={32} />
                             </button>
-                            <button onClick={e => { e.stopPropagation(); setPlaying(!playing); }} className="pointer-events-auto text-white p-4">
+                            <button onClick={e => { e.stopPropagation(); setPlaying(!playing); }} className={`pointer-events-auto text-white p-4 transition-opacity ${showExtraPanel ? 'opacity-20' : 'opacity-100'}`}>
                                 {playing ? <Pause size={48} fill="white" /> : <Play size={48} fill="white" />}
                             </button>
-                            <button onClick={e => { e.stopPropagation(); if (videoRef.current) videoRef.current.currentTime += 10; }} className="pointer-events-auto text-white p-4">
+                            <button onClick={e => { e.stopPropagation(); if (videoRef.current) videoRef.current.currentTime += 10; }} className={`pointer-events-auto text-white p-4 transition-opacity ${showExtraPanel ? 'opacity-20' : 'opacity-100'}`}>
                                 <ChevronsRight size={32} />
                             </button>
                         </motion.div>
@@ -1085,11 +1090,15 @@ function LocalPlayerOverlay() {
 
                 {/* BOTTOM SECTION */}
                 <AnimatePresence>
-                    {showControls && !isLocked && !showExtraPanel && (
+                    {showControls && !isLocked && (
                         <motion.div
-                            transition={{ type: 'tween', ease: 'circOut', duration: 0.15 }}
-                            className="absolute bottom-0 left-0 right-0 z-[600] p-6 flex flex-col gap-6 bg-gradient-to-t from-black to-transparent"
-                            onClick={e => { e.stopPropagation(); resetControlsTimeout(); }}
+                            animate={{ 
+                                opacity: showExtraPanel ? 0.3 : 1,
+                                y: showExtraPanel ? 20 : 0
+                            }}
+                            transition={{ type: 'tween', ease: 'circOut', duration: 0.2 }}
+                            className={`absolute bottom-0 left-0 right-0 z-[600] p-6 flex flex-col gap-6 bg-gradient-to-t from-black to-transparent ${showExtraPanel ? 'pointer-events-none opacity-30' : 'pointer-events-auto'}`}
+                            onClick={e => { e.stopPropagation(); if(!showExtraPanel) resetControlsTimeout(); }}
                         >
                             <div className="flex items-center justify-between gap-6">
                                 <div
