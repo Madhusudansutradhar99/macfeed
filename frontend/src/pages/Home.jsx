@@ -168,11 +168,11 @@ export default function Home() {
               ))}
             </Swiper>
           </section>
-        )}
+        ))}
       </div>
 
       <div className="mt-40 text-center opacity-10 text-[8px] font-black uppercase tracking-[1em]">
-        MACFEED v3.0.6 - FAIL-SAFE DEPLOY
+        MACFEED v3.0.6 - DEPLOYMENT FIXED
       </div>
     </div>
   );
