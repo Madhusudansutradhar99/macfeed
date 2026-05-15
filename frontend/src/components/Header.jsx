@@ -58,7 +58,30 @@ export default function Header() {
           return mapped;
         }
       }
-    } catch(e) {}
+
+      // Fallback: Direct YouTube API call if backend fails or is unavailable
+      const key = import.meta.env.VITE_YOUTUBE_API_KEY;
+      if (key) {
+        const ytUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&maxResults=10&key=${key}`;
+        const ytRes = await fetch(ytUrl);
+        const ytData = await ytRes.json();
+        if (ytData.items) {
+          const mapped = ytData.items.map(item => ({
+            id: `yt-${item.id.videoId}`, 
+            ytId: item.id.videoId, 
+            title: item.snippet.title, 
+            thumbnail_url: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
+            video_url: `https://www.youtube.com/embed/${item.id.videoId}`, 
+            source: 'youtube', 
+            type: 'global'
+          })).filter(v => v.ytId);
+          setCachedSearch(q, mapped);
+          return mapped;
+        }
+      }
+    } catch(e) {
+      console.error('Search fallback failed:', e);
+    }
     return [];
   };
 
@@ -115,12 +138,13 @@ export default function Header() {
   useEffect(() => {
     // Show header when route changes
     setIsHeaderVisible(true);
-    lastScrollY.current = window.scrollY;
+    lastScrollY.current = 0;
   }, [location.pathname]);
 
   useEffect(() => {
-    const onScroll = () => {
-      const currentY = window.scrollY;
+    const mainContent = document.getElementById('main-content');
+    const onScroll = (e) => {
+      const currentY = e.target.scrollTop;
 
       if (isFocused) {
         setIsHeaderVisible(true);
@@ -128,19 +152,21 @@ export default function Header() {
         return;
       }
 
-      if (currentY < 20) {
+      if (currentY < 10) {
         setIsHeaderVisible(true);
-      } else if (currentY > lastScrollY.current + 6) {
+      } else if (currentY > lastScrollY.current + 2) {
         setIsHeaderVisible(false);
-      } else if (currentY < lastScrollY.current - 6) {
+      } else if (currentY < lastScrollY.current - 2) {
         setIsHeaderVisible(true);
       }
 
       lastScrollY.current = currentY;
     };
 
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    if (mainContent) {
+      mainContent.addEventListener('scroll', onScroll);
+      return () => mainContent.removeEventListener('scroll', onScroll);
+    }
   }, [isFocused]);
 
   const isSearchPage = location.pathname === '/search';
@@ -150,15 +176,15 @@ export default function Header() {
   return (
     <motion.header
       initial={{ y: -100 }}
-      animate={{ y: isHeaderVisible ? 0 : -110 }}
+      animate={{ y: isHeaderVisible ? 0 : -80 }}
       transition={{ duration: 0.28, ease: 'easeOut' }}
-      className="fixed top-0 left-0 right-0 h-[86px] z-[5000] flex items-center px-4 md:px-10 border-b border-primary/10 shadow-none"
-      style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.18) 100%)', backdropFilter: 'blur(18px)' }}
+      className="fixed top-0 left-0 right-0 h-[60px] z-[5000] flex items-center px-4 md:px-10 border-b border-white/5"
+      style={{ background: 'transparent' }}
     >
       <div className="flex items-center gap-3 shrink-0">
         {!isSearchPage && (
-          <button onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))} className="w-14 h-14 rounded-2xl hover:text-white transition-all duration-300 border active:scale-90 flex items-center justify-center" style={{ backgroundColor: 'var(--accent-color)', borderColor: 'var(--accent-color)', color: '#ffffff', boxShadow: '0 12px 30px rgba(0,0,0,0.08)' }}>
-            <Layout className="w-5 h-5" />
+          <button onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))} className="w-10 h-10 rounded-xl hover:text-white transition-all duration-300 border-2 active:scale-90 flex items-center justify-center" style={{ backgroundColor: 'transparent', borderColor: 'var(--accent-color)', color: 'var(--accent-color)' }}>
+            <Layout className="w-4 h-4" />
           </button>
         )}
         <Link to="/" className="hidden sm:flex items-center gap-3 pl-1">
@@ -170,7 +196,7 @@ export default function Header() {
         </Link>
       </div>
 
-      <div ref={dropdownRef} className="flex-grow flex justify-center max-w-4xl mx-auto px-4">
+      <div ref={dropdownRef} className="flex-grow flex justify-center max-w-2xl mx-auto px-4">
         <motion.div
           onMouseEnter={() => setIsSearchHovered(true)}
           onMouseLeave={() => {
@@ -180,14 +206,14 @@ export default function Header() {
             setIsFocused(true);
             setTimeout(() => inputRef.current?.focus(), 0);
           }}
-          className={`relative flex items-center transition-all duration-300 px-4 md:px-6 py-3 md:py-4 rounded-[1.6rem] ${isFocused ? 'shadow-[0_0_40px] drop-shadow-lg' : ''}`}
+          className={`relative flex items-center transition-all duration-300 px-3 md:px-4 py-1 md:py-2 rounded-xl ${isFocused ? 'shadow-[0_0_40px] drop-shadow-lg' : ''}`}
           style={{
             width: showExpandedSearch ? '100%' : '56px',
             borderWidth: '2px',
             borderStyle: 'solid',
             borderColor: 'var(--accent-color)',
             boxShadow: isFocused ? `0 0 40px var(--accent-color)44` : 'none',
-            backgroundColor: 'rgba(255,255,255,0.30)',
+            backgroundColor: 'transparent',
             cursor: showExpandedSearch ? 'text' : 'pointer'
           }}
         >
@@ -229,8 +255,8 @@ export default function Header() {
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
         <ThemeToggle />
         {user ? (
-          <button onClick={() => navigate('/settings')} className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-80 transition-all duration-300 overflow-hidden p-0.5 active:scale-90" style={{ borderWidth: '2px', borderStyle: 'solid', borderColor: 'var(--accent-color)', backgroundColor: 'var(--accent-color)' }}>
-            {user.picture ? <img src={user.picture} className="w-full h-full rounded-full object-cover" /> : <span className="font-black text-[12px] text-white">{user.email?.[0]?.toUpperCase()}</span>}
+          <button onClick={() => navigate('/settings')} className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-80 transition-all duration-300 overflow-hidden p-0.5 active:scale-90 border-2" style={{ borderColor: 'var(--accent-color)', backgroundColor: 'transparent' }}>
+            {user.picture ? <img src={user.picture} className="w-full h-full rounded-full object-cover" /> : <span className="font-black text-[12px]" style={{ color: 'var(--accent-color)' }}>{user.email?.[0]?.toUpperCase()}</span>}
           </button>
         ) : (
           <button onClick={() => setAuthModalOpen(true)} className="px-5 py-2 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:scale-105 transition-all duration-300 active:scale-95" style={{ backgroundColor: 'var(--accent-color)' }}>SIGN IN</button>

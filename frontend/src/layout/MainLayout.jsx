@@ -33,7 +33,7 @@ const MainLayout = () => {
       <Header />
       <div className="flex flex-1 relative min-w-0 w-full overflow-hidden">
         <Sidebar />
-        <main className="flex-1 min-w-0 w-full overflow-y-auto overflow-x-hidden pt-20" style={{ backgroundColor: 'var(--bg-primary)' }}>
+        <main id="main-content" className="flex-1 min-w-0 w-full overflow-y-auto overflow-x-hidden pt-20" style={{ backgroundColor: 'var(--bg-primary)' }}>
           <div className="p-2 sm:p-4 md:p-6">
             <ErrorBoundary resetKey={location.pathname}>
               <Outlet />

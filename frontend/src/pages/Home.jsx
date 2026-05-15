@@ -1,19 +1,36 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../supabaseClient';
 import Loader from '../components/Loader';
-import { Play, ChevronRight, Sparkles } from 'lucide-react';
-
-// Swiper only for the Hero
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Autoplay, Pagination } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/pagination';
+import { Play, ChevronRight, RotateCcw, RotateCw } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function Home() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  const [currAngle, setCurrAngle] = useState(0);
+  const [targetAngle, setTargetAngle] = useState(0);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const wheelRef = useRef(null);
+  const rafRef = useRef(null);
+
+  const { theme: globalTheme } = useTheme();
+
+  // Color Mapping for Themes
+  const themeMap = {
+    'blue-yellow': { p: '#3b82f6', s: '#eab308' },
+    'white-black': { p: '#ffffff', s: '#000000' },
+    'orange-green': { p: '#f97316', s: '#22c55e' },
+    'black-red': { p: '#ef4444', s: '#000000' },
+    'yellow-blue': { p: '#eab308', s: '#3b82f6' },
+    'dark': { p: '#3b82f6', s: '#ffffff' }, // Fallback for default themes
+    'light': { p: '#3b82f6', s: '#000000' },
+    'blue': { p: '#eab308', s: '#3b82f6' }
+  };
+  const activeTheme = themeMap[globalTheme] || themeMap['dark'];
 
   useEffect(() => {
     async function loadData() {
@@ -33,8 +50,104 @@ export default function Home() {
     loadData();
   }, []);
 
-  const heroVideos = useMemo(() => videos.filter(v => v.is_featured).slice(0, 8), [videos]);
-  
+  const heroVideos = useMemo(() => {
+    const vids = videos.slice(0, 6);
+    while (vids.length < 6) {
+      vids.push({ id: 'dummy-' + vids.length, thumbnail_url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070' });
+    }
+    return vids;
+  }, [videos]);
+
+  const angleStep = 60;
+
+  useEffect(() => {
+    const animate = () => {
+      setCurrAngle(prev => {
+        const diff = targetAngle - prev;
+        if (Math.abs(diff) < 0.1) return targetAngle;
+        return prev + diff * 0.1;
+      });
+      rafRef.current = requestAnimationFrame(animate);
+    };
+    rafRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [targetAngle]);
+
+  const rotate = (dir) => {
+    const nextAngle = targetAngle + (dir * 60);
+    setTargetAngle(nextAngle);
+    
+    // Update index immediately for better feedback
+    const steps = Math.round(nextAngle / 60);
+    const idx = ((-steps % 6) + 6) % 6;
+    if (!isNaN(idx)) setActiveIdx(idx);
+  };
+
+  const goToCard = (idx) => {
+    const currentStep = Math.round(targetAngle / 60);
+    const targetStep = -idx;
+    let normalizedTarget = targetStep;
+    while (Math.abs(normalizedTarget - currentStep) > 3) {
+      if (normalizedTarget < currentStep) normalizedTarget += 6;
+      else normalizedTarget -= 6;
+    }
+    setTargetAngle(normalizedTarget * 60);
+    setActiveIdx(idx);
+  };
+
+  const dragInfo = useRef({ isDragging: false, startX: 0, startAngle: 0, wasDragged: false });
+
+  const onStart = (e) => {
+    dragInfo.current.isDragging = true;
+    dragInfo.current.wasDragged = false;
+    dragInfo.current.startX = e.clientX || e.touches?.[0]?.clientX || 0;
+    dragInfo.current.startAngle = targetAngle;
+  };
+
+  useEffect(() => {
+    const onMove = (e) => {
+      // Safety: Only drag if isDragging is true AND mouse button is pressed (1 for primary)
+      if (!dragInfo.current.isDragging || (e.buttons === 0 && !e.touches)) {
+        if (dragInfo.current.isDragging) onEnd(); // Force end if button released outside
+        return;
+      }
+      
+      const x = e.clientX || e.touches?.[0]?.clientX || 0;
+      const diff = x - dragInfo.current.startX;
+      
+      if (Math.abs(diff) > 15) dragInfo.current.wasDragged = true;
+      
+      const newAngle = dragInfo.current.startAngle + diff * 0.3;
+      setTargetAngle(newAngle);
+
+      // Real-time index update
+      const steps = Math.round(newAngle / 60);
+      const idx = ((-steps % 6) + 6) % 6;
+      if (!isNaN(idx)) setActiveIdx(idx);
+    };
+    const onEnd = () => {
+      if (!dragInfo.current.isDragging) return;
+      dragInfo.current.isDragging = false;
+      setTargetAngle(prev => {
+        const snapped = Math.round(prev / 60) * 60;
+        const steps = Math.round(snapped / 60);
+        const idx = ((-steps % 6) + 6) % 6;
+        if (!isNaN(idx)) setActiveIdx(idx);
+        return snapped;
+      });
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchmove', onMove);
+    window.addEventListener('touchend', onEnd);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onEnd);
+    };
+  }, [targetAngle]);
+
   const categoriesMap = useMemo(() => {
     const groups = {};
     videos.forEach(v => {
@@ -48,84 +161,130 @@ export default function Home() {
   if (loading) return <Loader />;
 
   return (
-    <div className="w-full min-w-0 overflow-x-hidden text-white pb-40 min-h-screen" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="w-full min-w-0 overflow-x-hidden text-white pb-20 min-h-screen">
       
-      {/* ── PREMIUM HERO SECTION (Game Store Style) ── */}
-      {heroVideos.length > 0 && (
-        <section className="mb-10 px-4 md:px-10 mt-6">
-          <Swiper
-            modules={[Autoplay, Pagination]}
-            autoplay={{ delay: 5000 }}
-            pagination={{ clickable: true }}
-            centeredSlides={true}
-            slidesPerView={1}
-            spaceBetween={20}
-            loop={heroVideos.length > 1}
-            className="w-full rounded-[2rem] overflow-hidden shadow-2xl h-[280px] md:h-[400px]"
-            style={{ border: '3px solid var(--border-color)', boxShadow: '0 40px 100px rgba(0,0,0,0.4)' }}
+      <section className="relative w-full min-h-[350px] flex flex-col items-center justify-center pt-16 select-none overflow-hidden">
+        <div 
+          className="relative w-full flex items-center justify-center cursor-grab active:cursor-grabbing" 
+          style={{ perspective: '1200px' }}
+          onMouseDown={onStart}
+          onTouchStart={onStart}
+        >
+          {/* Left Navigation Button */}
+          <button 
+            onClick={(e) => { e.stopPropagation(); rotate(1); }} 
+            className="absolute left-4 md:left-10 z-[100] w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all shadow-2xl"
+            style={{ borderColor: activeTheme.p, color: activeTheme.p, backgroundColor: 'rgba(0,0,0,0.2)' }}
           >
-            {heroVideos.map(video => (
-              <SwiperSlide key={video.id} onClick={() => navigate('/watch/' + video.id)} className="cursor-pointer">
-                <div className="relative w-full h-full" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                  <img src={video.thumbnail_url} className="w-full h-full object-cover opacity-70" alt="" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                  <div className="absolute bottom-8 left-8 right-8 z-20 space-y-4">
-                    <h2 className="text-2xl md:text-4xl font-black uppercase mb-2 line-clamp-2 tracking-tighter drop-shadow-2xl" style={{ textShadow: '0 4px 12px rgba(0,0,0,0.8)' }}>{video.title}</h2>
-                    <div className="flex gap-3 items-center">
-                      <button className="px-8 py-3 rounded-lg font-black text-sm uppercase flex items-center gap-2 transition-all hover:scale-105" style={{ backgroundColor: 'var(--border-color)', color: 'white' }}>
-                        <Play size={16} fill="currentColor" /> Watch Now
-                      </button>
-                      <button className="px-6 py-3 rounded-lg font-black text-sm uppercase border-2 transition-all hover:scale-105" style={{ borderColor: 'var(--border-color)', color: 'var(--border-color)' }}>
-                        + More Info
-                      </button>
+            <RotateCcw size={24} />
+          </button>
+
+          <div 
+            ref={wheelRef}
+            className="relative w-[300px] h-[170px]"
+            style={{ 
+              transformStyle: 'preserve-3d',
+              transform: `rotateY(${currAngle}deg)`
+            }}
+          >
+            {heroVideos.map((video, i) => {
+              const cardAngle = (i * 60 + currAngle) % 360;
+              let diff = Math.abs(cardAngle);
+              if (diff > 180) diff = 360 - diff;
+              const dynamicScale = 1 + Math.max(0, (40 - diff) / 40) * 0.25;
+              const dynamicOpacity = 0.6 + Math.max(0, (60 - diff) / 60) * 0.4;
+              const isFront = diff < 30;
+
+              return (
+                <div 
+                  key={video.id}
+                  onClick={(e) => {
+                    if (dragInfo.current.wasDragged) return;
+                    if (isFront) {
+                      navigate('/watch/' + video.id);
+                    } else {
+                      goToCard(i);
+                    }
+                  }}
+                  className="absolute inset-0 rounded-[2rem] overflow-hidden cursor-pointer border-2"
+                  style={{ 
+                    transform: `rotateY(${i * 60}deg) translateZ(320px) scale(${dynamicScale})`,
+                    backfaceVisibility: 'hidden',
+                    opacity: dynamicOpacity,
+                    borderColor: isFront ? activeTheme.p : 'rgba(255,255,255,0.1)',
+                    boxShadow: isFront ? `0 0 30px ${activeTheme.p}66` : 'none',
+                    zIndex: isFront ? 100 : Math.round(100 - diff),
+                    transition: dragInfo.current.isDragging ? 'none' : 'transform 0.5s ease-out, opacity 0.5s ease-out, border-color 0.5s'
+                  }}
+                >
+                  <img src={video.thumbnail_url} className="w-full h-full object-cover" alt="" />
+                  
+                  <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end items-center pb-6 transition-opacity duration-300 ${isFront ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className="text-white px-4 py-1.5 rounded-full font-black uppercase text-[10px] tracking-widest shadow-xl border" style={{ backgroundColor: activeTheme.s, borderColor: activeTheme.p }}>
+                      Watch Now
                     </div>
                   </div>
                 </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </section>
-      )}
+              );
+            })}
+          </div>
 
-      {/* ── TINY POSTER ROWS (Image 2 Style - Flix.id) ── */}
-      <div className="w-full min-w-0 px-4 md:px-10 space-y-12">
+          {/* Right Navigation Button */}
+          <button 
+            onClick={(e) => { e.stopPropagation(); rotate(-1); }} 
+            className="absolute right-4 md:right-10 z-[100] w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all shadow-2xl"
+            style={{ borderColor: activeTheme.p, color: activeTheme.p, backgroundColor: 'rgba(0,0,0,0.2)' }}
+          >
+            <RotateCw size={24} />
+          </button>
+        </div>
+
+        <div className="mt-32 flex flex-col items-center gap-4">
+          <h2 
+            className={`text-base md:text-lg font-black uppercase tracking-[0.2em] text-center drop-shadow-2xl px-10 line-clamp-1 opacity-90 transition-colors duration-500 max-w-[80%] md:max-w-[60%] ${(['white-black', 'yellow-blue', 'light'].includes(globalTheme)) ? 'text-black' : 'text-white'}`}
+          >
+            {heroVideos[((-Math.round(currAngle / 60) % 6) + 6) % 6]?.title}
+          </h2>
+          
+          <div className="flex justify-center gap-2">
+            {heroVideos.map((_, i) => {
+              const currentVisualIdx = ((-Math.round(currAngle / 60) % 6) + 6) % 6;
+              return (
+                <button 
+                  key={i} 
+                  onClick={() => goToCard(i)}
+                  className={`h-1.5 rounded-full transition-all duration-500 ${currentVisualIdx === i ? 'w-10 bg-white' : 'w-2 bg-white/20'}`}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Row Content */}
+      <div className="w-full px-4 md:px-10 space-y-4">
         {Object.entries(categoriesMap).map(([cat, vids]) => (
           <section key={cat} className="w-full">
-            <div className="flex items-center justify-between mb-5 border-l-4 pl-4" style={{ borderColor: 'var(--border-color)' }}>
-              <h2 className="text-base md:text-lg font-black uppercase italic tracking-tighter" style={{ color: 'var(--text-primary)', opacity: 0.85 }}>{cat}</h2>
-              <button className="text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-1" style={{ color: 'var(--border-color)' }}>
-                Explore <ChevronRight size={12} />
-              </button>
-            </div>
-
-            {/* Video Card Rows - Larger Cards */}
-            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3">
-              {vids.map(video => (
+            <h2 className="text-lg font-black uppercase tracking-tight mb-6 opacity-80">{cat}</h2>
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4">
+              {vids.map(v => (
                 <div 
-                  key={video.id} 
-                  onClick={() => navigate('/watch/' + video.id)} 
-                  className="min-w-[220px] md:min-w-[260px] lg:min-w-[280px] cursor-pointer group"
+                  key={v.id} 
+                  onClick={() => navigate('/watch/'+v.id)} 
+                  className="min-w-[280px] cursor-pointer group"
                 >
-                  <div className="relative aspect-video rounded-[1.5rem] overflow-hidden mb-3 border-3 shadow-lg group-hover:shadow-2xl transition-all" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
-                    <img src={video.thumbnail_url} className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700" alt="" />
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="p-3 rounded-full shadow-2xl" style={{ backgroundColor: 'var(--border-color)' }}><Play size={16} fill="white" /></div>
-                    </div>
+                  <div 
+                    className="aspect-video rounded-3xl overflow-hidden mb-3 border-2 transition-all duration-500"
+                    style={{ borderColor: activeTheme.p }}
+                  >
+                    <img src={v.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" alt="" />
                   </div>
-                  <h4 className="text-sm font-bold uppercase tracking-tight line-clamp-2 mb-2 transition-colors leading-tight" style={{ color: 'var(--text-primary)' }}>{video.title}</h4>
-                  <div className="flex items-center justify-between text-xs font-bold uppercase" style={{ color: 'var(--text-primary)', opacity: 0.7 }}>
-                    <span style={{ color: 'var(--border-color)' }}>★ 9.5</span>
-                    <span>2024</span>
-                  </div>
+                  <h4 className="text-sm font-bold uppercase line-clamp-1 opacity-90">{v.title}</h4>
                 </div>
               ))}
             </div>
           </section>
         ))}
-      </div>
-
-      <div className="mt-40 text-center opacity-5 text-[7px] font-black uppercase tracking-[3em]">
-        MACFEED ULTRA-TINY v5.6
       </div>
     </div>
   );
