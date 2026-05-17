@@ -3,11 +3,11 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'blue-yellow');
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove('light', 'dark', 'blue', 'blue-yellow', 'white-black', 'orange-green', 'black-red', 'yellow-blue');
+    root.classList.remove('light', 'dark', 'blue', 'blue-yellow', 'white-black', 'orange-green', 'black-red', 'yellow-blue', 'black-white');
     root.classList.add(theme);
     localStorage.setItem('theme', theme);
 
@@ -20,22 +20,18 @@ export const ThemeProvider = ({ children }) => {
     }
     
     const colors = {
-      dark: '#0A0A0F',
-      light: '#eff6ff',
-      blue: '#E0F2FE',
-      'blue-yellow': '#3b82f6',
+      'black-white': '#000000',
       'white-black': '#ffffff',
-      'orange-green': '#f97316',
-      'black-red': '#000000',
-      'yellow-blue': '#eab308'
+      'blue-yellow': '#E0F2FE'
     };
-    metaThemeColor.setAttribute('content', colors[theme] || colors.dark);
+    metaThemeColor.setAttribute('content', colors[theme] || colors['black-white']);
   }, [theme]);
 
   const toggleTheme = () => {
     setTheme((prev) => {
-      const allThemes = ['dark', 'light', 'blue-yellow', 'white-black', 'orange-green', 'black-red', 'yellow-blue'];
-      const nextIdx = (allThemes.indexOf(prev) + 1) % allThemes.length;
+      const allThemes = ['black-white', 'white-black', 'blue-yellow'];
+      let nextIdx = (allThemes.indexOf(prev) + 1) % allThemes.length;
+      if (nextIdx < 0) nextIdx = 0;
       return allThemes[nextIdx];
     });
   };

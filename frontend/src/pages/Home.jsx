@@ -19,18 +19,12 @@ export default function Home() {
 
   const { theme: globalTheme } = useTheme();
 
-  // Color Mapping for Themes
   const themeMap = {
-    'blue-yellow': { p: '#3b82f6', s: '#eab308' },
-    'white-black': { p: '#ffffff', s: '#000000' },
-    'orange-green': { p: '#f97316', s: '#22c55e' },
-    'black-red': { p: '#ef4444', s: '#000000' },
-    'yellow-blue': { p: '#eab308', s: '#3b82f6' },
-    'dark': { p: '#3b82f6', s: '#ffffff' }, // Fallback for default themes
-    'light': { p: '#3b82f6', s: '#000000' },
-    'blue': { p: '#eab308', s: '#3b82f6' }
+    'black-white': { p: '#ffffff', s: '#000000' },
+    'white-black': { p: '#000000', s: '#ffffff' },
+    'blue-yellow': { p: '#eab308', s: '#E0F2FE' }
   };
-  const activeTheme = themeMap[globalTheme] || themeMap['dark'];
+  const activeTheme = themeMap[globalTheme] || themeMap['black-white'];
 
   useEffect(() => {
     async function loadData() {
@@ -163,7 +157,7 @@ export default function Home() {
   return (
     <div className="w-full min-w-0 overflow-x-hidden text-white pb-20 min-h-screen">
       
-      <section className="relative w-full min-h-[350px] flex flex-col items-center justify-center pt-16 select-none overflow-hidden">
+      <section className="relative w-full min-h-[250px] flex flex-col items-center justify-center pt-6 select-none overflow-hidden">
         <div 
           className="relative w-full flex items-center justify-center cursor-grab active:cursor-grabbing" 
           style={{ perspective: '1200px' }}
@@ -181,7 +175,7 @@ export default function Home() {
 
           <div 
             ref={wheelRef}
-            className="relative w-[300px] h-[170px]"
+            className="relative w-[min(60vw,280px)] h-[min(33.7vw,158px)]"
             style={{ 
               transformStyle: 'preserve-3d',
               transform: `rotateY(${currAngle}deg)`
@@ -208,7 +202,7 @@ export default function Home() {
                   }}
                   className="absolute inset-0 rounded-[2rem] overflow-hidden cursor-pointer border-2"
                   style={{ 
-                    transform: `rotateY(${i * 60}deg) translateZ(320px) scale(${dynamicScale})`,
+                    transform: `rotateY(${i * 60}deg) translateZ(calc(min(60vw, 320px))) scale(${dynamicScale})`,
                     backfaceVisibility: 'hidden',
                     opacity: dynamicOpacity,
                     borderColor: isFront ? activeTheme.p : 'rgba(255,255,255,0.1)',
@@ -220,7 +214,7 @@ export default function Home() {
                   <img src={video.thumbnail_url} className="w-full h-full object-cover" alt="" />
                   
                   <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end items-center pb-6 transition-opacity duration-300 ${isFront ? 'opacity-100' : 'opacity-0'}`}>
-                    <div className="text-white px-4 py-1.5 rounded-full font-black uppercase text-[10px] tracking-widest shadow-xl border" style={{ backgroundColor: activeTheme.s, borderColor: activeTheme.p }}>
+                    <div className={`px-3 py-1 rounded-full font-black uppercase text-[9px] tracking-widest shadow-xl border ${(['white-black', 'blue-yellow'].includes(globalTheme)) ? 'text-black' : 'text-white'}`} style={{ backgroundColor: activeTheme.s, borderColor: activeTheme.p }}>
                       Watch Now
                     </div>
                   </div>
@@ -239,9 +233,9 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="mt-32 flex flex-col items-center gap-4">
+        <div className="mt-10 flex flex-col items-center gap-3">
           <h2 
-            className={`text-base md:text-lg font-black uppercase tracking-[0.2em] text-center drop-shadow-2xl px-10 line-clamp-1 opacity-90 transition-colors duration-500 max-w-[80%] md:max-w-[60%] ${(['white-black', 'yellow-blue', 'light'].includes(globalTheme)) ? 'text-black' : 'text-white'}`}
+            className={`text-base md:text-lg font-black uppercase tracking-[0.2em] text-center drop-shadow-2xl px-10 line-clamp-1 opacity-90 transition-colors duration-500 max-w-[90%] md:max-w-[60%] ${(['white-black', 'blue-yellow'].includes(globalTheme)) ? 'text-black' : 'text-white'}`}
           >
             {heroVideos[((-Math.round(currAngle / 60) % 6) + 6) % 6]?.title}
           </h2>
@@ -262,16 +256,16 @@ export default function Home() {
       </section>
 
       {/* Row Content */}
-      <div className="w-full px-4 md:px-10 space-y-4">
+      <div className="w-full px-4 md:px-10 space-y-2 mt-4">
         {Object.entries(categoriesMap).map(([cat, vids]) => (
           <section key={cat} className="w-full">
-            <h2 className="text-lg font-black uppercase tracking-tight mb-6 opacity-80">{cat}</h2>
+            <h2 className="text-lg font-black uppercase tracking-tight mb-3 opacity-80">{cat}</h2>
             <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4">
               {vids.map(v => (
                 <div 
                   key={v.id} 
                   onClick={() => navigate('/watch/'+v.id)} 
-                  className="min-w-[280px] cursor-pointer group"
+                  className="min-w-[65vw] sm:min-w-[240px] cursor-pointer group"
                 >
                   <div 
                     className="aspect-video rounded-3xl overflow-hidden mb-3 border-2 transition-all duration-500"
