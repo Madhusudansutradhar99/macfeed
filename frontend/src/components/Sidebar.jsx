@@ -22,10 +22,11 @@ const navItems = [
   { label: 'Library', icon: Folder, path: '/playlists' },
 ];
 
-const DynamicNavItem = ({ item, active, onClick }) => {
+const DynamicNavItem = ({ item, active, onClick, forceExpand }) => {
   const [hover, setHover] = useState(false);
   const navigate = useNavigate();
   const iconColor = active ? '#ffffff' : 'var(--text-primary)';
+  const isExpanded = forceExpand || hover;
 
   return (
     <motion.div
@@ -42,8 +43,8 @@ const DynamicNavItem = ({ item, active, onClick }) => {
       className={`absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-full cursor-pointer z-[2000] shadow-2xl will-change-transform
         ${active ? 'text-white shadow-[0_0_20px_rgba(var(--accent-rgb),0.4)]' : 'backdrop-blur-xl hover:bg-primary/10 border border-primary/20'}
       `}
-      style={active ? { backgroundColor: 'var(--accent-color)', boxShadow: '0 0 20px var(--accent-color)44' } : { backgroundColor: 'var(--bg-secondary)' }}
-      animate={{ width: hover ? 230 : 44 }}
+      style={active ? { backgroundColor: 'var(--accent-color)', boxShadow: '0 0 20px var(--accent-color)44' } : { backgroundColor: 'transparent' }}
+      animate={{ width: isExpanded ? 200 : 44 }}
       transition={{ type: 'tween', ease: 'circOut', duration: 0.12 }}
     >
       <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0">
@@ -51,7 +52,7 @@ const DynamicNavItem = ({ item, active, onClick }) => {
       </div>
       <motion.span
         initial={false}
-        animate={{ opacity: hover ? 1 : 0 }}
+        animate={{ opacity: isExpanded ? 1 : 0 }}
         transition={{ duration: 0.12 }}
         className={`whitespace-nowrap font-bold pr-6 text-[11px] uppercase tracking-widest ml-1 ${active ? 'text-white' : 'text-primary'}`}
       >
@@ -120,27 +121,27 @@ export default function Sidebar() {
           opacity: isSidebarOpen ? 1 : 0
         }}
         transition={{ type: 'tween', ease: 'circOut', duration: 0.14 }}
-        className="fixed top-20 left-4 h-[calc(100vh-100px)] w-[260px] z-[1100] flex flex-col pointer-events-none will-change-transform"
+        className="fixed top-20 left-4 h-[calc(100vh-140px)] w-[220px] z-[1100] flex flex-col pointer-events-none will-change-transform"
       >
-        <div className={`w-full h-full py-6 flex flex-col flex-1 relative overflow-y-auto no-scrollbar overflow-x-visible ${isSidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-          <nav className="flex-1 flex flex-col gap-3 px-1">
+        <div className={`w-full h-full py-6 flex flex-col flex-1 relative overflow-y-auto no-scrollbar overflow-x-hidden ${isSidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+          <nav className="flex-1 flex flex-col gap-2 px-3">
             {navItems.map((item) => {
               const active = location.pathname === item.path;
               const isTop = topItem?.label === item.label;
               return (
                 <div key={item.path} className="relative h-10 md:h-11 w-full shrink-0">
                   {!isTop && (
-                    <DynamicNavItem item={item} active={active} onClick={() => handleItemClick(item)} />
+                    <DynamicNavItem item={item} active={active} onClick={() => handleItemClick(item)} forceExpand={isSidebarOpen} />
                   )}
                 </div>
               );
             })}
           </nav>
 
-          <div className="mt-auto flex flex-col gap-3 px-1 pt-4 border-t border-primary mb-6">
+          <div className="mt-auto flex flex-col gap-2 px-3 pt-4 border-t border-white/10 mb-2">
             <div className="relative h-10 md:h-11 w-full shrink-0">
                {topItem?.label !== 'Admin' && (
-                 <DynamicNavItem item={{ label: 'Admin', icon: ShieldCheck, path: '/admin' }} active={location.pathname === '/admin'} onClick={() => handleItemClick({ label: 'Admin', icon: ShieldCheck, path: '/admin' })} />
+                 <DynamicNavItem item={{ label: 'Admin', icon: ShieldCheck, path: '/admin' }} active={location.pathname === '/admin'} onClick={() => handleItemClick({ label: 'Admin', icon: ShieldCheck, path: '/admin' })} forceExpand={isSidebarOpen} />
                )}
             </div>
             <div className="relative h-10 md:h-11 w-full shrink-0">
@@ -149,13 +150,13 @@ export default function Sidebar() {
                   onMouseLeave={() => setShowUserMenu(false)}
                   onClick={() => user ? navigate('/settings') : setAuthModalOpen(true)}
                   className="absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-full cursor-pointer overflow-hidden z-50 border shadow-lg will-change-transform"
-                  style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--accent-color)' }}
-                  animate={{ width: showUserMenu ? 150 : 44 }}
+                  style={{ backgroundColor: 'transparent', borderColor: 'var(--accent-color)' }}
+                  animate={{ width: isSidebarOpen || showUserMenu ? 200 : 44 }}
                   transition={{ type: 'tween', ease: 'circOut', duration: 0.12 }}
                >
                   <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0"><User className="w-5 h-5" style={{ color: 'var(--accent-color)' }} /></div>
                   <motion.span 
-                    animate={{ opacity: showUserMenu ? 1 : 0 }}
+                    animate={{ opacity: isSidebarOpen || showUserMenu ? 1 : 0 }}
                     transition={{ duration: 0.12 }}
                     className="text-[10px] font-black uppercase text-primary pr-4"
                   >

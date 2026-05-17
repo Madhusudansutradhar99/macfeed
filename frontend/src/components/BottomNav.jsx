@@ -1,48 +1,57 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Compass, PlaySquare, Music, Settings, LayoutGrid } from 'lucide-react';
-import { motion } from 'framer-motion';
-
-const navItems = [
-  { path: '/', icon: Home, label: 'Home' },
-  { path: '/shorts', icon: PlaySquare, label: 'Shorts' },
-  { path: '/music', icon: Music, label: 'Music' },
-  { path: '/trending', icon: Compass, label: 'Trending' },
-  { path: '/settings', icon: Settings, label: 'Settings' }
-];
+import { Menu, Music, User } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function BottomNav() {
   const location = useLocation();
+  const { user, setAuthModalOpen } = useAuth();
+
+  const handleProfileClick = (e) => {
+    if (!user) {
+      e.preventDefault();
+      setAuthModalOpen(true);
+    }
+  };
+
+  const handleLibraryClick = (e) => {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent('toggle-sidebar'));
+  };
 
   return (
-    <nav className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[400px] h-16 bg-[#000000]/80 backdrop-blur-3xl border border-white/10 rounded-[2rem] px-6 z-[9999] flex items-center justify-around shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-      {navItems.map((item) => {
-        const isActive = location.pathname === item.path;
-        return (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className="flex flex-col items-center gap-1 group relative flex-1"
-          >
-            <div className={`relative p-2 rounded-2xl transition-all duration-300 ${isActive ? 'bg-white/10 scale-110 shadow-[0_0_20px_rgba(255,255,255,0.1)]' : 'active:scale-90 opacity-60 hover:opacity-100'}`}>
-              <item.icon 
-                className={`w-5 h-5 transition-colors duration-300 ${isActive ? 'text-white' : 'text-white/40'}`} 
-                strokeWidth={isActive ? 3 : 2}
-              />
-              {isActive && (
-                <motion.div
-                  layoutId="nav-glow-indicator"
-                  className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_10px_white]"
-                  transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                />
-              )}
-            </div>
-            <span className={`text-[8px] font-black uppercase tracking-[0.1em] transition-colors duration-300 ${isActive ? 'text-white' : 'text-white/30'}`}>
-              {item.label}
-            </span>
-          </NavLink>
-        );
-      })}
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[6000] pb-[env(safe-area-inset-bottom)]">
+      <div className="relative flex items-center justify-between px-8 h-[70px] bg-transparent">
+        
+        {/* Left: Library */}
+        <button
+          onClick={handleLibraryClick}
+          className="flex flex-col items-center gap-1 group active:scale-90 transition-transform duration-300 drop-shadow-md"
+        >
+          <Menu className="w-6 h-6 text-[var(--text-primary)] opacity-70 group-hover:opacity-100 group-hover:text-[var(--accent-color)] transition-colors" />
+          <span className="text-[10px] font-bold text-[var(--text-primary)] opacity-60 tracking-wide">Library</span>
+        </button>
+
+        {/* Center: Music */}
+        <NavLink
+          to="/music"
+          className="flex flex-col items-center gap-1 group active:scale-90 transition-transform duration-300 drop-shadow-md"
+        >
+          <Music className={`w-6 h-6 transition-all duration-300 ${location.pathname === '/music' ? 'text-[var(--accent-color)] drop-shadow-[0_0_8px_var(--accent-color)] scale-110' : 'text-[var(--text-primary)] opacity-70'}`} />
+          <span className={`text-[10px] font-bold tracking-wide transition-colors ${location.pathname === '/music' ? 'text-[var(--text-primary)] opacity-100' : 'text-[var(--text-primary)] opacity-60'}`}>Music</span>
+        </NavLink>
+
+        {/* Right: Profile */}
+        <NavLink
+          to="/settings"
+          onClick={handleProfileClick}
+          className="flex flex-col items-center gap-1 group active:scale-90 transition-transform duration-300 drop-shadow-md"
+        >
+          <User className={`w-6 h-6 transition-all duration-300 ${location.pathname === '/settings' ? 'text-[var(--accent-color)] drop-shadow-[0_0_8px_var(--accent-color)] scale-110' : 'text-[var(--text-primary)] opacity-70'}`} />
+          <span className={`text-[10px] font-bold tracking-wide transition-colors ${location.pathname === '/settings' ? 'text-[var(--text-primary)] opacity-100' : 'text-[var(--text-primary)] opacity-60'}`}>Profile</span>
+        </NavLink>
+
+      </div>
     </nav>
   );
 }

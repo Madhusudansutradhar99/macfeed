@@ -341,14 +341,23 @@ export function MusicProvider({ children }) {
     window._lastMusicTime = Date.now();
   }, [currentSong?.id]);
 
-  const playVideo = (video) => {
+  const playVideo = (video, newList = null) => {
     if (!video) return;
-    const idx = playlist.findIndex((v) => v.id === video.id);
-    if (idx >= 0) setCurrentIdx(idx);
-    else {
-      setPlaylist((prev) => deduplicate([video, ...prev]));
-      setCurrentIdx(0);
+    
+    if (newList && Array.isArray(newList) && newList.length > 0) {
+      const deduplicatedList = deduplicate(newList);
+      setPlaylist(deduplicatedList);
+      const idx = deduplicatedList.findIndex((v) => v.id === video.id);
+      setCurrentIdx(Math.max(0, idx));
+    } else {
+      const idx = playlist.findIndex((v) => v.id === video.id);
+      if (idx >= 0) setCurrentIdx(idx);
+      else {
+        setPlaylist((prev) => deduplicate([video, ...prev]));
+        setCurrentIdx(0);
+      }
     }
+    
     setIsOpen(true);
     setPlaying(true);
     setPlayingLocal(false);

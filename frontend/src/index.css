@@ -133,25 +133,49 @@ body {
 }
 
 .black-white {
-  --bg-primary: #000000;
+  --bg-primary: #0a0a0f;
   --bg-secondary: rgba(255,255,255,0.05);
-  --text-primary: #ffffff;
-  --accent-color: #ffffff;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --accent-color: #38bdf8;
   --border-color: #ffffff;
 }
 
 .white-black {
-  --bg-primary: #ffffff;
-  --bg-secondary: rgba(0,0,0,0.05);
-  --text-primary: #000000;
-  --accent-color: #000000;
+  --bg-primary: #f8fafc;
+  --bg-secondary: rgba(0,0,0,0.03);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --accent-color: #6366f1;
   --border-color: #000000;
 }
 
 .blue-yellow {
-  --bg-primary: #E0F2FE;
+  --bg-primary: #e0f2fe;
   --bg-secondary: rgba(0,0,0,0.05);
-  --text-primary: #000000;
+  --text-primary: #0f172a;
+  --text-secondary: #0369a1;
   --accent-color: #eab308;
   --border-color: #eab308;
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, #ff8a00, #e52e71);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-alt {
+  background: linear-gradient(90deg, #00c6ff, #0072ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-magic {
+  background: linear-gradient(90deg, #8A2387, #E94057, #F27121);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

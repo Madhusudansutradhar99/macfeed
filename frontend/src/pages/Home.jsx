@@ -235,7 +235,7 @@ export default function Home() {
 
         <div className="mt-10 flex flex-col items-center gap-3">
           <h2 
-            className={`text-base md:text-lg font-black uppercase tracking-[0.2em] text-center drop-shadow-2xl px-10 line-clamp-1 opacity-90 transition-colors duration-500 max-w-[90%] md:max-w-[60%] ${(['white-black', 'blue-yellow'].includes(globalTheme)) ? 'text-black' : 'text-white'}`}
+            className="text-base md:text-lg font-black uppercase tracking-[0.2em] text-center drop-shadow-2xl px-10 line-clamp-1 opacity-100 transition-colors duration-500 max-w-[90%] md:max-w-[60%] text-gradient-magic"
           >
             {heroVideos[((-Math.round(currAngle / 60) % 6) + 6) % 6]?.title}
           </h2>
@@ -257,9 +257,12 @@ export default function Home() {
 
       {/* Row Content */}
       <div className="w-full px-4 md:px-10 space-y-2 mt-4">
-        {Object.entries(categoriesMap).map(([cat, vids]) => (
+        {Object.entries(categoriesMap).map(([cat, vids], index) => {
+          const gradients = ['text-gradient', 'text-gradient-alt', 'text-gradient-magic'];
+          const gradientClass = gradients[index % gradients.length];
+          return (
           <section key={cat} className="w-full">
-            <h2 className="text-lg font-black uppercase tracking-tight mb-3 opacity-80">{cat}</h2>
+            <h2 className={`text-lg font-black uppercase tracking-tight mb-3 opacity-100 ${gradientClass}`}>{cat}</h2>
             <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4">
               {vids.map(v => (
                 <div 
@@ -278,7 +281,8 @@ export default function Home() {
               ))}
             </div>
           </section>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

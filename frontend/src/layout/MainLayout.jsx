@@ -1,6 +1,7 @@
 import React from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import BottomNav from '../components/BottomNav';
 import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -21,7 +22,7 @@ const MainLayout = () => {
   if (location.pathname === '/music') {
     return (
       <div className="fixed inset-0 bg-primary text-primary overflow-hidden">
-        <div className="w-full h-full overflow-y-auto no-scrollbar">
+        <div className="w-full h-full overflow-hidden">
           <Outlet />
         </div>
       </div>
@@ -34,13 +35,14 @@ const MainLayout = () => {
       <div className="flex flex-1 relative min-w-0 w-full overflow-hidden">
         <Sidebar />
         <main id="main-content" className="flex-1 min-w-0 w-full overflow-y-auto overflow-x-hidden pt-20" style={{ backgroundColor: 'var(--bg-primary)' }}>
-          <div className="p-2 sm:p-4 md:p-6">
+          <div className="p-2 sm:p-4 md:p-6 pb-[100px] md:pb-6">
             <ErrorBoundary resetKey={location.pathname}>
               <Outlet />
             </ErrorBoundary>
           </div>
         </main>
       </div>
+      <BottomNav />
     </div>
   );
 };
