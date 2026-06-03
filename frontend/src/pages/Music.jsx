@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, ArrowLeft, Music as MusicIcon, Search, Flame, Clock, Sparkles,
-  Download, Heart, ChevronLeft, ChevronRight, AlertTriangle, Folder, Upload, Settings, Trash, Maximize2, X, Palette, Plus, Menu
+  Download, Heart, ChevronLeft, ChevronRight, AlertTriangle, Folder, Upload, Settings, Trash, Maximize2, X, Palette, Plus, Menu, Home
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useMusicPlayer } from '../context/MusicContext';
