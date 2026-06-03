@@ -575,7 +575,7 @@ export default function Music() {
             playVideo(checkAgain[0], list);
             setIsExpanded(true);
           } else {
-            const { data: inserted } = await supabase.from('videos').insert([{
+            const { data: inserted, error } = await supabase.from('videos').insert([{
               title: songToPlay?.title || 'Untitled Video',
               video_url: `https://www.youtube.com/embed/${ytId}`,
               youtube_id: ytId,
@@ -583,17 +583,24 @@ export default function Music() {
               source: 'youtube',
               category: 'Music',
               views: 0,
-              user_id: user?.id
+              user_id: user?.id || null
             }]).select('*').single();
+
+            if (error) console.error('Supabase Insert Error:', error);
 
             if (inserted) {
               playVideo(inserted, list);
               addToHistory(inserted);
               setIsExpanded(true);
+            } else {
+              // Fallback: play directly without saving if insert failed
+              playVideo(songToPlay, list);
+              setIsExpanded(true);
             }
           }
         }
       } catch (e) {
+        console.error('handleSongClick error:', e);
         playVideo(songToPlay, list);
         setIsExpanded(true);
       } finally {
