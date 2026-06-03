@@ -56,6 +56,93 @@ export function MusicProvider({ children }) {
 
   // ── DEVICE MUSIC STATE ──────────────────────────────────────────────────
   const [deviceSongs, setDeviceSongs] = useState([]);
+
+  // ── LYRICS STATE ────────────────────────────────────────────────────────
+  const [lyrics, setLyrics] = useState(null);
+  const [lyricsLoading, setLyricsLoading] = useState(false);
+  const silentAudioRef = useRef(null);
+
+  // Initialize silent audio for background keep-alive
+  useEffect(() => {
+    if (!silentAudioRef.current && typeof window !== 'undefined') {
+      // 1-second silent WAV
+      silentAudioRef.current = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+      silentAudioRef.current.loop = true;
+      silentAudioRef.current.volume = 0.01; // nearly silent
+    }
+  }, []);
+
+  useEffect(() => {
+    if (playing) {
+      silentAudioRef.current?.play().catch(e => console.warn('Silent audio keep-alive play failed:', e));
+    } else {
+      silentAudioRef.current?.pause();
+    }
+  }, [playing]);
+
+  // Fetch lyrics when song changes
+  useEffect(() => {
+    if (!currentSong) return;
+    let isActive = true;
+    
+    const fetchLyrics = async () => {
+      setLyricsLoading(true);
+      setLyrics(null);
+      try {
+        let q = currentSong.title || '';
+        // If youtube, title might be "Artist - Track"
+        const cleanTitle = q.replace(/\(Official.*?\)|\[.*?\]|\{.*?\}|music video|lyric video/gi, '').trim();
+        
+        // Search LRCLIB
+        const res = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(cleanTitle)}`);
+        if (!res.ok) throw new Error('Failed to fetch lyrics');
+        const data = await res.json();
+        
+        if (isActive && data && data.length > 0) {
+          // Find the best match, preferably with synced lyrics
+          const bestMatch = data.find(track => track.syncedLyrics) || data[0];
+          if (bestMatch.syncedLyrics) {
+            setLyrics({ type: 'synced', lines: parseLrc(bestMatch.syncedLyrics) });
+          } else if (bestMatch.plainLyrics) {
+            setLyrics({ type: 'plain', text: bestMatch.plainLyrics });
+          }
+        }
+      } catch (err) {
+        console.error('Lyrics fetch error:', err);
+      } finally {
+        if (isActive) setLyricsLoading(false);
+      }
+    };
+    
+    fetchLyrics();
+    
+    return () => { isActive = false; };
+  }, [currentSong?.id]);
+
+  // Basic LRC parser
+  const parseLrc = (lrcString) => {
+    const lines = lrcString.split('\n');
+    const parsed = [];
+    const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
+    
+    for (const line of lines) {
+      const match = timeRegex.exec(line);
+      if (match) {
+        const min = parseInt(match[1], 10);
+        const sec = parseInt(match[2], 10);
+        const ms = parseInt(match[3], 10);
+        // Normalize ms to milliseconds depending on length
+        const msValue = match[3].length === 2 ? ms * 10 : ms;
+        const time = min * 60 + sec + msValue / 1000;
+        const text = line.replace(timeRegex, '').trim();
+        if (text) {
+          parsed.push({ time, text });
+        }
+      }
+    }
+    return parsed;
+  };
+
   const [devicePermission, setDevicePermission] = useState(localStorage.getItem('macfeed_device_permission') === 'granted');
   const [isScanning, setIsScanning] = useState(false);
 
@@ -530,7 +617,7 @@ export function MusicProvider({ children }) {
   };
 
   const value = {
-    playlist, currentSong, currentIdx, isOpen, setIsOpen, isExpanded, setIsExpanded,
+    lyrics, lyricsLoading, playlist, currentSong, currentIdx, isOpen, setIsOpen, isExpanded, setIsExpanded,
     playing, setPlaying, volume, setVolume, muted, setMuted, progress, currentTime,
     duration, audioRef, handleTimeUpdate, seek, next, prev, close, playVideo,
     isLocalPlayerOpen, setIsLocalPlayerOpen, activeLocalSong, setActiveLocalSong,

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Maximize2, X, Rewind, FastForward, ChevronLeft, ChevronRight, Settings2, SlidersHorizontal, ChevronDown, Palette } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Maximize2, X, Rewind, FastForward, ChevronLeft, ChevronRight, Settings2, SlidersHorizontal, ChevronDown, Palette, Mic2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMusicPlayer } from '../context/MusicContext';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -57,6 +57,7 @@ export default React.memo(function MusicMiniPlayer() {
   const miniPlayerRef = useRef(null);
   const [showTopBar, setShowTopBar] = useState(false);
   const [showBottomBar, setShowBottomBar] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
   const [themeIdx, setThemeIdx] = useState(0);
   const [miniPos, setMiniPos] = useState({ x: 24, y: 0 });
   const dragStateRef = useRef({ isDragging: false, startX: 0, startY: 0, startPosX: 0, startPosY: 0 });
@@ -66,7 +67,7 @@ export default React.memo(function MusicMiniPlayer() {
     playlist = [], currentSong = null, currentIdx = 0, isOpen = false,
     isExpanded = false, setIsExpanded = () => { }, playing = false,
     setPlaying = () => { }, volume = 1, setVolume = () => { }, progress = 0,
-    currentTime = 0, duration = 0, seek = () => { }, next = () => { },
+    lyrics, lyricsLoading, currentTime = 0, duration = 0, seek = () => { }, next = () => { },
     prev = () => { }, close = () => { }, playVideo = () => { },
     setCurrentTime = () => { }, audioRef
   } = ctx || {};
@@ -284,6 +285,22 @@ export default React.memo(function MusicMiniPlayer() {
   }, [playing, currentTime, isOpen, volume]);
 
   // Progress bar via direct DOM — avoids re-renders on every time tick
+  
+  // Auto-scroll lyrics
+  useEffect(() => {
+    if (showLyrics && lyrics?.type === 'synced') {
+      const container = document.getElementById('lyrics-container');
+      if (!container) return;
+      const activeLineIdx = lyrics.lines.findIndex((line, idx) => currentTime >= line.time && (idx === lyrics.lines.length - 1 || currentTime < lyrics.lines[idx+1].time));
+      if (activeLineIdx >= 0) {
+        const activeEl = container.children[activeLineIdx];
+        if (activeEl) {
+          activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+  }, [currentTime, showLyrics, lyrics]);
+
   const progressBarRef = useRef(null);
   useEffect(() => {
     if (progressBarRef.current) {
@@ -352,6 +369,7 @@ export default React.memo(function MusicMiniPlayer() {
                   </div>
                   <span className="text-[11px] font-black uppercase text-white/60 truncate max-w-[120px] mx-auto">{currentSong.title}</span>
                   <div className="flex items-center gap-1">
+                    <button onClick={() => setShowLyrics(!showLyrics)} className={`p-1.5 rounded-full outline-none transition-colors ${showLyrics ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-white/50 hover:text-white'}`}><Mic2 className="w-3.5 h-3.5" /></button>
                     <button onClick={() => setThemeIdx(p => (p + 1) % themes.length)} className="p-1.5 hover:bg-white/10 rounded-full text-white/50 hover:text-white outline-none"><Palette className="w-3.5 h-3.5" /></button>
                     <button onClick={handleMinimize} className="p-1.5 hover:bg-white/10 rounded-full text-white/50 hover:text-white outline-none"><Maximize2 className="w-3.5 h-3.5 rotate-180" /></button>
                     <button onClick={handleClose} className="p-1.5 hover:bg-red-500/20 rounded-full text-red-500/50 hover:text-red-500 outline-none"><X className="w-4 h-4" /></button>
@@ -361,8 +379,46 @@ export default React.memo(function MusicMiniPlayer() {
             )}
           </AnimatePresence>
 
-          {/* SWIPER CAROUSEL */}
-          <div className="relative z-10 w-full">
+          
+          {/* LYRICS VIEW */}
+          <AnimatePresence>
+            {showLyrics && (
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 50 }}
+                className="absolute inset-0 z-40 flex flex-col pt-24 pb-32 px-6 md:px-20 bg-black/60 backdrop-blur-2xl overflow-hidden"
+              >
+                {lyricsLoading ? (
+                  <div className="flex-1 flex items-center justify-center text-white/50 font-bold">Loading lyrics...</div>
+                ) : lyrics ? (
+                  <div className="flex-1 overflow-y-auto custom-scrollbar-hide flex flex-col gap-6" id="lyrics-container">
+                    {lyrics.type === 'synced' ? (
+                      lyrics.lines.map((line, idx) => {
+                        const isActive = currentTime >= line.time && (idx === lyrics.lines.length - 1 || currentTime < lyrics.lines[idx+1].time);
+                        // Auto-scroll logic could be added here
+                        return (
+                          <div key={idx} className={`text-2xl md:text-4xl font-black transition-all duration-300 cursor-pointer hover:text-white ${isActive ? 'text-white scale-105' : 'text-white/30'}`} onClick={() => handleSeek(line.time)}>
+                            {line.text}
+                          </div>
+                        )
+                      })
+                    ) : (
+                      <div className="text-xl md:text-3xl font-bold text-white/80 whitespace-pre-wrap leading-relaxed">
+                        {lyrics.text}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-white/50 font-bold">No lyrics available</div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* SWIPER CAROUSEL (Hide when lyrics shown) */}
+
+          <div className={`relative z-10 w-full transition-opacity duration-500 ${showLyrics ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <Swiper
               ref={swiperRef}
               effect="coverflow"
