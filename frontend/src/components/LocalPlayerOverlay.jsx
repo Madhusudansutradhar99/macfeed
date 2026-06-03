@@ -7,7 +7,7 @@ import {
     Sliders, PictureInPicture, VolumeX, SkipBack, SkipForward,
     Repeat, Check, X, ChevronRight, Minimize2, MoreHorizontal, MoreVertical,
     Layout, RefreshCcw, ZoomIn, Type, Palette, Shield, Zap,
-    Keyboard, FileText, Download, List, Settings2
+    Keyboard, FileText, Download, List, Settings2, Mic, Globe
 } from 'lucide-react';
 import { useMusicPlayer } from '../context/MusicContext';
 import { Filesystem } from '@capacitor/filesystem';
@@ -151,6 +151,145 @@ function LocalPlayerOverlay() {
     const [forceLandscape, setForceLandscape] = useState(false);
     const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
     const [quickMenuData, setQuickMenuData] = useState(null);
+
+    // --- Auto Dub States ---
+    const [isDubbing, setIsDubbing] = useState(false);
+    const [dubLanguage, setDubLanguage] = useState('Hindi');
+    const [dubStatus, setDubStatus] = useState(null);
+    const [showDubMenu, setShowDubMenu] = useState(false);
+    const dubAudioRef = useRef(null);
+    const DUB_LANGUAGES = ['Hindi', 'Spanish', 'French', 'Japanese', 'German', 'Telugu', 'Tamil'];
+    
+    const handleStartDubbing = useCallback((lang) => {
+        setDubLanguage(lang);
+        setShowDubMenu(false);
+        setIsDubbing(true);
+        setDubStatus('Analyzing Audio & Voice Tone...');
+        
+        if (videoRef.current) {
+            videoRef.current.muted = true;
+            setIsMuted(true);
+        }
+        
+        // ------------------------------------------------------------------
+        // NETWORK-BASED AI DUBBING: WebSocket Connection to Python Backend
+        // ------------------------------------------------------------------
+        const ws = new WebSocket('ws://localhost:8000/ws/dub');
+        ws.onopen = () => {
+            ws.send(JSON.stringify({ language: lang }));
+            setDubStatus('Connected to AI GPU Server. Syncing...');
+        };
+
+        ws.onmessage = async (event) => {
+            if (typeof event.data === 'string') {
+                const data = JSON.parse(event.data);
+                if (data.status === 'CONNECTED') {
+                    setDubStatus(`Live Dubbing Active (${lang})`);
+                    setTimeout(() => setDubStatus(null), 3000);
+                }
+            } else if (event.data instanceof Blob) {
+                // Receive dubbed audio chunks from Python Server and play them!
+                const arrayBuffer = await event.data.arrayBuffer();
+                
+                // Initialize Web Audio API to play the dubbed chunk
+                if (!dubAudioRef.current) {
+                    dubAudioRef.current = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const audioCtx = dubAudioRef.current;
+                
+                try {
+                    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                    const source = audioCtx.createBufferSource();
+                    source.buffer = audioBuffer;
+                    source.connect(audioCtx.destination);
+                    source.start(0);
+                } catch (err) {
+                    console.warn("Failed to decode dubbed chunk:", err);
+                }
+            }
+        };
+
+        ws.onerror = () => {
+            setDubStatus('Server Offline. Run ai_dub_server.py');
+            setTimeout(() => setDubStatus(null), 4000);
+            setIsDubbing(false);
+            if (videoRef.current) {
+                videoRef.current.muted = false;
+                setIsMuted(false);
+            }
+        };
+
+        ws.onclose = () => {
+            setIsDubbing(false);
+            setDubStatus(null);
+        };
+        
+        // Save ws to a ref so we can close it later
+        window._dubWs = ws;
+        
+        
+        // ------------------------------------------------------------------
+        // REAL AUDIO EXTRACTION via MediaRecorder
+        // ------------------------------------------------------------------
+        let mediaRecorder = null;
+        let audioStream = null;
+
+        if (videoRef.current && 'captureStream' in videoRef.current) {
+            try {
+                // Get the audio track from the playing video
+                audioStream = videoRef.current.captureStream();
+                const audioTracks = audioStream.getAudioTracks();
+                
+                if (audioTracks.length > 0) {
+                    const audioOnlyStream = new MediaStream([audioTracks[0]]);
+                    
+                    // Use a supported mime type (webm is usually default for Chrome)
+                    const options = { mimeType: 'audio/webm' };
+                    mediaRecorder = new MediaRecorder(audioOnlyStream, options);
+                    
+                    mediaRecorder.ondataavailable = async (e) => {
+                        if (e.data.size > 0 && window._dubWs && window._dubWs.readyState === WebSocket.OPEN) {
+                            // Send the actual webm blob to the python backend
+                            window._dubWs.send(e.data);
+                        }
+                    };
+                    
+                    // Request data every 4 seconds to create translatable chunks
+                    mediaRecorder.start(4000); 
+                    window._dubMediaRecorder = mediaRecorder;
+                } else {
+                    setDubStatus('No audio track found in video.');
+                }
+            } catch (err) {
+                console.warn("captureStream error:", err);
+            }
+        } else {
+            // Fallback for browsers that don't support captureStream on video elements
+            console.warn("captureStream not supported.");
+        }
+
+
+    }, [setIsMuted]);
+
+    const handleStopDubbing = useCallback(() => {
+        setIsDubbing(false);
+        setDubStatus(null);
+        setShowDubMenu(false);
+        if (videoRef.current) {
+            videoRef.current.muted = false;
+            setIsMuted(false);
+        }
+        if (window._dubWs) {
+            window._dubWs.close();
+            window._dubWs = null;
+        }
+
+        if (window._dubMediaRecorder) {
+            try { window._dubMediaRecorder.stop(); } catch(e){}
+            window._dubMediaRecorder = null;
+        }
+    }, [setIsMuted]);
+
 
     useEffect(() => {
         const handleResize = () => setIsMobileView(window.innerWidth < 768);
@@ -1054,6 +1193,29 @@ function LocalPlayerOverlay() {
                                 >
                                     <Monitor size={18} />
                                 </button>
+                                <div className="relative flex items-center">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); setShowDubMenu(!showDubMenu); setShowSettings(false); }} 
+                                        className={`w-10 h-10 rounded-full bg-white/10 flex items-center justify-center relative ${isDubbing ? 'text-cyan-400 border border-cyan-400/50' : 'text-white'}`}
+                                    >
+                                        <Mic size={18} />
+                                        {isDubbing && <span className="absolute top-2 right-2 w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></span>}
+                                    </button>
+                                    
+                                    {/* Language Badge */}
+                                    <AnimatePresence>
+                                        {isDubbing && (
+                                            <motion.div
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: -10 }}
+                                                className="absolute right-full mr-3 whitespace-nowrap bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 text-xs font-black uppercase tracking-widest px-2 py-1 rounded-md"
+                                            >
+                                                {dubLanguage}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                                 <button onClick={handleCapture} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white">
                                     <Camera size={18} />
                                 </button>
@@ -1088,7 +1250,65 @@ function LocalPlayerOverlay() {
                     )}
                 </AnimatePresence>
 
-                {/* BOTTOM SECTION */}
+                
+                {/* AUTO DUB PROCESSING HUD */}
+                <AnimatePresence>
+                    {isDubbing && dubStatus && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="absolute top-24 left-1/2 -translate-x-1/2 z-[600] pointer-events-none"
+                        >
+                            <div className="px-6 py-3 rounded-2xl bg-black/80 backdrop-blur-md border border-cyan-500/30 flex items-center gap-4 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
+                                <div className="relative flex h-4 w-4">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-4 w-4 bg-cyan-500"></span>
+                                </div>
+                                <span className="text-cyan-400 font-bold tracking-widest text-sm uppercase">{dubStatus}</span>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+
+                {/* AUTO DUB MENU */}
+                <AnimatePresence>
+                    {showDubMenu && (
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="absolute bottom-32 right-10 z-[700] w-64 bg-black/90 backdrop-blur-2xl border border-white/10 rounded-3xl p-4 shadow-2xl"
+                        >
+                            <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
+                                <div className="flex items-center gap-2">
+                                    <Globe size={18} className="text-cyan-400" />
+                                    <span className="text-white font-bold">Auto Dub</span>
+                                </div>
+                                {isDubbing && (
+                                    <button onClick={handleStopDubbing} className="text-xs px-3 py-1 bg-red-500/20 text-red-400 rounded-full hover:bg-red-500/40">
+                                        Turn Off
+                                    </button>
+                                )}
+                            </div>
+                            <div className="max-h-60 overflow-y-auto space-y-2 custom-scrollbar pr-2">
+                                {DUB_LANGUAGES.map(lang => (
+                                    <button
+                                        key={lang}
+                                        onClick={() => handleStartDubbing(lang)}
+                                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${dubLanguage === lang && isDubbing ? 'bg-cyan-500/20 border border-cyan-500/50 text-cyan-400' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}
+                                    >
+                                        <span className="font-medium">{lang}</span>
+                                        {dubLanguage === lang && isDubbing && <Check size={16} />}
+                                    </button>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+{/* BOTTOM SECTION */}
                 <AnimatePresence>
                     {showControls && !isLocked && (
                         <motion.div
