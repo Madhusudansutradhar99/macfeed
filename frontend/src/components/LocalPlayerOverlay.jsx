@@ -160,141 +160,83 @@ function LocalPlayerOverlay() {
     const dubAudioRef = useRef(null);
     const DUB_LANGUAGES = ['Hindi', 'Spanish', 'French', 'Japanese', 'German', 'Telugu', 'Tamil'];
     
-    const handleStartDubbing = useCallback((lang) => {
+    const handleStartDubbing = useCallback(async (lang) => {
         setDubLanguage(lang);
-        // setShowDubMenu(false);
         setIsDubbing(true);
-        setDubStatus('Analyzing Audio & Voice Tone...');
+        setDubStatus('Uploading and Processing Video for AI Dubbing...');
         
-        if (videoRef.current) {
-            videoRef.current.muted = true;
-            setIsMuted(true);
+        try {
+            if (videoRef.current) {
+                videoRef.current.pause();
+                setPlaying(false);
+            }
+
+            // Fetch the current video blob
+            let blob = null;
+            if (currentSong && currentSong.file) {
+                // If we have the actual File object stored in history or state
+                blob = currentSong.file;
+            } else if (videoRef.current && videoRef.current.src) {
+                const response = await fetch(videoRef.current.src);
+                blob = await response.blob();
+            }
+
+            if (!blob) {
+                setDubStatus('Could not find video file for dubbing.');
+                setIsDubbing(false);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', blob, 'video.mp4');
+            formData.append('target_language', lang);
+
+            setDubStatus('Processing Full Video AI Dubbing... This will take a while.');
+
+            const res = await fetch('http://localhost:8001/api/dub', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!res.ok) {
+                throw new Error("Dubbing API failed");
+            }
+
+            const dubbedBlob = await res.blob();
+            const dubbedUrl = URL.createObjectURL(dubbedBlob);
+
+            if (videoRef.current) {
+                // Replace video source with the fully dubbed version!
+                videoRef.current.src = dubbedUrl;
+                videoRef.current.load();
+                videoRef.current.play();
+                setPlaying(true);
+            }
+
+            setDubStatus('Dubbing Applied successfully!');
+            setTimeout(() => setDubStatus(null), 4000);
+            
+            // Note: In batch mode, we don't duck audio in the player anymore, 
+            // because the backend already mixed the dubbed audio into the new video!
+            if (videoRef.current) {
+                videoRef.current.volume = 1.0; 
+            }
+
+        } catch (error) {
+            console.error("Dubbing Error:", error);
+            setDubStatus('Dubbing failed or server is offline.');
+            setIsDubbing(false);
+            setTimeout(() => setDubStatus(null), 4000);
         }
-        
-        // ------------------------------------------------------------------
-        // NETWORK-BASED AI DUBBING: WebSocket Connection to Python Backend
-        // ------------------------------------------------------------------
-        const ws = new WebSocket('ws://localhost:8000/ws/dub');
-        ws.onopen = () => {
-            ws.send(JSON.stringify({ language: lang }));
-            setDubStatus('Connected to AI GPU Server. Syncing...');
-        };
-
-        ws.onmessage = async (event) => {
-            if (typeof event.data === 'string') {
-                const data = JSON.parse(event.data);
-                if (data.status === 'CONNECTED') {
-                    setDubStatus(`Live Dubbing Active (${lang})`);
-                    setTimeout(() => setDubStatus(null), 3000);
-                }
-            } else if (event.data instanceof Blob) {
-                // Receive dubbed audio chunks from Python Server and play them!
-                const arrayBuffer = await event.data.arrayBuffer();
-                
-                // Initialize Web Audio API to play the dubbed chunk
-                if (!dubAudioRef.current) {
-                    dubAudioRef.current = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                const audioCtx = dubAudioRef.current;
-                
-                try {
-                    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-                    const source = audioCtx.createBufferSource();
-                    source.buffer = audioBuffer;
-                    source.connect(audioCtx.destination);
-                    source.start(0);
-                } catch (err) {
-                    console.warn("Failed to decode dubbed chunk:", err);
-                }
-            }
-        };
-
-        ws.onerror = () => {
-            console.warn("WebSocket Server Offline. Falling back to Browser TTS Simulation.");
-            
-            // Keep the dubbing active state for UI purposes
-            setIsDubbing(true);
-            setDubLanguage(lang);
-            
-            // Show a visual processing HUD
-            setDubStatus('Analyzing Audio Tone (Simulation)...');
-            setTimeout(() => setDubStatus('Cloning Voice (Simulation)...'), 2000);
-            setTimeout(() => setDubStatus('Applying Lip Sync (Simulation)...'), 4000);
-            
-            setTimeout(() => {
-                setDubStatus('Live Dubbing Active');
-                if ('speechSynthesis' in window) {
-                    const utterance = new SpeechSynthesisUtterance(`Live dubbing initialized in ${lang}. Server is offline, using browser simulation.`);
-                    utterance.lang = lang === 'Hindi' ? 'hi-IN' : 'en-US';
-                    window.speechSynthesis.speak(utterance);
-                }
-                setTimeout(() => setDubStatus(null), 3000);
-            }, 6000);
-        };
-
-        ws.onclose = (event) => {
-            // Only reset if it was a clean close (e.g. stopped manually)
-            // If it was a failure, we let the simulation run.
-            if (event.wasClean || window._dubMediaRecorder) {
-                // Actually, just let handleStopDubbing manage state manually to be safe.
-                console.log("WebSocket closed.");
-            }
-        };
-        
-        // Save ws to a ref so we can close it later
-        window._dubWs = ws;
-        
-        
-        // ------------------------------------------------------------------
-        // REAL AUDIO EXTRACTION via MediaRecorder
-        // ------------------------------------------------------------------
-        let mediaRecorder = null;
-        let audioStream = null;
-
-        if (videoRef.current && 'captureStream' in videoRef.current) {
-            try {
-                // Get the audio track from the playing video
-                audioStream = videoRef.current.captureStream();
-                const audioTracks = audioStream.getAudioTracks();
-                
-                if (audioTracks.length > 0) {
-                    const audioOnlyStream = new MediaStream([audioTracks[0]]);
-                    
-                    // Use a supported mime type (webm is usually default for Chrome)
-                    const options = { mimeType: 'audio/webm' };
-                    mediaRecorder = new MediaRecorder(audioOnlyStream, options);
-                    
-                    mediaRecorder.ondataavailable = async (e) => {
-                        if (e.data.size > 0 && window._dubWs && window._dubWs.readyState === WebSocket.OPEN) {
-                            // Send the actual webm blob to the python backend
-                            window._dubWs.send(e.data);
-                        }
-                    };
-                    
-                    // Request data every 2 seconds to create faster translatable chunks
-                    mediaRecorder.start(2000); 
-                    window._dubMediaRecorder = mediaRecorder;
-                } else {
-                    setDubStatus('No audio track found in video.');
-                }
-            } catch (err) {
-                console.warn("captureStream error:", err);
-            }
-        } else {
-            // Fallback for browsers that don't support captureStream on video elements
-            console.warn("captureStream not supported.");
-        }
-
-
-    }, [setIsMuted]);
+    }, [currentSong, setPlaying]);
 
     const handleStopDubbing = useCallback(() => {
         setIsDubbing(false);
         setDubStatus(null);
         setShowDubMenu(false);
         if (videoRef.current) {
-            videoRef.current.muted = false;
-            setIsMuted(false);
+            // Restore original volume
+            videoRef.current.volume = window._originalVolume !== undefined ? window._originalVolume : 1.0;
         }
         if (window._dubWs) {
             window._dubWs.close();
