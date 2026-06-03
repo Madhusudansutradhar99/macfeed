@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
-import { 
-  Flame, Clapperboard, MonitorPlay, Sparkles, 
-  Smile, Trophy, Video, Ghost, Newspaper, Rocket 
+import {
+  Flame, Clapperboard, MonitorPlay, Sparkles,
+  Smile, Trophy, Video, Ghost, Newspaper, Rocket
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -31,8 +31,8 @@ const CategoryPills = ({ activeCategory, setCategory }) => {
             onClick={() => setCategory(cat.id)}
             className={`
               flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 whitespace-nowrap
-              ${isActive 
-                ? 'bg-accent text-on-accent border-accent shadow-lg' 
+              ${isActive
+                ? 'bg-accent text-on-accent border-accent shadow-lg'
                 : 'bg-secondary/40 border-primary text-secondary hover:bg-secondary/60 hover:text-primary'
               }
             `}

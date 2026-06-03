@@ -131,29 +131,33 @@ const VideoCard = memo(({ video }) => {
       onMouseLeave={() => setHovered(false)}
       onClick={handleClick}
     >
-      <div className="relative aspect-video rounded-[1.4rem] md:rounded-[1.8rem] overflow-hidden shadow-2xl transition-all duration-500 group-hover:shadow-[0_0_50px] group-hover:drop-shadow-lg" style={{ borderWidth: '2px', borderStyle: 'solid', borderColor: 'var(--accent-color)', backgroundColor: 'var(--bg-secondary)', '--accent': 'var(--accent-color)' }}>
-        <img src={video?.thumbnail_url || 'https://via.placeholder.com/640x360?text=No+Thumbnail'} alt={video?.title || 'Video'} loading="lazy" decoding="async" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105 group-hover:brightness-60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-50 group-hover:opacity-70 transition-opacity" />
+      <div className="relative aspect-video rounded-2xl md:rounded-[1.5rem] overflow-hidden shadow-2xl transition-all duration-500 group-hover:shadow-[0_20px_50px_-10px_rgba(var(--accent-rgb),0.5)] group-hover:-translate-y-1 glass" style={{ backgroundColor: 'transparent', '--accent': 'var(--accent-color)' }}>
+        <img src={video?.thumbnail_url || 'https://via.placeholder.com/640x360?text=No+Thumbnail'} alt={video?.title || 'Video'} loading="lazy" decoding="async" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-[0.4]" />
+        
+        {/* Premium glare overlay */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none transform -translate-x-[100%] group-hover:translate-x-[100%]" />
+        
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
-        <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-lg text-[9px] font-black text-white border border-white/10 shadow-lg">
+        <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-[6px] text-[10px] font-black tracking-wider text-white border border-white/20 shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
           {video.duration || '00:00'}
         </div>
 
         <AnimatePresence>
           {hovered && (
-            <motion.div initial={{ opacity: 0, scale: 0.3 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.3 }} transition={{ duration: 0.2 }} className="absolute inset-0 flex items-center justify-center">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(var(--accent-rgb),0.6)] border-2 border-white/30 transition-all" style={{ backgroundColor: 'var(--accent-color)' }}>
-                {video.category === 'Music' ? <Music className="w-7 h-7 text-white" /> : <Play className="w-7 h-7 text-white fill-white ml-1" />}
+            <motion.div initial={{ opacity: 0, scale: 0.5, rotate: -15 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} exit={{ opacity: 0, scale: 0.5, rotate: 15 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="absolute inset-0 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(var(--accent-rgb),0.8)] border-[3px] border-white/50 backdrop-blur-md bg-white/10 transition-all">
+                {video.category === 'Music' ? <Music className="w-8 h-8 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" /> : <Play className="w-8 h-8 text-white fill-white ml-1 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" />}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      <div className="px-1">
-        <h3 className="text-primary font-black text-xs line-clamp-2 leading-snug group-hover:text-accent transition-colors duration-300 uppercase tracking-wider" style={{ '--accent': 'var(--accent-color)' }}>{video?.title || 'Untitled Video'}</h3>
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded-full border" style={{ color: 'var(--accent-color)', borderColor: 'var(--accent-color)', backgroundColor: 'var(--accent-color)', opacity: 0.12 }}>{video.category}</span>
+      <div className="px-2 pt-1">
+        <h3 className="text-primary font-bold text-[13px] line-clamp-2 leading-relaxed group-hover:text-accent transition-colors duration-300" style={{ '--accent': 'var(--accent-color)' }}>{video?.title || 'Untitled Video'}</h3>
+        <div className="flex items-center gap-2 mt-2.5">
+          <span className="text-[10px] font-bold tracking-wider px-2.5 py-1 rounded-md" style={{ color: 'var(--accent-color)', backgroundColor: 'rgba(var(--accent-rgb), 0.15)' }}>{video.category}</span>
         </div>
       </div>
     </motion.div>

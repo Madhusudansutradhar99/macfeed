@@ -1,0 +1,270 @@
+[
+  {
+    "_id": "o5n1bag",
+    "createdAt": "2026-06-03T05:45:39.559Z",
+    "updatedAt": "2026-06-03T06:18:11.220Z",
+    "isGroupChat": false,
+    "users": [
+      "user-admin",
+      "user-support"
+    ],
+    "chatName": "sender",
+    "latestMessage": {
+      "_modelName": "Message",
+      "_id": "x6ms1dk",
+      "createdAt": "2026-06-03T06:18:11.217Z",
+      "updatedAt": "2026-06-03T06:18:11.217Z",
+      "isRead": false,
+      "senderId": {
+        "_id": "user-admin",
+        "name": "MacFeed Admin",
+        "email": "admin@macfeed.com"
+      },
+      "content": "http://localhost:5173/#/chat?join=q1v3uw4",
+      "chat": {
+        "_id": "o5n1bag",
+        "createdAt": "2026-06-03T05:45:39.559Z",
+        "updatedAt": "2026-06-03T05:47:48.815Z",
+        "isGroupChat": false,
+        "users": [
+          {
+            "_id": "user-admin",
+            "name": "MacFeed Admin",
+            "email": "admin@macfeed.com"
+          },
+          {
+            "_id": "user-support",
+            "name": "Support Agent",
+            "email": "support@macfeed.com"
+          }
+        ],
+        "chatName": "sender",
+        "latestMessage": {
+          "_modelName": "Message",
+          "_id": "xy0w8vh",
+          "createdAt": "2026-06-03T05:47:48.811Z",
+          "updatedAt": "2026-06-03T05:47:48.811Z",
+          "isRead": false,
+          "senderId": {
+            "_id": "user-admin",
+            "name": "MacFeed Admin",
+            "email": "admin@macfeed.com"
+          },
+          "content": "tyggkgu",
+          "chat": {
+            "_id": "o5n1bag",
+            "createdAt": "2026-06-03T05:45:39.559Z",
+            "updatedAt": "2026-06-03T05:45:39.559Z",
+            "isGroupChat": false,
+            "users": [
+              {
+                "_id": "user-admin",
+                "name": "MacFeed Admin",
+                "email": "admin@macfeed.com"
+              },
+              {
+                "_id": "user-support",
+                "name": "Support Agent",
+                "email": "support@macfeed.com"
+              }
+            ],
+            "chatName": "sender"
+          },
+          "attachmentUrl": "",
+          "appTaskId": null
+        }
+      },
+      "attachmentUrl": "",
+      "appTaskId": null
+    }
+  },
+  {
+    "_id": "q1v3uw4",
+    "createdAt": "2026-06-03T05:45:53.902Z",
+    "updatedAt": "2026-06-03T06:25:41.467Z",
+    "isGroupChat": true,
+    "users": [
+      "user-tester",
+      "user-admin"
+    ],
+    "chatName": "mm",
+    "groupAdmin": "user-admin",
+    "latestMessage": {
+      "_modelName": "Message",
+      "_id": "w9jqk8t",
+      "createdAt": "2026-06-03T06:00:02.803Z",
+      "updatedAt": "2026-06-03T06:00:02.803Z",
+      "isRead": false,
+      "senderId": {
+        "_id": "user-admin",
+        "name": "MacFeed Admin",
+        "email": "admin@macfeed.com"
+      },
+      "content": "App review task: Install czxc & upload proof.",
+      "chat": {
+        "_id": "q1v3uw4",
+        "createdAt": "2026-06-03T05:45:53.902Z",
+        "updatedAt": "2026-06-03T05:59:09.839Z",
+        "isGroupChat": true,
+        "users": [
+          {
+            "_id": "user-support",
+            "name": "Support Agent",
+            "email": "support@macfeed.com"
+          },
+          {
+            "_id": "user-tester",
+            "name": "Beta Tester",
+            "email": "tester@macfeed.com"
+          },
+          {
+            "_id": "user-admin",
+            "name": "MacFeed Admin",
+            "email": "admin@macfeed.com"
+          }
+        ],
+        "chatName": "mm",
+        "groupAdmin": "user-admin",
+        "latestMessage": {
+          "_modelName": "Message",
+          "_id": "99gbe6d",
+          "createdAt": "2026-06-03T05:59:09.829Z",
+          "updatedAt": "2026-06-03T05:59:09.829Z",
+          "isRead": false,
+          "senderId": {
+            "_id": "user-admin",
+            "name": "MacFeed Admin",
+            "email": "admin@macfeed.com"
+          },
+          "content": "App review task: Install MacFeed Kids Cartoons & upload proof.",
+          "chat": {
+            "_id": "q1v3uw4",
+            "createdAt": "2026-06-03T05:45:53.902Z",
+            "updatedAt": "2026-06-03T05:48:59.910Z",
+            "isGroupChat": true,
+            "users": [
+              {
+                "_id": "user-support",
+                "name": "Support Agent",
+                "email": "support@macfeed.com"
+              },
+              {
+                "_id": "user-tester",
+                "name": "Beta Tester",
+                "email": "tester@macfeed.com"
+              },
+              {
+                "_id": "user-admin",
+                "name": "MacFeed Admin",
+                "email": "admin@macfeed.com"
+              }
+            ],
+            "chatName": "mm",
+            "groupAdmin": "user-admin"
+          },
+          "attachmentUrl": "",
+          "appTaskId": "app-macfeed-kids"
+        }
+      },
+      "attachmentUrl": "",
+      "appTaskId": "uxwkmvt"
+    }
+  },
+  {
+    "_id": "chat-review-portal-1",
+    "chatName": "Screenshot Review Panel",
+    "isGroupChat": true,
+    "users": [
+      "user-admin"
+    ],
+    "createdAt": "2026-06-03T06:18:25.990Z",
+    "updatedAt": "2026-06-03T06:20:48.427Z",
+    "isReviewChat": true,
+    "latestMessage": {
+      "_modelName": "Message",
+      "_id": "t3e9u2f",
+      "createdAt": "2026-06-03T06:20:48.425Z",
+      "updatedAt": "2026-06-03T06:20:48.425Z",
+      "isRead": false,
+      "senderId": {
+        "_id": "user-admin",
+        "name": "MacFeed Admin",
+        "email": "admin@macfeed.com"
+      },
+      "content": "hi",
+      "chat": {
+        "_id": "chat-review-portal-1",
+        "chatName": "Screenshot Review Panel",
+        "isGroupChat": true,
+        "users": [
+          {
+            "_id": "user-admin",
+            "name": "MacFeed Admin",
+            "email": "admin@macfeed.com"
+          }
+        ],
+        "createdAt": "2026-06-03T06:18:25.990Z",
+        "updatedAt": "2026-06-03T06:18:25.990Z",
+        "isReviewChat": true
+      },
+      "attachmentUrl": "",
+      "appTaskId": null
+    }
+  },
+  {
+    "_id": "nbpi6qp",
+    "createdAt": "2026-06-03T06:19:45.058Z",
+    "updatedAt": "2026-06-03T06:19:45.058Z",
+    "isGroupChat": false,
+    "users": [
+      "user-admin",
+      "uutb6zt"
+    ],
+    "chatName": "sender"
+  },
+  {
+    "_id": "agtq7xi",
+    "createdAt": "2026-06-03T06:19:53.473Z",
+    "updatedAt": "2026-06-03T06:22:24.357Z",
+    "isGroupChat": false,
+    "users": [
+      "user-admin",
+      "user-tester"
+    ],
+    "chatName": "sender",
+    "latestMessage": {
+      "_modelName": "Message",
+      "_id": "0702c7t",
+      "createdAt": "2026-06-03T06:22:24.355Z",
+      "updatedAt": "2026-06-03T06:22:24.355Z",
+      "isRead": false,
+      "senderId": {
+        "_id": "user-admin",
+        "name": "MacFeed Admin",
+        "email": "admin@macfeed.com"
+      },
+      "content": "http://localhost:5173/#/review?join=q1v3uw4",
+      "chat": {
+        "_id": "agtq7xi",
+        "createdAt": "2026-06-03T06:19:53.473Z",
+        "updatedAt": "2026-06-03T06:19:53.473Z",
+        "isGroupChat": false,
+        "users": [
+          {
+            "_id": "user-admin",
+            "name": "MacFeed Admin",
+            "email": "admin@macfeed.com"
+          },
+          {
+            "_id": "user-tester",
+            "name": "Beta Tester",
+            "email": "tester@macfeed.com"
+          }
+        ],
+        "chatName": "sender"
+      },
+      "attachmentUrl": "",
+      "appTaskId": null
+    }
+  }
+]

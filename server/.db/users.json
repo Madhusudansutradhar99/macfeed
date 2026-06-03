@@ -1,0 +1,48 @@
+[
+  {
+    "_id": "user-admin",
+    "name": "MacFeed Admin",
+    "email": "admin@macfeed.com",
+    "password": "$2b$10$TCkTMSlejYxQB4TJAecog.aV8RReVYabWClDAj.algbRBprz41QQC",
+    "role": "admin",
+    "phone": "+919999999999",
+    "totalEarnings": 10000,
+    "pendingAmount": 2500,
+    "withdrawnAmount": 7500,
+    "createdAt": "2026-06-03T04:35:11.783Z"
+  },
+  {
+    "_id": "user-support",
+    "name": "Support Agent",
+    "email": "support@macfeed.com",
+    "password": "$2b$10$TCkTMSlejYxQB4TJAecog.aV8RReVYabWClDAj.algbRBprz41QQC",
+    "role": "admin",
+    "phone": "+918888888888",
+    "totalEarnings": 0,
+    "pendingAmount": 0,
+    "withdrawnAmount": 0,
+    "createdAt": "2026-06-03T04:35:11.783Z"
+  },
+  {
+    "_id": "user-tester",
+    "name": "Beta Tester",
+    "email": "tester@macfeed.com",
+    "password": "$2b$10$TCkTMSlejYxQB4TJAecog.aV8RReVYabWClDAj.algbRBprz41QQC",
+    "role": "user",
+    "phone": "+917777777777",
+    "totalEarnings": 150,
+    "pendingAmount": 50,
+    "withdrawnAmount": 100,
+    "createdAt": "2026-06-03T04:35:11.783Z"
+  },
+  {
+    "_id": "uutb6zt",
+    "createdAt": "2026-06-03T05:16:11.710Z",
+    "updatedAt": "2026-06-03T05:16:11.710Z",
+    "name": "madhu",
+    "email": "7987474479@macfeed.com",
+    "password": "$2b$10$Q0QcQAY79TJf0fhpOt.aReYoIv9YNO0wC.Bi1kumGzttLH2b.NOM2",
+    "phone": "7987474479",
+    "role": "user"
+  }
+]

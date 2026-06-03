@@ -20,6 +20,31 @@ export default function Settings() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (confirm('WARNING: Are you sure you want to delete your account? This action is permanent and cannot be undone.')) {
+      try {
+        const apiHost = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const response = await fetch(`${apiHost}/auth/delete-account`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (response.ok) {
+          showToast('Account deleted successfully.', 'success');
+          logout();
+          setTimeout(() => {
+            window.location.href = '#/';
+          }, 1000);
+        } else {
+          showToast(data.error || 'Failed to delete account.', 'error');
+        }
+      } catch (e) {
+        showToast('Error connecting to authentication server.', 'error');
+      }
+    }
+  };
+
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] text-center p-6">
@@ -118,6 +143,17 @@ export default function Settings() {
                     <span className="font-black uppercase italic text-primary">Clear Local History</span>
                  </div>
                  <ChevronRight className="w-5 h-5 text-secondary" />
+              </button>
+
+              <button 
+                onClick={handleDeleteAccount}
+                className="w-full flex items-center justify-between p-6 bg-red-500/10 border border-red-500/30 rounded-3xl hover:bg-red-500 group transition-all"
+              >
+                 <div className="flex items-center gap-4">
+                    <Trash2 className="w-5 h-5 text-red-500 group-hover:text-white" />
+                    <span className="font-black uppercase italic text-red-500 group-hover:text-white">Delete My Account</span>
+                 </div>
+                 <ChevronRight className="w-5 h-5 text-red-500 group-hover:text-white" />
               </button>
            </section>
         </div>

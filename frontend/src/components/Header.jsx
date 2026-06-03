@@ -4,7 +4,7 @@ import { Search, Layout, User, Palette } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import ThemeToggle from './ThemeToggle';
+
 
 // ── L1 CACHE ──
 const CACHE_PREFIX = 'mf_search_';
@@ -142,9 +142,8 @@ export default function Header() {
   }, [location.pathname]);
 
   useEffect(() => {
-    const mainContent = document.getElementById('main-content');
-    const onScroll = (e) => {
-      const currentY = e.target.scrollTop;
+    const onScroll = () => {
+      const currentY = window.scrollY || document.documentElement.scrollTop;
 
       if (isFocused) {
         setIsHeaderVisible(true);
@@ -163,23 +162,20 @@ export default function Header() {
       lastScrollY.current = currentY;
     };
 
-    if (mainContent) {
-      mainContent.addEventListener('scroll', onScroll);
-      return () => mainContent.removeEventListener('scroll', onScroll);
-    }
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
   }, [isFocused]);
 
   const isSearchPage = location.pathname === '/search';
   const isHomePage = location.pathname === '/';
-  const showExpandedSearch = isHomePage || isFocused || query.trim().length > 0 || isSearchHovered;
+  const showExpandedSearch = isFocused || query.trim().length > 0 || isSearchHovered;
 
   return (
     <motion.header
       initial={{ y: -100 }}
       animate={{ y: isHeaderVisible ? 0 : -80 }}
       transition={{ duration: 0.28, ease: 'easeOut' }}
-      className="fixed top-0 left-0 right-0 h-[60px] z-[5000] flex items-center px-4 md:px-10 border-b border-white/5"
-      style={{ background: 'transparent' }}
+      className="fixed top-0 left-0 right-0 h-[70px] z-[5000] flex items-center px-4 md:px-10 glass-header"
     >
       <div className="flex items-center gap-3 shrink-0">
         {!isSearchPage && (
@@ -194,6 +190,26 @@ export default function Header() {
           </span>
           <span className="text-[7px] font-black px-1.5 py-0.5 rounded border" style={{ color: 'var(--accent-color)', borderColor: 'var(--accent-color)', backgroundColor: 'var(--accent-color)', opacity: 0.12 }}>v3.0.6</span>
         </Link>
+        {isHomePage && (
+          <div className="hidden lg:flex items-center gap-6 ml-8 text-[11px] font-black uppercase tracking-widest text-white/50">
+            <span 
+              className="hover:text-white transition-colors cursor-pointer"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('open-info-modal', {
+                  detail: {
+                    title: 'About MacFeed',
+                    content: 'MacFeed is the ultimate premium media and entertainment destination. We curate high-quality cartoons, movies, TV series, and independent music to provide an immersive, color-shifting aesthetic experience. Dive into our handpicked playlists or leverage our advanced Smart Search feature to find your next obsession.'
+                  }
+                }));
+              }}
+            >
+              About
+            </span>
+            <span className="hover:text-white transition-colors cursor-pointer" onClick={() => navigate('/movies')}>Marketplace</span>
+            <span className="hover:text-white transition-colors cursor-pointer" onClick={() => navigate('/music')}>For Artists</span>
+            <span className="hover:text-white transition-colors cursor-pointer" onClick={() => navigate('/playlists')}>Exhibitions</span>
+          </div>
+        )}
       </div>
 
       <div ref={dropdownRef} className="flex-grow flex justify-center max-w-2xl mx-auto px-4">
@@ -206,14 +222,15 @@ export default function Header() {
             setIsFocused(true);
             setTimeout(() => inputRef.current?.focus(), 0);
           }}
-          className={`relative flex items-center transition-all duration-300 px-3 md:px-4 py-1 md:py-2 rounded-xl ${isFocused ? 'shadow-[0_0_40px] drop-shadow-lg' : ''}`}
+          className={`relative flex items-center transition-all duration-300 px-3 md:px-4 py-2 rounded-2xl ${isFocused ? 'shadow-[0_0_40px] drop-shadow-lg' : ''}`}
           style={{
             width: showExpandedSearch ? '100%' : '56px',
-            borderWidth: '2px',
+            borderWidth: '1px',
             borderStyle: 'solid',
-            borderColor: 'var(--accent-color)',
-            boxShadow: isFocused ? `0 0 40px var(--accent-color)44` : 'none',
-            backgroundColor: 'transparent',
+            borderColor: isFocused ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)',
+            boxShadow: isFocused ? `0 0 30px rgba(var(--accent-rgb),0.3)` : '0 4px 20px rgba(0,0,0,0.2)',
+            backgroundColor: isFocused ? 'rgba(var(--bg-primary), 0.9)' : 'rgba(255,255,255,0.03)',
+            backdropFilter: 'blur(10px)',
             cursor: showExpandedSearch ? 'text' : 'pointer'
           }}
         >
@@ -238,7 +255,7 @@ export default function Header() {
         </motion.div>
         <AnimatePresence>
           {isFocused && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 15 }} exit={{ opacity: 0, y: 10 }} className="absolute top-full left-4 right-4 rounded-[1.5rem] shadow-2xl overflow-hidden z-[7000] mt-2" style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid rgba(255,255,255,0.10)' }}>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 15 }} exit={{ opacity: 0, y: 10 }} className="absolute top-full left-4 right-4 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[7000] mt-3 glass-panel">
               <div className="max-h-[60vh] overflow-y-auto no-scrollbar">
                 {results.length > 0 ? results.map((r, idx) => (
                   <div key={r.id + idx} onClick={() => handleResultClick(r)} className="flex items-center gap-4 px-6 py-4 group cursor-pointer transition-all border-b border-primary/5 last:border-0" style={{ backgroundColor: 'transparent' }}>
@@ -253,13 +270,15 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
-        <ThemeToggle />
         {user ? (
           <button onClick={() => navigate('/settings')} className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-80 transition-all duration-300 overflow-hidden p-0.5 active:scale-90 border-2" style={{ borderColor: 'var(--accent-color)', backgroundColor: 'transparent' }}>
             {user.picture ? <img src={user.picture} className="w-full h-full rounded-full object-cover" /> : <span className="font-black text-[12px]" style={{ color: 'var(--accent-color)' }}>{user.email?.[0]?.toUpperCase()}</span>}
           </button>
         ) : (
-          <button onClick={() => setAuthModalOpen(true)} className="px-5 py-2 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:scale-105 transition-all duration-300 active:scale-95" style={{ backgroundColor: 'var(--accent-color)' }}>SIGN IN</button>
+          <button onClick={() => setAuthModalOpen(true)} className="px-4 py-2 rounded-lg font-black text-[8px] md:text-[9px] uppercase tracking-widest shadow-[0_0_15px_rgba(var(--accent-rgb),0.3)] hover:shadow-[0_0_25px_rgba(var(--accent-rgb),0.55)] hover:scale-105 transition-all duration-300 active:scale-95 flex items-center gap-1.5" style={{ backgroundColor: 'var(--accent-color)', color: 'var(--text-on-accent, #ffffff)' }}>
+            <User className="w-3 h-3 md:w-3.5 md:h-3.5" />
+            {isHomePage ? 'SIGN UP / LOG IN' : 'SIGN IN'}
+          </button>
         )}
       </div>
     </motion.header>

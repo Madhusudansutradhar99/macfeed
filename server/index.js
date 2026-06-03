@@ -9,9 +9,31 @@ const { createClient } = require('@supabase/supabase-js');
 const { caching } = require('cache-manager');
 const { DiskStore } = require('cache-manager-fs-hash');
 const path = require('path');
+const http = require('http');
+const { Server } = require('socket.io');
+const connectDB = require('./config/db');
 require('dotenv').config();
 
+const authRoutes = require('./routes/auth');
+const appRoutes = require('./routes/apps');
+const reviewRoutes = require('./routes/reviews');
+const paymentRoutes = require('./routes/payments');
+const chatRoutes = require('./routes/chat');
+const chatSocket = require('./socket/chatSocket');
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: ['http://localhost:5173', 'http://localhost:3000', process.env.CLIENT_URL],
+    credentials: true
+  }
+});
+app.set('io', io);
+chatSocket(io);
+
+// Connect to MongoDB
+connectDB();
+
 const PORT = process.env.PORT || 5000;
 const YT_API_KEY = process.env.YOUTUBE_API_KEY;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -58,6 +80,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(cookieParser());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -164,17 +187,43 @@ app.post('/auth/delete-account', authLimiter, async (req, res) => {
 
   try {
     const user = JSON.parse(session);
+    const userId = user.userId || 'google_' + user.email.replace(/[^a-zA-Z0-9]/g, '');
     
-    // If it's a Supabase user, try to delete them (requires Service Role Key usually, but we can at least log them out and clear metadata)
-    // For now, we just clear the session and let them know the identity is removed from MacFeed
+    // 1. Delete from Mock database if file exists
+    const fs = require('fs');
+    const path = require('path');
+    const usersFile = path.join(__dirname, '.db/users.json');
+    if (fs.existsSync(usersFile)) {
+      try {
+        let users = JSON.parse(fs.readFileSync(usersFile, 'utf8'));
+        users = users.filter(u => u._id !== userId);
+        fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+      } catch (err) {
+        console.error('Failed to delete user from mock db file:', err);
+      }
+    }
+    
+    // 2. Delete from MongoDB if connection is active
+    const User = require('./models/User');
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState === 1) {
+      await User.findByIdAndDelete(userId);
+    }
+    
     res.clearCookie('macfeed_session');
-    res.json({ success: true, message: 'Account identity successfully removed from MacFeed.' });
+    res.json({ success: true, message: 'Account identity successfully removed.' });
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete account' });
   }
 });
 
 // ── API ROUTES ──
+
+app.use('/api/auth', authRoutes);
+app.use('/api/apps', appRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/chat', chatRoutes);
 
 // YouTube Search — 2-Layer Backend Cache
 app.get('/api/search', async (req, res) => {
@@ -453,6 +502,6 @@ app.get('/api/cache-stats', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

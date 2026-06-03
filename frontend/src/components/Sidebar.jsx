@@ -40,12 +40,12 @@ const DynamicNavItem = ({ item, active, onClick, forceExpand }) => {
           navigate(item.path);
         }
       }}
-      className={`absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-full cursor-pointer z-[2000] shadow-2xl will-change-transform
-        ${active ? 'text-white shadow-[0_0_20px_rgba(var(--accent-rgb),0.4)]' : 'backdrop-blur-xl hover:bg-primary/10 border border-primary/20'}
+      className={`absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-2xl cursor-pointer z-[2000] shadow-xl will-change-transform border border-white/5
+        ${active ? 'text-white' : 'hover:bg-white/10 glass'}
       `}
-      style={active ? { backgroundColor: 'var(--accent-color)', boxShadow: '0 0 20px var(--accent-color)44' } : { backgroundColor: 'transparent' }}
+      style={active ? { background: 'linear-gradient(135deg, rgba(var(--accent-rgb), 0.9), rgba(var(--accent-rgb), 0.6))', boxShadow: '0 8px 20px -5px rgba(var(--accent-rgb),0.5)' } : {}}
       animate={{ width: isExpanded ? 200 : 44 }}
-      transition={{ type: 'tween', ease: 'circOut', duration: 0.12 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
     >
       <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0">
         <item.icon className="w-5 h-5" style={{ color: iconColor }} />
@@ -144,21 +144,20 @@ export default function Sidebar() {
                  <DynamicNavItem item={{ label: 'Admin', icon: ShieldCheck, path: '/admin' }} active={location.pathname === '/admin'} onClick={() => handleItemClick({ label: 'Admin', icon: ShieldCheck, path: '/admin' })} forceExpand={isSidebarOpen} />
                )}
             </div>
-            <div className="relative h-10 md:h-11 w-full shrink-0">
+            <div className="relative h-10 md:h-11 w-full shrink-0 mt-2">
                <motion.div
                   onMouseEnter={() => setShowUserMenu(true)} 
                   onMouseLeave={() => setShowUserMenu(false)}
                   onClick={() => user ? navigate('/settings') : setAuthModalOpen(true)}
-                  className="absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-full cursor-pointer overflow-hidden z-50 border shadow-lg will-change-transform"
-                  style={{ backgroundColor: 'transparent', borderColor: 'var(--accent-color)' }}
+                  className="absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-2xl cursor-pointer overflow-hidden z-50 shadow-lg will-change-transform glass border border-white/10"
                   animate={{ width: isSidebarOpen || showUserMenu ? 200 : 44 }}
-                  transition={{ type: 'tween', ease: 'circOut', duration: 0.12 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                >
                   <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0"><User className="w-5 h-5" style={{ color: 'var(--accent-color)' }} /></div>
                   <motion.span 
                     animate={{ opacity: isSidebarOpen || showUserMenu ? 1 : 0 }}
-                    transition={{ duration: 0.12 }}
-                    className="text-[10px] font-black uppercase text-primary pr-4"
+                    transition={{ duration: 0.15 }}
+                    className="text-[12px] font-bold tracking-wide text-primary pr-4"
                   >
                     {user ? 'Profile' : 'Sign In'}
                   </motion.span>

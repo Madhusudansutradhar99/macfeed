@@ -19,20 +19,28 @@ export default function AdBanner({ position = 'corner' }) {
 
   useEffect(() => {
     async function fetchAd() {
-      // Temporarily bypass Supabase fetch to prevent 404 console errors
-      // if the 'ads' table does not exist in the user's database.
-      /*
       try {
         const { data, error } = await supabase
           .from('ads')
-          ...
-      } catch (err) { ... }
-      */
-      setAd(FALLBACK_AD);
-      setLoaded(true);
+          .select('*')
+          .eq('is_active', true)
+          .eq('position', position);
+
+        if (data && data.length > 0) {
+          // Choose a random active ad for this position
+          const randomIndex = Math.floor(Math.random() * data.length);
+          setAd(data[randomIndex]);
+        } else {
+          setAd(FALLBACK_AD);
+        }
+      } catch (err) {
+        setAd(FALLBACK_AD);
+      } finally {
+        setLoaded(true);
+      }
     }
     fetchAd();
-  }, []);
+  }, [position]);
 
   if (!loaded || !ad || dismissed) return null;
 

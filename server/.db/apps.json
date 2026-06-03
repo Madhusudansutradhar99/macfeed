@@ -1,0 +1,62 @@
+[
+  {
+    "_id": "app-macfeed-pro",
+    "name": "MacFeed Pro Streamer",
+    "playStoreLink": "https://play.google.com/store/apps/details?id=com.macfeed.pro",
+    "icon": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=128&h=128&fit=crop",
+    "rewardAmount": 25,
+    "instructions": "Install MacFeed Pro Streamer, log in using your Google account, browse movies for 5 minutes, and leave a detailed 5-star review with a screenshot on the Play Store.",
+    "totalReviews": 12,
+    "isActive": true,
+    "targetType": "group",
+    "createdAt": "2026-06-03T04:27:37.849Z"
+  },
+  {
+    "_id": "app-macfeed-music",
+    "name": "MacFeed Retro Music",
+    "playStoreLink": "https://play.google.com/store/apps/details?id=com.macfeed.music",
+    "icon": "https://images.unsplash.com/photo-1614680376593-902f74fa0d41?w=128&h=128&fit=crop",
+    "rewardAmount": 15,
+    "instructions": "Download the app, play at least 3 retro radio stations, and leave a review explaining your experience. Upload screenshot of your review for confirmation.",
+    "totalReviews": 8,
+    "isActive": true,
+    "targetType": "group",
+    "createdAt": "2026-06-03T03:27:37.852Z"
+  },
+  {
+    "_id": "app-macfeed-kids",
+    "name": "MacFeed Kids Cartoons",
+    "playStoreLink": "https://play.google.com/store/apps/details?id=com.macfeed.kids",
+    "icon": "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=128&h=128&fit=crop",
+    "rewardAmount": 10,
+    "instructions": "Install and test child filters in the settings. Provide feedback on ease of use. Upload proof of Google Play review submission.",
+    "totalReviews": 4,
+    "isActive": true,
+    "targetType": "group",
+    "createdAt": "2026-06-03T02:27:37.852Z"
+  },
+  {
+    "_id": "l457f6g",
+    "createdAt": "2026-06-03T05:58:49.457Z",
+    "updatedAt": "2026-06-03T05:58:49.457Z",
+    "name": "macc",
+    "playStoreLink": "https://play.google.com/store/apps/details?id=com.samco.app",
+    "icon": null,
+    "rewardAmount": 8,
+    "instructions": "dcnsjnc",
+    "createdBy": "user-admin",
+    "targetType": "group"
+  },
+  {
+    "_id": "uxwkmvt",
+    "createdAt": "2026-06-03T05:59:59.876Z",
+    "updatedAt": "2026-06-03T05:59:59.876Z",
+    "name": "czxc",
+    "playStoreLink": "https://play.google.com/store/apps/details?id=com.samco.app",
+    "icon": null,
+    "rewardAmount": 52,
+    "instructions": "zcvd",
+    "createdBy": "user-admin",
+    "targetType": "group"
+  }
+]

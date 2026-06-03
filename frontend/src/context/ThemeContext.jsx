@@ -3,13 +3,13 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'blue-yellow');
+  const [theme, setTheme] = useState('black-white');
 
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark', 'blue', 'blue-yellow', 'white-black', 'orange-green', 'black-red', 'yellow-blue', 'black-white');
-    root.classList.add(theme);
-    localStorage.setItem('theme', theme);
+    root.classList.add('black-white');
+    localStorage.setItem('theme', 'black-white');
 
     // Update theme-color meta tag for mobile status bar/browser bar
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
@@ -19,25 +19,15 @@ export const ThemeProvider = ({ children }) => {
       document.head.appendChild(metaThemeColor);
     }
     
-    const colors = {
-      'black-white': '#000000',
-      'white-black': '#ffffff',
-      'blue-yellow': '#E0F2FE'
-    };
-    metaThemeColor.setAttribute('content', colors[theme] || colors['black-white']);
-  }, [theme]);
+    metaThemeColor.setAttribute('content', '#000000');
+  }, []);
 
   const toggleTheme = () => {
-    setTheme((prev) => {
-      const allThemes = ['black-white', 'white-black', 'blue-yellow'];
-      let nextIdx = (allThemes.indexOf(prev) + 1) % allThemes.length;
-      if (nextIdx < 0) nextIdx = 0;
-      return allThemes[nextIdx];
-    });
+    // Disabled
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme: 'black-white', toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

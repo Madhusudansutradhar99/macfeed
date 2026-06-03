@@ -771,7 +771,7 @@ export default function Admin() {
             onClick={handleLogin}
             disabled={!user}
             className="w-full h-16 font-black uppercase text-[11px] tracking-[0.4em] rounded-2xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-4 hover:brightness-110 disabled:opacity-50 disabled:grayscale"
-            style={{ backgroundColor: 'var(--accent-color)', color: 'var(--bg-primary)' }}
+            style={{ backgroundColor: 'var(--accent-color)', color: 'var(--text-on-accent, #ffffff)' }}
           >
             AUTHORIZE ACCESS <ArrowRight className="w-5 h-5" />
           </button>

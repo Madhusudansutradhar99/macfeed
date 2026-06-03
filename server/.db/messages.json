@@ -1,0 +1,35 @@
+[
+  {
+    "_id": "xy0w8vh",
+    "createdAt": "2026-06-03T05:47:48.811Z",
+    "updatedAt": "2026-06-03T05:47:48.811Z",
+    "isRead": false,
+    "senderId": "user-admin",
+    "content": "tyggkgu",
+    "chat": "o5n1bag",
+    "attachmentUrl": "",
+    "appTaskId": null
+  },
+  {
+    "_id": "x6ms1dk",
+    "createdAt": "2026-06-03T06:18:11.217Z",
+    "updatedAt": "2026-06-03T06:18:11.217Z",
+    "isRead": false,
+    "senderId": "user-admin",
+    "content": "http://localhost:5173/#/chat?join=q1v3uw4",
+    "chat": "o5n1bag",
+    "attachmentUrl": "",
+    "appTaskId": null
+  },
+  {
+    "_id": "t3e9u2f",
+    "createdAt": "2026-06-03T06:20:48.425Z",
+    "updatedAt": "2026-06-03T06:20:48.425Z",
+    "isRead": false,
+    "senderId": "user-admin",
+    "content": "hi",
+    "chat": "chat-review-portal-1",
+    "attachmentUrl": "",
+    "appTaskId": null
+  }
+]

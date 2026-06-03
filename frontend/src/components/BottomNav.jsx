@@ -20,8 +20,8 @@ export default function BottomNav() {
   };
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[6000] pb-[env(safe-area-inset-bottom)]">
-      <div className="relative flex items-center justify-between px-8 h-[70px] bg-transparent">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[6000] pb-[env(safe-area-inset-bottom)] glass-header" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: 'none' }}>
+      <div className="relative flex items-center justify-between px-10 h-[75px] bg-transparent">
         
         {/* Left: Library */}
         <button
