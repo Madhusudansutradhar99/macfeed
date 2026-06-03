@@ -57,6 +57,19 @@ export function MusicProvider({ children }) {
   // ── DEVICE MUSIC STATE ──────────────────────────────────────────────────
   const [deviceSongs, setDeviceSongs] = useState([]);
 
+  const [devicePermission, setDevicePermission] = useState(localStorage.getItem('macfeed_device_permission') === 'granted');
+  const [isScanning, setIsScanning] = useState(false);
+
+  const audioRef = useRef();
+  const currentSong = React.useMemo(() => {
+    const raw = (playlist && playlist[currentIdx]) || null;
+    if (raw?.source === 'device') {
+      const fresh = deviceSongs.find(s => s.id === raw.id);
+      if (fresh) return fresh;
+    }
+    return raw;
+  }, [playlist, currentIdx, deviceSongs]);
+
   // ── LYRICS STATE ────────────────────────────────────────────────────────
   const [lyrics, setLyrics] = useState(null);
   const [lyricsLoading, setLyricsLoading] = useState(false);
@@ -143,18 +156,6 @@ export function MusicProvider({ children }) {
     return parsed;
   };
 
-  const [devicePermission, setDevicePermission] = useState(localStorage.getItem('macfeed_device_permission') === 'granted');
-  const [isScanning, setIsScanning] = useState(false);
-
-  const audioRef = useRef();
-  const currentSong = React.useMemo(() => {
-    const raw = (playlist && playlist[currentIdx]) || null;
-    if (raw?.source === 'device') {
-      const fresh = deviceSongs.find(s => s.id === raw.id);
-      if (fresh) return fresh;
-    }
-    return raw;
-  }, [playlist, currentIdx, deviceSongs]);
 
 
 
