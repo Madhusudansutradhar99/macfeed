@@ -67,6 +67,8 @@ const HexVideoCard = ({ video, index, isFeatured }) => {
           loading="lazy"
           className="w-full h-full object-cover brightness-[0.8] group-hover:brightness-110 transition-all duration-1000 scale-110 group-hover:scale-100"
         />
+<img src="/watermark.png" className="absolute top-2 right-2 w-6 h-6 z-[60] opacity-80 pointer-events-none drop-shadow-md mix-blend-plus-lighter" alt="watermark" />
+
         
         {/* Sharp Gradients */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-95" />

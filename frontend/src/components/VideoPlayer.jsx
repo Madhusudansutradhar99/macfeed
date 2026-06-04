@@ -701,7 +701,9 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             onEnded={() => { setPlaying(false); onNext?.(); }}
             onError={() => onError?.('This video could not be loaded.')}
           />
-        )}
+        
+<img src="/watermark.png" className="absolute top-4 right-4 w-10 h-10 opacity-60 z-[90] w-6 h-6 z-[60] opacity-80 pointer-events-none drop-shadow-md mix-blend-plus-lighter" alt="watermark" />
+)}
 
         {/* NATIVE UI SHIELD: Hides YT controls in normal view, disappears in fullscreen */}
         {!isFullscreen && (

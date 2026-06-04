@@ -47,6 +47,8 @@ const VideoRenderer = memo(({ videoRef, aspectRatio, handleVideoMetadata, setIsL
         >
             {activeSubtitle && <track src={activeSubtitle} kind="subtitles" srcLang="en" label="English" default />}
         </video>
+<img src="/watermark.png" className="absolute top-4 right-4 w-10 h-10 opacity-60 z-[90] w-6 h-6 z-[60] opacity-80 pointer-events-none drop-shadow-md mix-blend-plus-lighter" alt="watermark" />
+
     );
 });
 
