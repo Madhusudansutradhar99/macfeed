@@ -53,7 +53,7 @@ export default function SearchResults() {
   const q = params.get('q') || '';
 
   const performSearch = useCallback(async (query) => {
-    if (!query) return;
+    
     setLoading(true);
     setError('');
     setEmpty(false);
