@@ -499,7 +499,7 @@ export default React.memo(function MusicMiniPlayer() {
                   <div className="flex-1 flex items-center gap-2 md:gap-3 px-3 md:px-10 w-full min-w-0">
                     <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-white/10">
                       <img src={currentSong?.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover" alt="" />
-<img src="/watermark.png" className="absolute top-2 right-2 w-6 h-6 z-[60] opacity-80 pointer-events-none drop-shadow-md mix-blend-plus-lighter" alt="watermark" />
+<img src="/watermark.png" className="absolute top-2 right-2 w-7 h-7 z-[60] opacity-100 pointer-events-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" alt="watermark" />
 
                     </div>
                     <div className="flex-1 min-w-0">

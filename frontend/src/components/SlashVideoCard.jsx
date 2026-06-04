@@ -33,7 +33,7 @@ const SlashVideoCard = ({ video, index }) => {
             alt={video.title}
             className={`w-full h-full object-cover transition-all duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'} brightness-[0.8] group-hover:brightness-110 group-hover:scale-105`}
           />
-<img src="/watermark.png" className="absolute top-2 right-2 w-6 h-6 z-[60] opacity-80 pointer-events-none drop-shadow-md mix-blend-plus-lighter" alt="watermark" />
+<img src="/watermark.png" className="absolute top-2 right-2 w-7 h-7 z-[60] opacity-100 pointer-events-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" alt="watermark" />
 
           
           {/* Gradients */}

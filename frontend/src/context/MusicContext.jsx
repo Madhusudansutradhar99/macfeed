@@ -716,12 +716,7 @@ export function MusicProvider({ children }) {
           return item.id !== songId;
         })));
 
-        // Clean up both 'macfeed_liked' (Music page array) and 'macfeed_likes' (Global page object)
-        const likedArr = JSON.parse(localStorage.getItem('macfeed_liked') || '[]');
-        localStorage.setItem('macfeed_liked', JSON.stringify(likedArr.filter(item => {
-          if (youtubeId && (item.youtube_id === youtubeId || item.youtubeId === youtubeId)) return false;
-          return item.id !== songId;
-        })));
+        
 
         const likesObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
         if (likesObj[songId]) {

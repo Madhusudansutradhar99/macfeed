@@ -34,7 +34,7 @@ export default function PosterCard({ video, index }) {
           className="w-full h-full object-cover object-top transition-all duration-700 group-hover:scale-110 group-hover:blur-[2px] brightness-90 group-hover:brightness-75"
         />
         
-<img src="/watermark.png" className="absolute top-2 right-2 w-6 h-6 z-[60] opacity-80 pointer-events-none drop-shadow-md mix-blend-plus-lighter" alt="watermark" />
+<img src="/watermark.png" className="absolute top-2 right-2 w-7 h-7 z-[60] opacity-100 pointer-events-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" alt="watermark" />
         {/* Premium glare overlay */}
         <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none transform -translate-x-[100%] group-hover:translate-x-[100%]" />
 

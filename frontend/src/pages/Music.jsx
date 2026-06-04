@@ -478,8 +478,12 @@ export default function Music() {
       const history = JSON.parse(localStorage.getItem('macfeed_history') || '[]');
       localStorage.setItem('macfeed_history', JSON.stringify(history.filter((h) => h.id !== song.id)));
 
-      const liked = JSON.parse(localStorage.getItem('macfeed_liked') || '[]');
-      localStorage.setItem('macfeed_liked', JSON.stringify(liked.filter((l) => l.id !== song.id)));
+      const likedObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
+      const liked = Object.values(likedObj);
+      if (likedObj[song.id]) {
+        delete likedObj[song.id];
+        localStorage.setItem('macfeed_likes', JSON.stringify(likedObj));
+      }
 
       showToast('Song deleted successfully');
     } catch (err) {
@@ -523,8 +527,9 @@ export default function Music() {
       return deduplicate(history.filter(h => h.category === 'Music')).slice(0, 20);
     }
     if (activeTab === 'Liked') {
-      const liked = JSON.parse(localStorage.getItem('macfeed_liked') || '[]');
-      return deduplicate(liked.filter(l => l.category === 'Music'));
+      const likedObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
+      const liked = Object.values(likedObj);
+      return deduplicate(liked);
     }
     if (activeTab === 'My Uploads') return deduplicate(songs.filter(s => s.source === 'local' && s.user_id === user?.id));
     if (activeTab === 'Artists') return deduplicate(songs).slice().sort(() => Math.random() - 0.5);
