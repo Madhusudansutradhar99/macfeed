@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { fetchJson } from '../utils/request';
 
 // ── L1 CACHE: localStorage with 2hr TTL ──
-const CACHE_PREFIX = 'mf_search_';
+const CACHE_PREFIX = 'mf_search_v3_';
 const CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours in ms
 
 function getCachedSearch(query) {

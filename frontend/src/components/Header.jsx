@@ -259,7 +259,7 @@ export default function Header() {
         </motion.div>
         <AnimatePresence>
           {isFocused && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 15 }} exit={{ opacity: 0, y: 10 }} className="absolute top-full left-4 right-4 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[7000] mt-3 glass-panel">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 15 }} exit={{ opacity: 0, y: 10 }} className="absolute top-full left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-[500px] rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[7000] mt-3 glass-panel">
               <div className="max-h-[60vh] overflow-y-auto no-scrollbar">
                 {results.length > 0 ? results.map((r, idx) => (
                   <div key={r.id + idx} onClick={() => handleResultClick(r)} className="flex items-center gap-4 px-6 py-4 group cursor-pointer transition-all border-b border-primary/5 last:border-0" style={{ backgroundColor: 'transparent' }}>

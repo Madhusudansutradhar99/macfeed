@@ -83,10 +83,12 @@ export default function HeroCarousel({ slides = [] }) {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="absolute inset-0 w-full h-full bg-[#020205] rounded-[1.2rem] md:rounded-[2rem] overflow-hidden pointer-events-none"
           >
-            {/* Crisp Full Background version of the thumbnail */}
-            <div
-              className="absolute inset-0 w-full h-full bg-cover bg-center rounded-[1.2rem] md:rounded-[2rem] overflow-hidden"
-              style={{ backgroundImage: `url('${activeHero.thumbnail_url?.replace('mqdefault.jpg', 'hqdefault.jpg') || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025'}')` }}
+            {/* Crisp Full Background version of the thumbnail with maxresdefault fallback */}
+            <img
+              src={activeHero.thumbnail_url?.replace('mqdefault.jpg', 'maxresdefault.jpg') || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025'}
+              onError={(e) => { e.target.onerror = null; e.target.src = activeHero.thumbnail_url?.replace('mqdefault.jpg', 'hqdefault.jpg'); }}
+              className="absolute inset-0 w-full h-full object-cover rounded-[1.2rem] md:rounded-[2rem]"
+              alt=""
             />
 
             {/* Dark Gradients to ensure readability of buttons and text */}
@@ -94,7 +96,7 @@ export default function HeroCarousel({ slides = [] }) {
             <div className="absolute inset-0 bg-gradient-to-t from-[#020205]/95 via-transparent to-transparent z-10 rounded-[1.2rem] md:rounded-[2rem]" />
 
             {/* Interactive Controls Overlay on the Left (Buttons at top, title below in small size) */}
-            <div className="absolute inset-x-0 bottom-4 sm:bottom-26 md:bottom-32 flex flex-col items-start px-4 sm:px-8 md:px-12 gap-2 z-40 pointer-events-auto">
+            <div className="absolute inset-x-0 bottom-20 sm:bottom-32 md:bottom-40 flex flex-col items-start px-4 sm:px-8 md:px-12 gap-2 z-40 pointer-events-auto">
               {/* Play & Add & Review buttons */}
               <div className="flex flex-wrap items-center gap-2">
                 <button

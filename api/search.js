@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   const isGlobal = !q || q.trim() === '';
   const url = isGlobal 
     ? `https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&regionCode=IN&maxResults=50&key=${key}`
-    : `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&maxResults=50&order=relevance&key=${key}`;
+    : `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q + ' -shorts')}&type=video&maxResults=50&order=date&videoDuration=medium&key=${key}`;
   
   try {
     const data = await fetch(url).then(r => r.json())

@@ -25,6 +25,7 @@ export function VideoPlayerProvider({ children }) {
   // Set video and maximize (used by Watch page)
   const playVideo = useCallback((video, newPlaylist = [], index = -1) => {
     setActiveVideo(video);
+    setPlaying(true);
     if (newPlaylist.length > 0) {
       setPlaylist(newPlaylist);
       if (index !== -1) {
