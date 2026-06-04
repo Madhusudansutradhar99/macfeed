@@ -686,7 +686,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             />
           </div>
         ) : (
-          <video
+          <><video
             ref={nativeVideoRef}
             data-macfeed-player="youtube"
             src={video.video_url}
@@ -703,6 +703,8 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
           />
         
 <img src="/watermark.png" className="absolute top-4 right-4 w-10 h-10 opacity-60 z-[90] w-6 h-6 z-[60] opacity-80 pointer-events-none drop-shadow-md mix-blend-plus-lighter" alt="watermark" />
+<img src="/watermark.png" className="absolute top-4 right-4 w-10 h-10 opacity-60 z-[90] pointer-events-none drop-shadow-md mix-blend-plus-lighter" alt="watermark" />
+</>
 )}
 
         {/* NATIVE UI SHIELD: Hides YT controls in normal view, disappears in fullscreen */}
