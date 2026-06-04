@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Fallback ad shows MacFeed branding when no Supabase ad is found
 const FALLBACK_AD = {
   id: 'macfeed-brand',
-  image_url: '/macfeed-logo.png',
+  image_url: '/watermark.png',
   link_url: '/',
   label: 'MacFeed',
   isBrand: true,
@@ -62,7 +62,7 @@ export default function AdBanner({ position = 'corner' }) {
             className="block w-full bg-secondary p-6 flex flex-col items-center justify-center transition-colors duration-500"
           >
             <div className="flex items-center gap-4">
-              <img src="/macfeed-logo.png" alt="MacFeed" className="w-12 h-12 object-contain" />
+              <img src="/watermark.png" alt="MacFeed" className="w-12 h-12 object-contain" />
               <div>
                 <div className="text-primary font-bold text-lg">MacFeed Entertainment Hub</div>
                 <div className="text-secondary text-sm">
@@ -123,7 +123,7 @@ export default function AdBanner({ position = 'corner' }) {
           /* MacFeed brand placeholder */
           <a href="/" className="flex flex-col items-center gap-2 w-full">
             <img
-              src="/macfeed-logo.png"
+              src="/watermark.png"
               alt="MacFeed"
               className="w-16 h-16 object-contain drop-shadow-lg"
             />

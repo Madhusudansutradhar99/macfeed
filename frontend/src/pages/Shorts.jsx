@@ -356,7 +356,7 @@ function ShortPlayer({ video, isActive, onLike }) {
       )}
 
       <div className="absolute top-4 left-14 z-10 flex items-center gap-1.5 opacity-60 pointer-events-none">
-        <img src="/macfeed-logo.png" alt="" className="w-4 h-4 object-contain" />
+        <img src="/watermark.png" alt="" className="w-4 h-4 object-contain" />
         <span className="text-white text-[10px] font-bold tracking-wider">MacFeed Shorts</span>
       </div>
     </div>

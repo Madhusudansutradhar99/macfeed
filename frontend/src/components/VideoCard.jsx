@@ -16,6 +16,30 @@ const YoutubeIcon = () => (
   </svg>
 );
 
+const timeAgo = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+  
+  const intervals = {
+    year: 31536000,
+    month: 2592000,
+    week: 604800,
+    day: 86400,
+    hour: 3600,
+    minute: 60
+  };
+
+  for (const [unit, seconds] of Object.entries(intervals)) {
+    const interval = Math.floor(diffInSeconds / seconds);
+    if (interval >= 1) {
+      return `${interval} ${unit}${interval === 1 ? '' : 's'} ago`;
+    }
+  }
+  return 'Just now';
+};
+
 const formatDuration = (iso) => {
   if (!iso || iso === '--:--') return '--:--';
   // If it's already a time string like "5:32" or "1:20:05"
@@ -126,20 +150,20 @@ const VideoCard = memo(({ video }) => {
     <motion.div
       whileHover={{ y: -12 }}
       whileTap={{ scale: 0.96 }}
-      className={`video-card group cursor-pointer flex flex-col gap-3 w-full transition-opacity duration-300 ${isSaving ? 'opacity-50 pointer-events-none' : ''}`}
+      className={`video-card group/card cursor-pointer flex flex-col gap-3 w-full transition-opacity duration-300 ${isSaving ? 'opacity-50 pointer-events-none' : ''}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={handleClick}
     >
-      <div className="relative aspect-video rounded-2xl md:rounded-[1.5rem] overflow-hidden shadow-2xl transition-all duration-500 group-hover:shadow-[0_20px_50px_-10px_rgba(var(--accent-rgb),0.5)] group-hover:-translate-y-1 glass" style={{ backgroundColor: 'transparent', '--accent': 'var(--accent-color)' }}>
-        <img src={video?.thumbnail_url || 'https://via.placeholder.com/640x360?text=No+Thumbnail'} alt={video?.title || 'Video'} loading="lazy" decoding="async" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-[0.4]" />
+      <div className="relative aspect-video rounded-2xl md:rounded-[1.5rem] overflow-hidden shadow-2xl transition-all duration-500 group-hover/card:shadow-[0_20px_50px_-10px_rgba(var(--accent-rgb),0.5)] group-hover/card:-translate-y-1 glass" style={{ backgroundColor: 'transparent', '--accent': 'var(--accent-color)' }}>
+        <img src={video?.thumbnail_url || 'https://via.placeholder.com/640x360?text=No+Thumbnail'} alt={video?.title || 'Video'} loading="lazy" decoding="async" className="w-full h-full object-cover transition-all duration-700 group-hover/card:scale-110 " draggable="false" />
 <img src="/watermark.png" className="absolute top-2 right-2 w-7 h-7 z-[60] opacity-100 pointer-events-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" alt="watermark" />
 
         
         {/* Premium glare overlay */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none transform -translate-x-[100%] group-hover:translate-x-[100%]" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-700 pointer-events-none transform -translate-x-[100%] group-hover/card:translate-x-[100%]" />
         
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-60 transition-opacity" />
 
         <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-[6px] text-[10px] font-black tracking-wider text-white border border-white/20 shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
           {video.duration || '00:00'}
@@ -157,10 +181,15 @@ const VideoCard = memo(({ video }) => {
       </div>
 
       <div className="px-2 pt-1">
-        <h3 className="text-primary font-bold text-[13px] line-clamp-2 leading-relaxed group-hover:text-accent transition-colors duration-300" style={{ '--accent': 'var(--accent-color)' }}>{video?.title || 'Untitled Video'}</h3>
+        <h3 className="text-primary font-bold text-[13px] line-clamp-2 leading-relaxed group-hover/card:text-accent transition-colors duration-300" style={{ '--accent': 'var(--accent-color)' }}>{video?.title || 'Untitled Video'}</h3>
         <div className="flex items-center gap-2 mt-2.5">
           <span className="text-[10px] font-bold tracking-wider px-2.5 py-1 rounded-md" style={{ color: 'var(--accent-color)', backgroundColor: 'rgba(var(--accent-rgb), 0.15)' }}>{video.category}</span>
-        </div>
+            {video.published_at && (
+              <span className="text-[9px] font-medium tracking-wider text-white/50 bg-white/5 px-2 py-0.5 rounded-full backdrop-blur-sm border border-white/5">
+                {timeAgo(video.published_at)}
+              </span>
+            )}
+          </div>
       </div>
     </motion.div>
   );

@@ -7,6 +7,8 @@ import { Play, Plus, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReviewButton from '../components/ReviewApp/ReviewButton';
 import AdBanner from '../components/AdBanner';
+import VideoCard from '../components/VideoCard';
+import HeroCarousel from '../components/HeroCarousel';
 
 // Utility component to render rating stars
 const RenderStars = ({ rating }) => {
@@ -28,6 +30,12 @@ const VideoRow = ({ title, videos, onVideoClick, defaultCategory }) => {
   const rowRef = useRef(null);
   const [showLeft, setShowLeft] = useState(false);
   const [showRight, setShowRight] = useState(true);
+
+  // Drag to scroll states
+  const [isDragging, setIsDragging] = useState(false);
+  const [hasDragged, setHasDragged] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
 
   const updateScrollButtons = () => {
     if (rowRef.current) {
@@ -63,14 +71,70 @@ const VideoRow = ({ title, videos, onVideoClick, defaultCategory }) => {
     }
   };
 
+  // Mouse Drag to Scroll Handlers
+  const handleMouseDown = (e) => {
+    if (!rowRef.current) return;
+    setIsDragging(true);
+    setHasDragged(false);
+    setStartX(e.pageX - rowRef.current.offsetLeft);
+    setScrollLeft(rowRef.current.scrollLeft);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+  
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging || !rowRef.current) return;
+    e.preventDefault();
+    setHasDragged(true);
+    const x = e.pageX - rowRef.current.offsetLeft;
+    const walk = (x - startX) * 2; // scroll-fast multiplier
+    rowRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleClickCapture = (e) => {
+    if (hasDragged) {
+      e.stopPropagation();
+      e.preventDefault();
+      setHasDragged(false);
+    }
+  };
+
+  // Click handler for VIEW ALL / FILTER CONTENT
+  const handleFilterClick = () => {
+    const el = document.getElementById('categories-filter-pills');
+    if (el) {
+      window.scrollTo({ top: el.offsetTop - 100, behavior: 'smooth' });
+    }
+    window.dispatchEvent(new CustomEvent('select-category', { detail: defaultCategory || 'ALL' }));
+  };
+
   if (!videos || videos.length === 0) return null;
 
   return (
-    <section className="w-full relative group">
+    <section className="w-full relative group/row">
       {title && (
         <div className="flex items-center justify-between mb-4 px-4 sm:px-6 md:px-10">
           <h2 className="text-base md:text-lg font-black uppercase tracking-widest text-[#f59e0b] italic">{title}</h2>
-          <span className="text-[9px] font-black uppercase tracking-widest text-white/40 cursor-pointer hover:text-white transition">View all</span>
+          <div className="flex flex-col items-end gap-1">
+            <span 
+              onClick={handleFilterClick}
+              className="text-[9px] font-black uppercase tracking-widest text-white/40 cursor-pointer hover:text-white transition"
+            >
+              View all
+            </span>
+            <div 
+              onClick={handleFilterClick}
+              className="text-secondary/40 font-black uppercase text-[8px] tracking-widest hidden sm:block cursor-pointer hover:text-white transition"
+            >
+              Filter Content
+            </div>
+          </div>
         </div>
       )}
       
@@ -79,7 +143,7 @@ const VideoRow = ({ title, videos, onVideoClick, defaultCategory }) => {
         {showLeft && (
           <button
             onClick={() => scroll('left')}
-            className="absolute left-4 top-[35%] -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/10 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-black/90 hover:scale-110 active:scale-95 cursor-pointer shadow-lg hidden md:flex"
+            className="absolute left-4 top-[35%] -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/10 flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-opacity duration-300 hover:bg-black/90 hover:scale-110 active:scale-95 cursor-pointer shadow-lg hidden md:flex"
             aria-label="Scroll Left"
           >
             <ChevronLeft className="w-5 h-5 text-white" />
@@ -90,7 +154,7 @@ const VideoRow = ({ title, videos, onVideoClick, defaultCategory }) => {
         {showRight && (
           <button
             onClick={() => scroll('right')}
-            className="absolute right-4 top-[35%] -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/10 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-black/90 hover:scale-110 active:scale-95 cursor-pointer shadow-lg hidden md:flex"
+            className="absolute right-4 top-[35%] -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/10 flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-opacity duration-300 hover:bg-black/90 hover:scale-110 active:scale-95 cursor-pointer shadow-lg hidden md:flex"
             aria-label="Scroll Right"
           >
             <ChevronRight className="w-5 h-5 text-white" />
@@ -100,26 +164,16 @@ const VideoRow = ({ title, videos, onVideoClick, defaultCategory }) => {
         {/* Horizontal Scroll Wrapper */}
         <div
           ref={rowRef}
-          className="flex flex-row gap-4 md:gap-6 overflow-x-auto no-scrollbar pb-4 w-full scroll-smooth px-4 sm:px-6 md:px-10"
+          onMouseDown={handleMouseDown}
+          onMouseLeave={handleMouseLeave}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
+          onClickCapture={handleClickCapture}
+          className={`flex flex-row gap-4 md:gap-6 overflow-x-auto no-scrollbar py-4 w-full scroll-smooth px-4 sm:px-6 md:px-10 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         >
           {videos.map((v) => (
-            <div
-              key={v.id}
-              onClick={() => onVideoClick(v.id)}
-              className="flex flex-col gap-2 cursor-pointer group/card w-[140px] sm:w-[180px] md:w-[200px] shrink-0"
-            >
-              <div className="aspect-video rounded-lg md:rounded-[0.8rem] overflow-hidden border border-white/10 group-hover/card:border-blue-400 bg-black relative transition-all duration-300 shadow-xl group-hover/card:scale-102">
-                <img src={v.thumbnail_url} className="w-full h-full object-cover" alt="" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-3 opacity-0 group-hover/card:opacity-100 transition-opacity">
-                  <div className="bg-[#0ea5e9] text-white text-[7px] font-black uppercase tracking-widest py-1 px-2.5 rounded-full w-fit">Watch Now</div>
-                </div>
-              </div>
-              <h4 className="text-[11px] md:text-xs font-black uppercase tracking-tight line-clamp-1 text-white/90 group-hover/card:text-[#0ea5e9] transition-colors">
-                {v.title}
-              </h4>
-              <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">
-                {v.category || defaultCategory || 'More Videos'}
-              </span>
+            <div key={v.id} onClick={() => !hasDragged && onVideoClick(v.id)} className="w-[200px] sm:w-[220px] md:w-[260px] shrink-0 pointer-events-auto">
+              <VideoCard video={v} />
             </div>
           ))}
         </div>
@@ -127,7 +181,6 @@ const VideoRow = ({ title, videos, onVideoClick, defaultCategory }) => {
     </section>
   );
 };
-
 
 export default function Home() {
   const [videos, setVideos] = useState([]);
@@ -189,23 +242,18 @@ export default function Home() {
     }
     loadData();
   }, []);
-
-  // Filter videos dynamically based on selected pill category
-  const filteredVideos = useMemo(() => {
-    if (selectedCategory === 'ALL') return videos;
-    if (selectedCategory === 'Series') {
-      return videos.filter(v => v.category === 'Cartoon' || v.category === 'Series');
-    }
-    if (selectedCategory === 'Action' || selectedCategory === 'Adventure') {
-      return videos.filter(v => v.category === 'Movies' || v.category === 'YouTube');
-    }
-    if (selectedCategory === 'Comedy') {
-      return videos.filter(v => v.category === 'YouTube');
-    }
-    return videos.filter(v => v.category === 'Shorts' || !v.category);
-  }, [videos, selectedCategory]);
-
   // Segmenting videos for home sections
+    const allCategories = useMemo(() => {
+    const dynamicCats = Array.from(new Set(videos.map(v => v.category).filter(Boolean)));
+    const baseCats = ['Comedy', 'Series', 'Drama', 'Horror', 'Animation', 'Cartoon', 'Sports'];
+    const cats = Array.from(new Set([...baseCats, ...dynamicCats]));
+    return cats.filter(c => c !== 'Shorts');
+  }, [videos]);
+
+  const visibleCategories = useMemo(() => {
+    if (selectedCategory === 'ALL') return allCategories;
+    return allCategories.filter(c => c === selectedCategory);
+  }, [allCategories, selectedCategory]);
   const moviesList = useMemo(() => videos.filter(v => v.category === 'Movies'), [videos]);
   const cartoonsList = useMemo(() => videos.filter(v => v.category === 'Cartoon'), [videos]);
   const youtubeList = useMemo(() => videos.filter(v => v.category === 'YouTube'), [videos]);
@@ -240,207 +288,23 @@ export default function Home() {
   const tvSeriesRow = useMemo(() => {
     return youtubeList.slice(0, 10);
   }, [youtubeList]);
-
-  // ─── TOP HERO BANNER AUTOPLAY SLIDESHOW SETUP (Right to Left Slide) ───
-  const [heroIdx, setHeroIdx] = useState(0);
-  const heroSlides = useMemo(() => {
-    const uniqueList = [];
-    const seen = new Set();
-    
-    moviesList.forEach(v => {
-      if (!seen.has(v.id)) {
-        seen.add(v.id);
-        uniqueList.push(v);
-      }
-    });
-    cartoonsList.forEach(v => {
-      if (!seen.has(v.id)) {
-        seen.add(v.id);
-        uniqueList.push(v);
-      }
-    });
-    videos.forEach(v => {
-      if (!seen.has(v.id)) {
-        seen.add(v.id);
-        uniqueList.push(v);
-      }
-    });
-    
-    const list = uniqueList.slice(0, 7);
-    if (list.length === 0) {
-      return [{
-        id: 'raya',
-        title: 'Raya and the Last Dragon',
-        category: 'Adventure, Fantasy, Action',
-        duration: '1h 47m',
-        thumbnail_url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025',
-        description: 'Long ago, in the fantasy world of Kumandra, humans and dragons lived together in harmony. But when an evil force threatened the land, the dragons sacrificed themselves to save humanity. Now, 500 years later, that same evil has returned.'
-      }];
-    }
-    
-    const padded = [...list];
-    while (padded.length < 7) {
-      padded.push(...list);
-    }
-    return padded.slice(0, 7);
-  }, [moviesList, cartoonsList, videos]);
-
-  useEffect(() => {
-    if (heroSlides.length <= 1) return;
-    const timer = setInterval(() => {
-      setHeroIdx(prev => (prev + 1) % heroSlides.length);
-    }, 5500); // 5.5 seconds autoplay rotation
-    return () => clearInterval(timer);
-  }, [heroSlides]);
-
-  const activeHero = useMemo(() => {
-    return heroSlides[heroIdx] || heroSlides[0];
-  }, [heroSlides, heroIdx]);
-
-  // Split title helper to match the two-line "INTRUDER ALERT" layout
-  const { line1, line2 } = useMemo(() => {
-    if (!activeHero?.title) return { line1: '', line2: '' };
-    const titleText = activeHero.title.trim();
-    const words = titleText.split(' ');
-    if (words.length <= 1) return { line1: titleText, line2: '' };
-    const mid = Math.ceil(words.length / 2);
-    return {
-      line1: words.slice(0, mid).join(' '),
-      line2: words.slice(mid).join(' ')
-    };
-  }, [activeHero]);
-
+  
   if (loading && videos.length === 0) return <Loader />;
 
   return (
     <div className="w-full max-w-full overflow-x-hidden text-[#f8fafc] pb-10 bg-transparent min-h-screen font-sans px-0 relative z-10">
       
       {/* ─── ALL CATEGORY: CINEMATIC MULTI-BANNER LAYOUT ─── */}
-      {selectedCategory === 'ALL' ? (
+      
         <div className="flex flex-col gap-10 w-full relative z-10">
           
-          {/* 1. TOP HERO BANNER (Autoplay slideshow right-to-left with sharp full thumbnail & blurred back) */}
-          <section className="relative w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)] md:w-[calc(100%-5rem)] mx-auto mt-2 md:mt-4 aspect-[16/10] sm:aspect-[16/11] md:aspect-[21/9.5] min-h-[220px] sm:min-h-[360px] md:min-h-[480px] rounded-[1.2rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-white/5 bg-black">
-            
-            {/* Green diagonal glowing stripe */}
-            <div
-              className="absolute left-[-10%] top-[-30%] w-[6%] h-[180%] bg-gradient-to-b from-[#10b981]/50 via-[#10b981]/15 to-transparent blur-[35px] transform rotate-[32deg] pointer-events-none z-10"
-            />
-
-            {/* Sliding Container */}
-            <div className="absolute inset-0 w-full h-full overflow-hidden rounded-[1.2rem] md:rounded-[2rem]">
-              <AnimatePresence mode="popLayout" initial={false}>
-                <motion.div
-                  key={activeHero.id}
-                  initial={{ x: '100%', opacity: 0.8 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: '-100%', opacity: 0.8 }}
-                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute inset-0 w-full h-full bg-[#020205] rounded-[1.2rem] md:rounded-[2rem] overflow-hidden"
-                >
-                  {/* Crisp Full Background version of the thumbnail */}
-                  <div
-                    className="absolute inset-0 w-full h-full bg-cover bg-center rounded-[1.2rem] md:rounded-[2rem] overflow-hidden"
-                    style={{ backgroundImage: `url('${activeHero.thumbnail_url || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025'}')` }}
-                  />
-
-                  {/* Dark Gradients to ensure readability of buttons and text */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#020205]/90 via-[#020205]/30 to-transparent z-10 rounded-[1.2rem] md:rounded-[2rem]" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#020205]/95 via-transparent to-transparent z-10 rounded-[1.2rem] md:rounded-[2rem]" />
-
-                  {/* Interactive Controls Overlay on the Left (Buttons at top, title below in small size) */}
-                  <div className="absolute inset-x-0 bottom-4 sm:bottom-26 md:bottom-32 flex flex-col items-start px-4 sm:px-8 md:px-12 gap-2 z-40">
-                    
-                    {/* Play & Add & Review buttons */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        onClick={() => navigate('/watch/' + activeHero.id)}
-                        className="flex items-center gap-1 bg-[#00f2fe] hover:bg-cyan-400 text-black font-black uppercase text-[7px] sm:text-[8px] md:text-[9px] tracking-widest px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 rounded-lg shadow-[0_0_15px_rgba(0,242,254,0.3)] hover:shadow-[0_0_25px_rgba(0,242,254,0.6)] transition-all hover:scale-105 active:scale-95 border border-[#00f2fe]/20"
-                      >
-                        <Play className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 fill-black text-black" /> Play
-                      </button>
-                      <button
-                        onClick={() => navigate('/movies')}
-                        className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg border border-white/20 hover:border-white/50 bg-black/40 backdrop-blur-md flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95"
-                      >
-                        <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 h-4" />
-                      </button>
-                      <ReviewButton />
-                    </div>
-
-                    {/* Small title text below the play button */}
-                    <p className="text-[9px] sm:text-[11px] md:text-xs font-black uppercase tracking-wider text-white/95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] max-w-[85%] text-left font-sans">
-                      {activeHero.title}
-                    </p>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            {/* Overlapping Cyberpunk Slide Previews Carousel (Symmetrical 7-card layout centered on active) */}
-            <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center justify-center -space-x-4 sm:-space-x-8 md:-space-x-12 z-30 w-full overflow-x-auto no-scrollbar py-4 px-6 hidden sm:flex pointer-events-none">
-              {[-3, -2, -1, 0, 1, 2, 3].map((offset) => {
-                const L = heroSlides.length;
-                const slideIdx = (heroIdx + offset + L) % L;
-                const slide = heroSlides[slideIdx];
-                const isActive = offset === 0;
-
-                // Symmetrical size scaling based on offset from center (3D arch depth)
-                let cardStyle = "";
-                if (offset === 0) {
-                  cardStyle = "w-[65px] sm:w-[115px] md:w-[145px] z-30 scale-105 sm:scale-110 border-[#ff007f] shadow-[0_0_15px_rgba(255,0,127,0.4)] sm:shadow-[0_0_25px_rgba(255,0,127,0.6)]";
-                } else if (offset === -1 || offset === 1) {
-                  cardStyle = "w-[55px] sm:w-[100px] md:w-[125px] z-20 scale-95 opacity-80 border-[#ff007f]/40";
-                } else if (offset === -2 || offset === 2) {
-                  cardStyle = "w-[45px] sm:w-[85px] md:w-[105px] z-10 scale-85 opacity-55 border-[#ff007f]/20";
-                } else {
-                  cardStyle = "w-[35px] sm:w-[70px] md:w-[85px] z-0 scale-75 opacity-35 border-transparent hidden sm:flex";
-                }
-
-                return (
-                  <div
-                    key={slide.id + '-' + offset}
-                    onClick={() => setHeroIdx(slideIdx)}
-                    className={`aspect-[3/4.2] rounded-xl sm:rounded-2xl overflow-visible border cursor-pointer transition-all duration-500 shrink-0 relative flex flex-col justify-end p-2 sm:p-3 shadow-2xl bg-black pointer-events-auto ${cardStyle}`}
-                  >
-                    {/* Active ring background */}
-                    {isActive && (
-                      <div 
-                        style={{ animation: 'spin 15s linear infinite' }}
-                        className="absolute inset-[-12px] sm:inset-[-18px] rounded-full border border-dashed border-[#ff007f] opacity-50 blur-[1px] z-[-1] pointer-events-none" 
-                      />
-                    )}
-
-                    {/* Card Image */}
-                    <div className="absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl overflow-hidden">
-                      <img src={slide.thumbnail_url} className="w-full h-full object-cover select-none pointer-events-none" alt="" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="relative z-10 w-full flex flex-col gap-0.5 sm:gap-1 pointer-events-none">
-                      {isActive && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate('/watch/' + slide.id);
-                          }}
-                          className="bg-[#00f2fe] hover:bg-cyan-400 text-black text-[7px] sm:text-[8px] font-black uppercase tracking-wider py-1.5 rounded-lg w-full text-center shadow-[0_0_12px_rgba(0,242,254,0.5)] border border-cyan-300/20 transition-all select-none pointer-events-auto hover:scale-105 active:scale-95 animate-pulse"
-                        >
-                          Play Now
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+          {/* 1. TOP HERO BANNER (Universal Carousel) */}
+          <HeroCarousel slides={[...(moviesList.slice(0,3)), ...(cartoonsList.slice(0,3)), ...videos].filter(Boolean)} />
 
           {/* 2. CATEGORIES FILTER PILLS */}
           <div id="categories-filter-pills" className="w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)] md:w-[calc(100%-5rem)] mx-auto flex items-center justify-between border-y border-white/5 py-4">
             <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
-              {['ALL', 'Action', 'Comedy', 'Series', 'Adventure', 'Other'].map((cat) => (
+              {['ALL', ...allCategories].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
@@ -459,179 +323,63 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 3. MOST VIEWED SECTION (Rowwise Slide/Scroll) */}
-          <VideoRow
-            title="Most Viewed"
-            videos={mostViewedVideos}
-            onVideoClick={(id) => navigate('/watch/' + id)}
-            defaultCategory="More Videos"
-          />
+          {/* ─── EXPLICIT CATEGORY ROWS ─── */}
+          {['Comedy', 'Horror', 'Drama'].map((cat) => (
+             visibleCategories.includes(cat) && (
+               <VideoRow
+                 key={`cat-row-${cat}`}
+                 title={`${cat} Videos`}
+                 videos={videos.filter(v => v.category === cat)}
+                 onVideoClick={(id) => navigate('/watch/' + id)}
+                 defaultCategory={cat}
+               />
+             )
+          ))}
 
-          {/* 4. MIDDLE HERO BANNER (Dynamic) */}
-            {featuredVideo ? (
-            <section className="relative w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)] md:w-[calc(100%-5rem)] mx-auto aspect-[16/10] md:aspect-[21/6.2] min-h-[260px] md:min-h-[300px] rounded-[1.2rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-white/5 group">
-              {/* Background Image */}
-              <div className="absolute inset-0 rounded-[1.2rem] md:rounded-[2rem] overflow-hidden bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url('${featuredVideo.thumbnail_url?.replace('mqdefault', 'maxresdefault') || featuredVideo.thumbnail_url}')` }}>
-                <div className="absolute inset-0 bg-gradient-to-r from-[#020205] via-[#020205]/80 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#020205] via-transparent to-transparent" />
-              </div>
-  
-              {/* Content Overlay */}
-              <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-8 md:p-12 z-10 max-w-2xl gap-2 md:gap-3">
-                <h2 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase leading-none text-white italic drop-shadow-2xl line-clamp-2">
-                  {featuredVideo.title}
-                </h2>
-                
-                {/* Rating */}
-                <div className="flex items-center gap-3">
-                  <RenderStars rating={4.5} />
-                  <span className="text-[10px] md:text-xs font-black text-white/60">FEATURED HERO</span>
-                </div>
-  
-                <p className="text-white/60 text-[11px] md:text-sm line-clamp-2 font-medium leading-relaxed max-w-lg">
-                  {featuredVideo.description || `Watch ${featuredVideo.title} now, exclusively on MacFeed. Immerse yourself in the ultimate digital entertainment experience.`}
-                </p>
-  
-                {/* Play button */}
-                <div className="flex items-center gap-4 mt-1">
-                  <button
-                    onClick={() => navigate('/watch/' + featuredVideo.id)}
-                    className="flex items-center gap-2 bg-[#0ea5e9] hover:bg-sky-400 text-white font-black uppercase text-[9px] md:text-[10px] tracking-widest px-6 md:px-8 py-3 rounded-full shadow-[0_0_20px_rgba(14,165,233,0.4)] transition-all active:scale-95"
-                  >
-                    <Play className="w-3.5 h-3.5 fill-white" /> Play
-                  </button>
-                </div>
-              </div>
-  
-              {/* Right Stacked Scenes */}
-              <div className="absolute bottom-4 right-6 hidden lg:flex flex-col gap-2 z-20">
-                {videos.filter(v => v.id !== featuredVideo.id).slice(0, 3).map((c) => (
-                  <div
-                    key={c.id}
-                    onClick={() => navigate('/watch/' + c.id)}
-                    className="relative w-24 aspect-video rounded-lg overflow-hidden border border-white/10 hover:border-blue-400 cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-xl bg-black"
-                  >
-                    <img src={c.thumbnail_url} className="w-full h-full object-cover" alt="" />
-                    <img src="/watermark.png" className="absolute top-1 right-1 w-4 h-4 z-50 opacity-100 pointer-events-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" alt="watermark" />
-                  </div>
-                ))}
-              </div>
-            </section>
-            ) : null}
+          {/* 4. MIDDLE HERO BANNER (Universal Carousel) */}
+          <HeroCarousel slides={featuredVideo ? [featuredVideo, ...moviesList] : moviesList} />
 
-          {/* 5. MOST POPULAR ROW 1 (Rowwise Slide/Scroll) */}
-          <VideoRow
-            title="Most Popular Movies"
-            videos={mostPopularRow1}
-            onVideoClick={(id) => navigate('/watch/' + id)}
-            defaultCategory="Movies"
-          />
-
-          {/* 6. MOST POPULAR ROW 2 (Rowwise Slide/Scroll) */}
-          <VideoRow
-            title="Most Popular Animations"
-            videos={mostPopularRow2}
-            onVideoClick={(id) => navigate('/watch/' + id)}
-            defaultCategory="Cartoon"
-          />
+          {['Series', 'Animation', 'Cartoon'].map((cat) => (
+             visibleCategories.includes(cat) && (
+               <VideoRow
+                 key={`cat-row-${cat}`}
+                 title={`${cat} Highlights`}
+                 videos={videos.filter(v => v.category === cat)}
+                 onVideoClick={(id) => navigate('/watch/' + id)}
+                 defaultCategory={cat}
+               />
+             )
+          ))}
 
           {/* Ad Banner (Inline) */}
           <div className="py-6 px-4 sm:px-0">
             <AdBanner position="banner" />
           </div>
 
-          {/* 7. POPULAR TV SERIES HEADER */}
-          <div className="w-full flex items-center justify-center my-4">
-            <h1 className="text-2xl md:text-4xl font-black italic tracking-tighter uppercase text-center text-white drop-shadow-lg">
-              Popular TV Series
-            </h1>
-          </div>
+          {['Sports'].map((cat) => (
+             visibleCategories.includes(cat) && (
+               <VideoRow
+                 key={`cat-row-${cat}`}
+                 title={`Best of ${cat}`}
+                 videos={videos.filter(v => v.category === cat)}
+                 onVideoClick={(id) => navigate('/watch/' + id)}
+                 defaultCategory={cat}
+               />
+             )
+          ))}
 
-          {/* 8. BOTTOM HERO BANNER (The Flash Style) */}
-          <section className="relative w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)] md:w-[calc(100%-5rem)] mx-auto aspect-[16/10] md:aspect-[21/6.2] min-h-[260px] md:min-h-[300px] rounded-[1.2rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-white/5 group">
-            {/* Background Image */}
-            <div className="absolute inset-0 rounded-[1.2rem] md:rounded-[2rem] overflow-hidden bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=2000')" }}>
-              <div className="absolute inset-0 bg-gradient-to-r from-[#020205] via-[#020205]/75 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#020205] via-transparent to-transparent" />
-            </div>
-
-            {/* Content Overlay */}
-            <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-8 md:p-12 z-10 max-w-2xl gap-2 md:gap-3">
-              <h2 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase leading-none text-white italic drop-shadow-2xl">
-                The Flash : Season 9
-              </h2>
-              
-              {/* Rating */}
-              <div className="flex items-center gap-3">
-                <RenderStars rating={4} />
-                <span className="text-[10px] md:text-xs font-black text-white/60">7.5 RATING</span>
-              </div>
-
-              <p className="text-white/60 text-[11px] md:text-sm line-clamp-2 font-medium leading-relaxed max-w-lg">
-                After being struck by lightning, Barry Allen wakes up from his coma to discover he has been given the power of super speed, becoming the next Flash, fighting crime in Central City.
-              </p>
-
-              {/* Play button */}
-              <div className="flex items-center gap-4 mt-1">
-                <button
-                  onClick={() => navigate('/watch/' + defaultCartoonPlayVideo.id)}
-                  className="flex items-center gap-2 bg-[#0ea5e9] hover:bg-sky-400 text-white font-black uppercase text-[9px] md:text-[10px] tracking-widest px-6 md:px-8 py-3 rounded-full shadow-[0_0_20px_rgba(14,165,233,0.4)] transition-all active:scale-95"
-                >
-                  <Play className="w-3.5 h-3.5 fill-white" /> Play
-                </button>
-              </div>
-            </div>
-
-            {/* Right highlight poster card */}
-            <div className="absolute bottom-4 right-6 hidden lg:flex z-20">
-              <div
-                onClick={() => navigate('/watch/' + defaultPlayVideo.id)}
-                className="w-40 aspect-video rounded-xl overflow-hidden border border-white/20 hover:border-blue-400 cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-2xl bg-black"
-              >
-                <img src={defaultPlayVideo.thumbnail_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070'} className="w-full h-full object-cover" alt="" />
-              </div>
-            </div>
-          </section>
-
-          {/* 9. TV SERIES ROW (Rowwise Slide/Scroll) */}
-          <VideoRow
-            videos={tvSeriesRow}
-            onVideoClick={(id) => navigate('/watch/' + id)}
-            defaultCategory="Series"
-          />
-
-        </div>
-      ) : (
-        /* ─── FILTERED VIEWS LAYOUT (SINGLE ROW SLIDER) ─── */
-        <div className="flex flex-col gap-6 w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)] md:w-[calc(100%-5rem)] mx-auto">
+          {/* Any other dynamic categories not explicitly mentioned */}
+          {visibleCategories.filter(c => !['Comedy', 'Horror', 'Drama', 'Series', 'Animation', 'Cartoon', 'Sports'].includes(c)).map((cat, i) => (
+             <VideoRow
+               key={`cat-row-extra-${cat}`}
+               title={`More ${cat}`}
+               videos={videos.filter(v => v.category === cat)}
+               onVideoClick={(id) => navigate('/watch/' + id)}
+               defaultCategory={cat}
+             />
+          ))}
           
-          {/* Header & Back Button */}
-          <div className="flex items-center gap-4 mt-2">
-            <button
-              onClick={() => setSelectedCategory('ALL')}
-              className="px-5 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-white font-black uppercase text-[8px] md:text-[9px] tracking-widest transition"
-            >
-              Back to Home
-            </button>
-            <h2 className="text-xl font-black italic tracking-tighter uppercase text-white">
-              Category: {selectedCategory}
-            </h2>
-          </div>
-
-          {filteredVideos.length > 0 ? (
-            <VideoRow
-              title=""
-              videos={filteredVideos}
-              onVideoClick={(id) => navigate('/watch/' + id)}
-              defaultCategory={selectedCategory}
-            />
-          ) : (
-            <div className="py-40 text-center text-white/20 font-black uppercase tracking-[0.4em] text-xs">
-              No content found in this category
-            </div>
-          )}
         </div>
-      )}
 
       {/* ─── FOOTER SECTION ─── */}
       <footer className="w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)] md:w-[calc(100%-5rem)] mx-auto border-t border-white/5 mt-20 pt-12 pb-6 flex flex-col gap-10">

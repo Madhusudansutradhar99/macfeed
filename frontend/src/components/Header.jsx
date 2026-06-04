@@ -52,7 +52,9 @@ export default function Header() {
         if (backData.results?.length > 0) {
           const mapped = backData.results.slice(0, 10).map(v => ({
             id: `yt-${v.ytId}`, ytId: v.ytId, title: v.title, thumbnail_url: v.thumbnail || v.thumbnail_url,
-            video_url: `https://www.youtube.com/embed/${v.ytId}`, source: 'youtube', type: 'global'
+            video_url: `https://www.youtube.com/embed/${v.ytId}`, source: 'youtube',
+              type: 'global',
+              published_at: item.snippet.publishedAt
           }));
           setCachedSearch(q, mapped);
           return mapped;
@@ -62,7 +64,8 @@ export default function Header() {
       // Fallback: Direct YouTube API call if backend fails or is unavailable
       const key = import.meta.env.VITE_YOUTUBE_API_KEY;
       if (key) {
-        const ytUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&maxResults=10&key=${key}`;
+        const ytQuery = encodeURIComponent(q + ' -shorts');
+          const ytUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${ytQuery}&type=video&videoDuration=medium&order=date&maxResults=50&key=${key}`;
         const ytRes = await fetch(ytUrl);
         const ytData = await ytRes.json();
         if (ytData.items) {
@@ -72,8 +75,9 @@ export default function Header() {
             title: item.snippet.title, 
             thumbnail_url: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
             video_url: `https://www.youtube.com/embed/${item.id.videoId}`, 
-            source: 'youtube', 
-            type: 'global'
+            source: 'youtube',
+              type: 'global',
+              published_at: item.snippet.publishedAt
           })).filter(v => v.ytId);
           setCachedSearch(q, mapped);
           return mapped;
@@ -184,7 +188,7 @@ export default function Header() {
           </button>
         )}
         <Link to="/" className="hidden sm:flex items-center gap-3 pl-1">
-          <img src="/macfeed-logo.png" className="h-9 w-9 drop-shadow-lg" />
+          <img src="/watermark.png" className="h-9 w-9 drop-shadow-lg" />
           <span className="text-primary text-[1.45rem] font-black uppercase italic tracking-tighter leading-none">
             MAC<span style={{ color: 'var(--accent-color)' }}>FEED</span>
           </span>

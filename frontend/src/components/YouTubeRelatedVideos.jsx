@@ -73,7 +73,7 @@ const YTVideoCard = memo(({ item, onPlay }) => {
   );
 });
 
-export default function YouTubeRelatedVideos({ currentVideoUrl, currentVideoId, currentVideoTitle, parentCategory }) {
+export default function YouTubeRelatedVideos({ currentVideoUrl, currentVideoId, currentVideoTitle, parentCategory, onLoaded }) {
   const navigate = useNavigate();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);

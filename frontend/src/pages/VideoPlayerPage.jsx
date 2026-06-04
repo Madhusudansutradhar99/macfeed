@@ -22,10 +22,23 @@ export default function VideoPlayerPage() {
   const [searchParams] = useSearchParams();
   const [video, setVideo] = useState(null);
   const [related, setRelated] = useState([]);
+  const [youtubeRelated, setYoutubeRelated] = useState([]);
   const [loading, setLoading] = useState(true);
   const [playerError, setPlayerError] = useState('');
   const [isLiked, setIsLiked] = useState(false);
   const navigate = useNavigate();
+  
+  const handleNextVideo = () => {
+    if (video?.source === 'youtube') {
+      if (youtubeRelated && youtubeRelated.length > 0) {
+        navigate(`/watch/${youtubeRelated[0].id || 'yt-' + youtubeRelated[0].ytId}`);
+      }
+    } else {
+      if (related && related.length > 0) {
+        navigate(`/watch/${related[0].id}`);
+      }
+    }
+  };
 
   useEffect(() => {
     if (!loading && !user) {

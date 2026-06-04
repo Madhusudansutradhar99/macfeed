@@ -79,7 +79,7 @@ export default function InstallPWA() {
                 <X size={16} />
               </button>
 
-              <img src="/macfeed-logo.png" className="w-16 h-16 object-contain rounded-2xl shadow-md border border-gray-800 bg-[#0e1621]" alt="MacFeed Logo" />
+              <img src="/watermark.png" className="w-16 h-16 object-contain rounded-2xl shadow-md border border-gray-800 bg-[#0e1621]" alt="MacFeed Logo" />
               
               <div className="flex flex-col gap-1">
                 <h3 className="text-white text-xl font-black tracking-tight">Download MacFeed</h3>

@@ -18,6 +18,11 @@ const SmartYoutubeSearch = () => {
 
   const determineCategory = (title, q) => {
     const text = (title + ' ' + q).toLowerCase();
+    if (text.includes('comedy') || text.includes('funny') || text.includes('laugh')) return 'Comedy';
+    if (text.includes('horror') || text.includes('scary') || text.includes('ghost')) return 'Horror';
+    if (text.includes('drama')) return 'Drama';
+    if (text.includes('animation') || text.includes('anime')) return 'Animation';
+    if (text.includes('cartoon') || text.includes('kids')) return 'Cartoon';
     if (text.includes('movie') || text.includes('film') || text.includes('trailer')) return 'Movies';
     if (text.includes('song') || text.includes('music') || text.includes('lyrics')) return 'Music';
     if (text.includes('cricket') || text.includes('football') || text.includes('match') || text.includes('sports')) return 'Sports';

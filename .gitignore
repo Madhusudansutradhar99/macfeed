@@ -21,3 +21,5 @@ Thumbs.db
 
 # Disk Cache (YouTube API responses)
 server/.cache/
+
+backend/venv/
