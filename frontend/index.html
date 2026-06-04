@@ -42,11 +42,11 @@
     <script src="https://www.youtube.com/iframe_api" async defer></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
-    <title>MacFeed - Final Sync</title>
+    <title>MacFeed</title>
     <script>
       // Check for new version and notify if necessary
       window.addEventListener('load', () => {
-        const currentVersion = '1.1.14'; 
+        const currentVersion = '1.1.15'; 
         const storedVersion = localStorage.getItem('macfeed_version');
         if (storedVersion !== currentVersion) {
           localStorage.setItem('macfeed_version', currentVersion);

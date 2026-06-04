@@ -136,6 +136,9 @@ export default function Home() {
   const navigate = useNavigate();
   const { theme: globalTheme } = useTheme();
 
+    // Find the featured video from Supabase
+    const featuredVideo = useMemo(() => videos.find(v => v.is_featured) || null, [videos]);
+
   // Handle select-category event for smooth scroll-to-pill category navigation
   useEffect(() => {
     const handleSelectCat = (e) => {
@@ -464,54 +467,57 @@ export default function Home() {
             defaultCategory="More Videos"
           />
 
-          {/* 4. MIDDLE HERO BANNER (Black Adam Style) */}
-          <section className="relative w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)] md:w-[calc(100%-5rem)] mx-auto aspect-[16/10] md:aspect-[21/6.2] min-h-[260px] md:min-h-[300px] rounded-[1.2rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-white/5 group">
-            {/* Background Image */}
-            <div className="absolute inset-0 rounded-[1.2rem] md:rounded-[2rem] overflow-hidden bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1618336753974-aae8e04506aa?q=80&w=2070')" }}>
-              <div className="absolute inset-0 bg-gradient-to-r from-[#020205] via-[#020205]/75 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#020205] via-transparent to-transparent" />
-            </div>
-
-            {/* Content Overlay */}
-            <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-8 md:p-12 z-10 max-w-2xl gap-2 md:gap-3">
-              <h2 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase leading-none text-white italic drop-shadow-2xl">
-                Black Adam
-              </h2>
-              
-              {/* Rating */}
-              <div className="flex items-center gap-3">
-                <RenderStars rating={4} />
-                <span className="text-[10px] md:text-xs font-black text-white/60">7.0 RATING</span>
+          {/* 4. MIDDLE HERO BANNER (Dynamic) */}
+            {featuredVideo ? (
+            <section className="relative w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)] md:w-[calc(100%-5rem)] mx-auto aspect-[16/10] md:aspect-[21/6.2] min-h-[260px] md:min-h-[300px] rounded-[1.2rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-white/5 group">
+              {/* Background Image */}
+              <div className="absolute inset-0 rounded-[1.2rem] md:rounded-[2rem] overflow-hidden bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url('${featuredVideo.thumbnail_url?.replace('mqdefault', 'maxresdefault') || featuredVideo.thumbnail_url}')` }}>
+                <div className="absolute inset-0 bg-gradient-to-r from-[#020205] via-[#020205]/80 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#020205] via-transparent to-transparent" />
               </div>
-
-              <p className="text-white/60 text-[11px] md:text-sm line-clamp-2 font-medium leading-relaxed max-w-lg">
-                Nearly 5,000 years after he was bestowed with the almighty powers of the ancient gods—and imprisoned just as quickly—Black Adam is freed from his earthly tomb, ready to unleash his unique form of justice on the modern world.
-              </p>
-
-              {/* Play button */}
-              <div className="flex items-center gap-4 mt-1">
-                <button
-                  onClick={() => navigate('/watch/' + defaultMoviePlayVideo.id)}
-                  className="flex items-center gap-2 bg-[#0ea5e9] hover:bg-sky-400 text-white font-black uppercase text-[9px] md:text-[10px] tracking-widest px-6 md:px-8 py-3 rounded-full shadow-[0_0_20px_rgba(14,165,233,0.4)] transition-all active:scale-95"
-                >
-                  <Play className="w-3.5 h-3.5 fill-white" /> Play
-                </button>
-              </div>
-            </div>
-
-            {/* Right Stacked Scenes */}
-            <div className="absolute bottom-4 right-6 hidden lg:flex flex-col gap-2 z-20">
-              {cartoonsList.slice(0, 3).map((c) => (
-                <div
-                  key={c.id}
-                  onClick={() => navigate('/watch/' + c.id)}
-                  className="w-24 aspect-video rounded-lg overflow-hidden border border-white/10 hover:border-blue-400 cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-xl bg-black"
-                >
-                  <img src={c.thumbnail_url} className="w-full h-full object-cover" alt="" />
+  
+              {/* Content Overlay */}
+              <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-8 md:p-12 z-10 max-w-2xl gap-2 md:gap-3">
+                <h2 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase leading-none text-white italic drop-shadow-2xl line-clamp-2">
+                  {featuredVideo.title}
+                </h2>
+                
+                {/* Rating */}
+                <div className="flex items-center gap-3">
+                  <RenderStars rating={4.5} />
+                  <span className="text-[10px] md:text-xs font-black text-white/60">FEATURED HERO</span>
                 </div>
-              ))}
-            </div>
-          </section>
+  
+                <p className="text-white/60 text-[11px] md:text-sm line-clamp-2 font-medium leading-relaxed max-w-lg">
+                  {featuredVideo.description || `Watch ${featuredVideo.title} now, exclusively on MacFeed. Immerse yourself in the ultimate digital entertainment experience.`}
+                </p>
+  
+                {/* Play button */}
+                <div className="flex items-center gap-4 mt-1">
+                  <button
+                    onClick={() => navigate('/watch/' + featuredVideo.id)}
+                    className="flex items-center gap-2 bg-[#0ea5e9] hover:bg-sky-400 text-white font-black uppercase text-[9px] md:text-[10px] tracking-widest px-6 md:px-8 py-3 rounded-full shadow-[0_0_20px_rgba(14,165,233,0.4)] transition-all active:scale-95"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-white" /> Play
+                  </button>
+                </div>
+              </div>
+  
+              {/* Right Stacked Scenes */}
+              <div className="absolute bottom-4 right-6 hidden lg:flex flex-col gap-2 z-20">
+                {videos.filter(v => v.id !== featuredVideo.id).slice(0, 3).map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => navigate('/watch/' + c.id)}
+                    className="relative w-24 aspect-video rounded-lg overflow-hidden border border-white/10 hover:border-blue-400 cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-xl bg-black"
+                  >
+                    <img src={c.thumbnail_url} className="w-full h-full object-cover" alt="" />
+                    <img src="/watermark.png" className="absolute top-1 right-1 w-4 h-4 z-50 opacity-100 pointer-events-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" alt="watermark" />
+                  </div>
+                ))}
+              </div>
+            </section>
+            ) : null}
 
           {/* 5. MOST POPULAR ROW 1 (Rowwise Slide/Scroll) */}
           <VideoRow

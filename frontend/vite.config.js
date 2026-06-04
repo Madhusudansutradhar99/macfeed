@@ -15,7 +15,7 @@ export default defineConfig({
       },
       includeAssets: ['favicon.ico', 'icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'MacFeed Pro Hub',
+        name: 'MacFeed',
         short_name: 'MacFeed',
         description: 'Ultimate Digital Entertainment Hub',
         theme_color: '#020617',
