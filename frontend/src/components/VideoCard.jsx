@@ -16,6 +16,14 @@ const YoutubeIcon = () => (
   </svg>
 );
 
+const isNewVideo = (dateString) => {
+  if (!dateString) return false;
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInDays = (now - date) / (1000 * 3600 * 24);
+  return diffInDays <= 3;
+};
+
 const timeAgo = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);

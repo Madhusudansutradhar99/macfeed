@@ -86,7 +86,7 @@ export default function HeroCarousel({ slides = [] }) {
             {/* Crisp Full Background version of the thumbnail */}
             <div
               className="absolute inset-0 w-full h-full bg-cover bg-center rounded-[1.2rem] md:rounded-[2rem] overflow-hidden"
-              style={{ backgroundImage: `url('${activeHero.thumbnail_url?.replace('mqdefault', 'maxresdefault').replace('default.jpg', 'hqdefault.jpg') || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025'}')` }}
+              style={{ backgroundImage: `url('${activeHero.thumbnail_url?.replace('mqdefault.jpg', 'hqdefault.jpg') || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025'}')` }}
             />
 
             {/* Dark Gradients to ensure readability of buttons and text */}

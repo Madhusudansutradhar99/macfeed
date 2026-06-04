@@ -323,13 +323,20 @@ export default function Home() {
             </div>
           </div>
 
+          {/* ─── GLOBAL DATA / MOST VIEWED ─── */}
+          <VideoRow
+            title="Most Viewed Global"
+            videos={videos.filter(v => v.category !== 'Shorts' && v.duration !== 'Short').sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 50)}
+            onVideoClick={(id) => navigate('/watch/' + id)}
+          />
+
           {/* ─── EXPLICIT CATEGORY ROWS ─── */}
           {['Comedy', 'Horror', 'Drama'].map((cat) => (
              visibleCategories.includes(cat) && (
                <VideoRow
                  key={`cat-row-${cat}`}
                  title={`${cat} Videos`}
-                 videos={videos.filter(v => v.category === cat)}
+                 videos={videos.filter(v => (v.category === cat && v.category !== 'Shorts' && v.duration !== 'Short'))}
                  onVideoClick={(id) => navigate('/watch/' + id)}
                  defaultCategory={cat}
                />
@@ -344,7 +351,7 @@ export default function Home() {
                <VideoRow
                  key={`cat-row-${cat}`}
                  title={`${cat} Highlights`}
-                 videos={videos.filter(v => v.category === cat)}
+                 videos={videos.filter(v => (v.category === cat && v.category !== 'Shorts' && v.duration !== 'Short'))}
                  onVideoClick={(id) => navigate('/watch/' + id)}
                  defaultCategory={cat}
                />
@@ -361,7 +368,7 @@ export default function Home() {
                <VideoRow
                  key={`cat-row-${cat}`}
                  title={`Best of ${cat}`}
-                 videos={videos.filter(v => v.category === cat)}
+                 videos={videos.filter(v => (v.category === cat && v.category !== 'Shorts' && v.duration !== 'Short'))}
                  onVideoClick={(id) => navigate('/watch/' + id)}
                  defaultCategory={cat}
                />
@@ -373,7 +380,7 @@ export default function Home() {
              <VideoRow
                key={`cat-row-extra-${cat}`}
                title={`More ${cat}`}
-               videos={videos.filter(v => v.category === cat)}
+               videos={videos.filter(v => (v.category === cat && v.category !== 'Shorts' && v.duration !== 'Short'))}
                onVideoClick={(id) => navigate('/watch/' + id)}
                defaultCategory={cat}
              />
