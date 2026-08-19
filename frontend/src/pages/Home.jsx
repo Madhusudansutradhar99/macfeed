@@ -5,7 +5,6 @@ import { supabase } from '../supabaseClient';
 import Loader from '../components/Loader';
 import { Play, Plus, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReviewButton from '../components/ReviewApp/ReviewButton';
 import AdBanner from '../components/AdBanner';
 import VideoCard from '../components/VideoCard';
 import HeroCarousel from '../components/HeroCarousel';
