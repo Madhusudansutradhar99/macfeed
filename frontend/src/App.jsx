@@ -21,7 +21,6 @@ import InstallPWA from './components/InstallPWA';
 import OfflineStatus from './components/OfflineStatus';
 import StartupAnimation from './components/StartupAnimation';
 import InstantFeedbackProvider from './components/InstantFeedbackProvider';
-import ReviewApp from './components/ReviewApp/ReviewApp';
 
 // Lazy load pages for performance optimization
 import Home from './pages/Home';
@@ -154,7 +153,6 @@ function AppContent() {
           <Suspense fallback={<Loader />}>
             <Routes>
               <Route path="/intro" element={<ErrorBoundary resetKey="intro"><IntroPage /></ErrorBoundary>} />
-              <Route path="/review/*" element={<ErrorBoundary resetKey="review"><ReviewApp /></ErrorBoundary>} />
               <Route element={<MainLayout />}>
                 <Route index element={<ErrorBoundary resetKey="home"><Home /></ErrorBoundary>} />
                 <Route path="/watch/:id" element={<ErrorBoundary resetKey="watch"><VideoPlayerPage /></ErrorBoundary>} />

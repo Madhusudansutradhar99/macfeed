@@ -147,8 +147,9 @@ export default React.memo(function MusicMiniPlayer() {
 
   // ── MINI PLAYER DRAGGING WITH POINTER EVENTS ────────────────────────────
   const handleMiniPlayerPointerDown = useCallback((e) => {
-    if (e.button !== 0) return; // Only left mouse button
+    if (e.pointerType === 'mouse' && e.button !== 0) return; // Only left mouse button
     dragStateRef.current.isDragging = true;
+    dragStateRef.current.hasDragged = false;
     dragStateRef.current.startX = e.clientX;
     dragStateRef.current.startY = e.clientY;
     dragStateRef.current.startPosX = miniPos.x;
@@ -158,6 +159,7 @@ export default React.memo(function MusicMiniPlayer() {
 
   const handleMiniPlayerPointerMove = useCallback((e) => {
     if (!dragStateRef.current.isDragging) return;
+    dragStateRef.current.hasDragged = true;
     const deltaX = e.clientX - dragStateRef.current.startX;
     const deltaY = e.clientY - dragStateRef.current.startY;
     let newX = dragStateRef.current.startPosX + deltaX;
@@ -185,10 +187,17 @@ export default React.memo(function MusicMiniPlayer() {
   }, []);
 
   useEffect(() => {
-    // Initialize mini player position on mount
-    if (miniPlayerRef.current) {
-      setMiniPos({ x: 24, y: window.innerHeight - 120 });
-    }
+    // Initialize mini player position on mount reliably
+    setMiniPos({ x: 24, y: window.innerHeight - 120 });
+    
+    const handleResize = () => {
+      setMiniPos(prev => ({
+        x: Math.min(prev.x, window.innerWidth - 280),
+        y: Math.min(prev.y, window.innerHeight - 100)
+      }));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   useEffect(() => {
@@ -339,45 +348,22 @@ export default React.memo(function MusicMiniPlayer() {
             <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] blur-[130px] rounded-full transition-colors duration-1000" style={{ backgroundColor: currentTheme.blur2, opacity: 0.2 }} />
           </div>
 
-          {/* TOP BAR TOGGLE ICON */}
-          <AnimatePresence>
-            {!showTopBar && (
-              <motion.button 
-                initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-                onClick={() => setShowTopBar(true)} 
-                className="absolute top-4 left-4 md:left-8 z-[60] w-10 h-10 bg-white/5 backdrop-blur-2xl rounded-full flex items-center justify-center text-white/50 hover:text-white border border-white/10 shadow-2xl"
-              >
-                <Settings2 className="w-5 h-5" />
-              </motion.button>
-            )}
-          </AnimatePresence>
-
-          {/* TOP BAR */}
-          <AnimatePresence>
-            {showTopBar && (
-              <motion.div 
-                initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -50, opacity: 0 }}
-                className="absolute top-2 md:top-4 w-full flex justify-center z-50 px-2 md:px-10"
-              >
-                <div className="w-full max-w-[320px] h-12 bg-white/5 backdrop-blur-[30px] border border-white/10 rounded-full flex items-center justify-between px-3 shadow-2xl relative">
-                  <button onClick={() => setShowTopBar(false)} className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white/50 hover:text-white backdrop-blur-xl border border-white/10 shadow-lg">
-                    <ChevronDown className="w-3 h-3" />
-                  </button>
-                  <div className="hidden md:flex gap-1">
-                    <button className="p-1.5 hover:bg-white/10 rounded-full text-white cursor-pointer outline-none" onClick={prev}><ChevronLeft className="w-4 h-4" /></button>
-                    <button className="p-1.5 hover:bg-white/10 rounded-full text-white cursor-pointer outline-none" onClick={next}><ChevronRight className="w-4 h-4" /></button>
-                  </div>
-                  <span className="text-[11px] font-black uppercase text-white/60 truncate max-w-[120px] mx-auto">{currentSong.title}</span>
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => setShowLyrics(!showLyrics)} className={`p-1.5 rounded-full outline-none transition-colors ${showLyrics ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-white/50 hover:text-white'}`}><Mic2 className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => setThemeIdx(p => (p + 1) % themes.length)} className="p-1.5 hover:bg-white/10 rounded-full text-white/50 hover:text-white outline-none"><Palette className="w-3.5 h-3.5" /></button>
-                    <button onClick={handleMinimize} className="p-1.5 hover:bg-white/10 rounded-full text-white/50 hover:text-white outline-none"><Maximize2 className="w-3.5 h-3.5 rotate-180" /></button>
-                    <button onClick={handleClose} className="p-1.5 hover:bg-red-500/20 rounded-full text-red-500/50 hover:text-red-500 outline-none"><X className="w-4 h-4" /></button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* TOP BAR ALWAYS VISIBLE */}
+          <div className="absolute top-2 md:top-4 w-full flex justify-center z-50 px-2 md:px-10">
+            <div className="w-full max-w-[320px] h-12 bg-white/5 backdrop-blur-[30px] border border-white/10 rounded-full flex items-center justify-between px-3 shadow-2xl relative">
+              <div className="hidden md:flex gap-1">
+                <button className="p-1.5 hover:bg-white/10 rounded-full text-white cursor-pointer outline-none" onClick={prev}><ChevronLeft className="w-4 h-4" /></button>
+                <button className="p-1.5 hover:bg-white/10 rounded-full text-white cursor-pointer outline-none" onClick={next}><ChevronRight className="w-4 h-4" /></button>
+              </div>
+              <span className="text-[11px] font-black uppercase text-white/60 truncate max-w-[120px] mx-auto">{currentSong.title}</span>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setShowLyrics(!showLyrics)} className={`p-1.5 rounded-full outline-none transition-colors ${showLyrics ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-white/50 hover:text-white'}`}><Mic2 className="w-3.5 h-3.5" /></button>
+                <button onClick={() => setThemeIdx(p => (p + 1) % themes.length)} className="p-1.5 hover:bg-white/10 rounded-full text-white/50 hover:text-white outline-none"><Palette className="w-3.5 h-3.5" /></button>
+                <button onClick={handleMinimize} className="p-1.5 hover:bg-white/10 rounded-full text-white/50 hover:text-white outline-none"><Maximize2 className="w-3.5 h-3.5 rotate-180" /></button>
+                <button onClick={handleClose} className="p-1.5 hover:bg-red-500/20 rounded-full text-red-500/50 hover:text-red-500 outline-none"><X className="w-4 h-4" /></button>
+              </div>
+            </div>
+          </div>
 
           
           {/* LYRICS VIEW */}
@@ -538,19 +524,23 @@ export default React.memo(function MusicMiniPlayer() {
           onPointerMove={handleMiniPlayerPointerMove}
           onPointerUp={handleMiniPlayerPointerUp}
           onPointerCancel={handleMiniPlayerPointerUp}
-          className="fixed z-[300] pointer-events-auto bg-secondary backdrop-blur-3xl border border-primary rounded-[20px] md:rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 md:p-4 flex items-center gap-2 md:gap-4 cursor-grab active:cursor-grabbing w-[280px] md:w-[340px] transition-colors duration-500 touch-none"
+          onClick={(e) => {
+            if (!dragStateRef.current.hasDragged) {
+              handleExpand();
+            }
+          }}
+          className="fixed z-[300] pointer-events-auto bg-secondary backdrop-blur-3xl border border-primary rounded-[20px] md:rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 md:p-4 flex items-center gap-2 md:gap-4 cursor-grab active:cursor-grabbing w-[280px] md:w-[340px] transition-colors duration-500"
           style={{ 
             willChange: 'transform',
             transform: `translate3d(${miniPos.x}px, ${miniPos.y}px, 0)`,
             userSelect: 'none',
-            WebkitUserSelect: 'none',
-            touchAction: 'none'
+            WebkitUserSelect: 'none'
           }}
         >
-          <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl overflow-hidden cursor-pointer shadow-xl shrink-0 border border-primary" onClick={handleExpand}>
+          <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl overflow-hidden cursor-pointer shadow-xl shrink-0 border border-primary">
             <img src={currentSong?.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')} loading="lazy" decoding="async" className="w-full h-full object-cover" alt="" />
           </div>
-          <div className="flex-1 min-w-0 cursor-pointer" onClick={handleExpand}>
+          <div className="flex-1 min-w-0 cursor-pointer">
             <h4 className="text-[11px] font-black uppercase text-primary truncate leading-tight italic">{currentSong?.title}</h4>
             <div className="flex items-center gap-2 mt-1">
               <div className="flex gap-0.5">

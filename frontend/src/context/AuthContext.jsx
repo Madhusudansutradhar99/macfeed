@@ -12,16 +12,9 @@ export function AuthProvider({ children }) {
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
-    // Restore user from localStorage
-    const savedUser = localStorage.getItem('macfeed_user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        console.error('Failed to parse saved user');
-        localStorage.removeItem('macfeed_user');
-      }
-    }
+    // Authentication is bypassed for now as requested
+    const dummyUser = { id: 'admin-123', name: 'Admin', email: 'admin@macfeed.local', picture: '' };
+    setUser(dummyUser);
     setLoading(false);
   }, []);
 

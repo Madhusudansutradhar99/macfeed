@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Plus } from 'lucide-react';
-import ReviewButton from './ReviewApp/ReviewButton';
+import { Play, Plus, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function HeroCarousel({ slides = [] }) {
   const navigate = useNavigate();
@@ -111,7 +110,11 @@ export default function HeroCarousel({ slides = [] }) {
                 >
                   <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 h-4" />
                 </button>
-                <ReviewButton />
+                <button className="h-10 px-5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] group hover:scale-105 active:scale-95"
+                  onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-info-modal', { detail: { title: activeHero.title, content: activeHero.description || 'MacFeed Exclusive Content.' } })); }}>
+                  <Info className="w-3.5 h-3.5 mr-2" />
+                  Info
+                </button>
               </div>
 
               {/* Small title text below the play button */}

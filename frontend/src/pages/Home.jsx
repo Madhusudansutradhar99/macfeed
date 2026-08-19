@@ -343,9 +343,6 @@ export default function Home() {
              )
           ))}
 
-          {/* 4. MIDDLE HERO BANNER (Universal Carousel) */}
-          <HeroCarousel slides={featuredVideo ? [featuredVideo, ...moviesList] : moviesList} />
-
           {['Series', 'Animation', 'Cartoon'].map((cat) => (
              visibleCategories.includes(cat) && (
                <VideoRow
