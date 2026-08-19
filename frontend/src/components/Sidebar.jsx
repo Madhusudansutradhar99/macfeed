@@ -23,16 +23,11 @@ const navItems = [
 ];
 
 const DynamicNavItem = ({ item, active, onClick, forceExpand }) => {
-  const [hover, setHover] = useState(false);
   const navigate = useNavigate();
   const iconColor = active ? '#ffffff' : 'var(--text-primary)';
-  const isExpanded = forceExpand || hover;
 
   return (
-    <motion.div
-      layoutId={`nav-item-${item.label}`}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+    <div
       onClick={(e) => {
         if (onClick) onClick(e);
         else {
@@ -40,25 +35,20 @@ const DynamicNavItem = ({ item, active, onClick, forceExpand }) => {
           navigate(item.path);
         }
       }}
-      className={`absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-2xl cursor-pointer z-[2000] shadow-xl will-change-transform border border-white/5
+      className={`flex items-center h-10 md:h-11 rounded-xl cursor-pointer transition-all duration-200 border border-transparent
         ${active ? 'text-white' : 'hover:bg-white/10 glass'}
       `}
-      style={active ? { background: 'linear-gradient(135deg, rgba(var(--accent-rgb), 0.9), rgba(var(--accent-rgb), 0.6))', boxShadow: '0 8px 20px -5px rgba(var(--accent-rgb),0.5)' } : {}}
-      animate={{ width: isExpanded ? 200 : 44 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      style={active ? { background: 'linear-gradient(135deg, rgba(var(--accent-rgb), 0.9), rgba(var(--accent-rgb), 0.6))', boxShadow: '0 4px 15px -3px rgba(var(--accent-rgb),0.3)' } : {}}
     >
       <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0">
         <item.icon className="w-5 h-5" style={{ color: iconColor }} />
       </div>
-      <motion.span
-        initial={false}
-        animate={{ opacity: isExpanded ? 1 : 0 }}
-        transition={{ duration: 0.12 }}
-        className={`whitespace-nowrap font-bold pr-6 text-[11px] uppercase tracking-widest ml-1 ${active ? 'text-white' : 'text-primary'}`}
-      >
-        {item.label}
-      </motion.span>
-    </motion.div>
+      {forceExpand && (
+        <span className={`whitespace-nowrap font-bold pr-4 text-[11px] uppercase tracking-widest ml-1 ${active ? 'text-white' : 'text-primary'}`}>
+          {item.label}
+        </span>
+      )}
+    </div>
   );
 };
 
@@ -145,23 +135,19 @@ export default function Sidebar() {
                )}
             </div>
             <div className="relative h-10 md:h-11 w-full shrink-0 mt-2">
-               <motion.div
-                  onMouseEnter={() => setShowUserMenu(true)} 
-                  onMouseLeave={() => setShowUserMenu(false)}
+               <div
                   onClick={() => user ? navigate('/settings') : setAuthModalOpen(true)}
-                  className="absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-2xl cursor-pointer overflow-hidden z-50 shadow-lg will-change-transform glass border border-white/10"
-                  animate={{ width: isSidebarOpen || showUserMenu ? 200 : 44 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                  className={`flex items-center h-10 md:h-11 rounded-xl cursor-pointer transition-all duration-200 border border-transparent hover:bg-white/10 glass`}
                >
-                  <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0"><User className="w-5 h-5" style={{ color: 'var(--accent-color)' }} /></div>
-                  <motion.span 
-                    animate={{ opacity: isSidebarOpen || showUserMenu ? 1 : 0 }}
-                    transition={{ duration: 0.15 }}
-                    className="text-[12px] font-bold tracking-wide text-primary pr-4"
-                  >
-                    {user ? 'Profile' : 'Sign In'}
-                  </motion.span>
-               </motion.div>
+                  <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0">
+                    <User className="w-5 h-5" style={{ color: 'var(--accent-color)' }} />
+                  </div>
+                  {isSidebarOpen && (
+                    <span className="text-[12px] font-bold tracking-wide text-primary pr-4">
+                      {user ? 'Profile' : 'Sign In'}
+                    </span>
+                  )}
+               </div>
             </div>
           </div>
         </div>
