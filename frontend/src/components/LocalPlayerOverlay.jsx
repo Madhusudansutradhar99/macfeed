@@ -1035,10 +1035,8 @@ function LocalPlayerOverlay() {
         <motion.div
             ref={containerRef}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className={`fixed z-[9999] bg-black flex flex-col items-center justify-center overflow-hidden font-sans select-none touch-none rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/20`}
-            style={{ width: 'clamp(320px, 80vw, 450px)', height: 'clamp(200px, 45vw, 250px)', bottom: '2rem', right: '2rem', position: 'fixed', backgroundColor: 'black', touchAction: 'none' }}
-            drag
-            dragMomentum={false}
+            className={`fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center overflow-hidden font-sans select-none touch-none px-2 sm:px-0 rounded-lg sm:rounded-2xl ${forceLandscape ? 'rotate-90 origin-center' : ''}`}
+            style={forceLandscape ? { width: '100vh', height: '100vw', position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(90deg)', backgroundColor: 'black' } : { backgroundColor: 'black' }}
             onMouseMove={resetControlsTimeout}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
@@ -1139,6 +1137,13 @@ function LocalPlayerOverlay() {
                             </div>
 
                             <div className="flex items-center gap-4">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); videoRef.current?.requestPictureInPicture(); }}
+                                    className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white"
+                                    title="Pop-up Video"
+                                >
+                                    <PictureInPicture size={18} />
+                                </button>
                                 <button
                                     onClick={toggleROT}
                                     className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white"
@@ -1982,3 +1987,129 @@ const Shortcut = memo(({ keyLabel, label }) => {
     );
 });
 
+const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
+    const angleStep = 18;
+    const y = useTransform(wheelRotationMV, (rot) => {
+        const rad = ((index * angleStep - rot) * Math.PI) / 180;
+        const panelRadius = isMobileView ? 140 : 300;
+        return Math.sin(rad) * panelRadius;
+    });
+    const x = useTransform(wheelRotationMV, (rot) => {
+        const rad = ((index * angleStep - rot) * Math.PI) / 180;
+        const panelRadius = isMobileView ? 100 : 300;
+        const baseOffset = isMobileView ? 60 : 250;
+        return Math.cos(rad) * panelRadius + baseOffset;
+    });
+    const scale = useTransform(y, (yVal) => {
+        const panelRadius = isMobileView ? 140 : 300;
+        const normalizedDist = Math.abs(yVal) / (panelRadius * 1.2);
+        return Math.max(0.7, 1.2 - normalizedDist);
+    });
+    const opacity = useTransform(y, (yVal) => {
+        const panelRadius = isMobileView ? 140 : 300;
+        const normalizedDist = Math.abs(yVal) / (panelRadius * 1.2);
+        return Math.max(0.1, 1.1 - normalizedDist);
+    });
+
+    const [isFocused, setIsFocused] = useState(false);
+    const [showInlineMenu, setShowInlineMenu] = useState(false);
+
+    useEffect(() => {
+        const unsubscribe = scale.on('change', (s) => {
+            setIsFocused(s > 1.05);
+        });
+        return unsubscribe;
+    }, [scale]);
+
+    useEffect(() => {
+        if (!isFocused) setShowInlineMenu(false);
+    }, [isFocused]);
+
+    return (
+        <motion.div
+            style={{ y, x, scale, opacity, zIndex: showInlineMenu ? 900 : 600, position: 'absolute', left: isMobileView ? '0px' : '40px', willChange: 'transform, opacity' }}
+            className="flex items-center gap-4 cursor-pointer group pointer-events-auto"
+            onClick={(e) => {
+                e.stopPropagation();
+                if (action.inlineMenu) {
+                    setShowInlineMenu(!showInlineMenu);
+                } else {
+                    action.onClick();
+                }
+            }}
+            animate={isFocused ? { 
+                scale: showInlineMenu ? 1.1 : 1.2,
+                rotateY: showInlineMenu ? 0 : [0, 8, -8, 0],
+                rotateX: showInlineMenu ? 0 : [0, 4, -4, 0],
+                filter: `drop-shadow(0 0 30px ${action.color}) brightness(1.3)`
+            } : { scale: 1, rotateY: 0, rotateX: 0, filter: 'none' }}
+            transition={{ 
+                rotateY: { repeat: Infinity, duration: 4, ease: 'easeInOut' },
+                rotateX: { repeat: Infinity, duration: 3, ease: 'easeInOut' }
+            }}
+            whileHover={{ scale: 1.25 }}
+            whileTap={{ scale: 0.9 }}
+        >
+            {/* ATMOSPHERIC BLUR LAYER - Behind the Wheel Area */}
+            {isFocused && (
+                <div className="fixed inset-y-0 left-0 w-[450px] bg-black/20 backdrop-blur-[8px] z-[-1] pointer-events-none" 
+                     style={{ maskImage: 'linear-gradient(to right, black, transparent)' }} />
+            )}
+            {/* SVG Wireframe Box - Starting from OUTSIDE the wheel */}
+            <div className="absolute left-[-160px] w-[170px] h-10 pointer-events-none transition-opacity duration-300" style={{ opacity: isFocused ? '1' : '0.5' }}>
+                <svg width="170" height="40" viewBox="0 0 170 40" fill="none">
+                    <path d="M10 20 H90 L120 5 H170" stroke={action.color} strokeWidth="2.5" strokeOpacity="0.9" />
+                    <path d="M10 20 H90 L120 35 H170" stroke={action.color} strokeWidth="2.5" strokeOpacity="0.9" />
+                    <circle cx="10" cy="20" r="5" fill={action.color} />
+                </svg>
+            </div>
+
+            {/* Panel Body - Transparent Background as requested */}
+            <div
+                className={`relative ${isMobileView ? 'w-20 h-7' : 'w-36 h-14'} bg-transparent backdrop-blur-[2px] border-l-[4px] sm:border-l-[8px] border-r-[1px] sm:border-r-[2px] border-y-[1px] sm:border-y-[2px] transition-all duration-300 flex items-center justify-between px-1.5 sm:px-4`}
+                style={{
+                    clipPath: 'polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%)',
+                    borderLeftColor: isFocused ? action.color : 'rgba(255,255,255,0.1)',
+                    borderRightColor: 'rgba(255,255,255,0.05)',
+                    borderTopColor: 'rgba(255,255,255,0.05)',
+                    borderBottomColor: 'rgba(255,255,255,0.05)',
+                    boxShadow: isFocused ? `0 0 35px ${action.color}44` : 'none',
+                    opacity: isFocused ? '1' : '0.7'
+                }}
+            >
+                <div className="transition-all duration-300" style={{ color: isFocused ? action.color : 'rgba(255,255,255,0.4)', transform: isFocused ? 'scale(1.3)' : 'scale(1)' }}>
+                    {action.icon}
+                </div>
+                <div className="flex flex-col items-end">
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em]">{action.label}</span>
+                    {action.inlineMenu && (
+                        <div className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${showInlineMenu ? 'bg-red-500 shadow-[0_0_10px_red]' : 'bg-white/20'}`} />
+                    )}
+                </div>
+            </div>
+
+            {/* IN-LINE FEATURE ROW - APPEARS IN FRONT OF WIREBOX */}
+            <AnimatePresence>
+                {showInlineMenu && action.inlineMenu && (
+                    <motion.div
+                        initial={{ opacity: 0, x: -30, scale: 0.8 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: -30, scale: 0.8 }}
+                        className="flex items-center gap-3 ml-2 sm:ml-6 p-3 bg-red-950/20 backdrop-blur-3xl rounded-2xl border border-red-500/20 shadow-[0_0_50px_rgba(220,38,38,0.2)] max-w-[200px] sm:max-w-[500px] overflow-x-auto no-scrollbar"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {action.inlineMenu.items.map((item, i) => (
+                            <button
+                                key={i}
+                                onClick={() => { item.action(); setShowInlineMenu(false); }}
+                                className={`px-5 py-2.5 rounded-xl whitespace-nowrap text-[10px] font-black uppercase tracking-widest transition-all border ${item.active ? 'bg-yellow-200 text-black border-yellow-200 shadow-[0_0_20px_rgba(250,204,21,0.6)]' : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10 hover:text-white'}`}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
+    );
+});
