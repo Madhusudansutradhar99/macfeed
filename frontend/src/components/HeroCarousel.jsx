@@ -83,7 +83,10 @@ export default function HeroCarousel({ slides = [] }) {
             className="absolute inset-0 w-full h-full bg-[#020205] rounded-[1.2rem] md:rounded-[2rem] overflow-hidden pointer-events-none"
           >
             {/* Crisp Full Background version of the thumbnail with maxresdefault fallback */}
-            <img
+            <motion.img
+              initial={{ scale: 1.05 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 6, ease: "easeOut" }}
               src={activeHero.thumbnail_url?.replace('mqdefault.jpg', 'maxresdefault.jpg') || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025'}
               onError={(e) => { e.target.onerror = null; e.target.src = activeHero.thumbnail_url?.replace('mqdefault.jpg', 'hqdefault.jpg'); }}
               className="absolute inset-0 w-full h-full object-cover rounded-[1.2rem] md:rounded-[2rem]"
@@ -91,36 +94,53 @@ export default function HeroCarousel({ slides = [] }) {
             />
 
             {/* Dark Gradients to ensure readability of buttons and text */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#020205]/90 via-[#020205]/30 to-transparent z-10 rounded-[1.2rem] md:rounded-[2rem]" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#020205]/95 via-transparent to-transparent z-10 rounded-[1.2rem] md:rounded-[2rem]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent z-10 rounded-[1.2rem] md:rounded-[2rem]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-transparent to-transparent z-10 rounded-[1.2rem] md:rounded-[2rem]" />
 
-            {/* Interactive Controls Overlay on the Left (Buttons at top, title below in small size) */}
-            <div className="absolute inset-x-0 bottom-20 sm:bottom-32 md:bottom-40 flex flex-col items-start px-4 sm:px-8 md:px-12 gap-2 z-40 pointer-events-auto">
-              {/* Play & Add & Review buttons */}
-              <div className="flex flex-wrap items-center gap-2">
+            {/* Interactive Controls Overlay */}
+            <div className="absolute inset-0 flex flex-col justify-end px-6 sm:px-10 md:px-16 pb-16 sm:pb-24 md:pb-32 gap-4 z-40 pointer-events-auto">
+              
+              {/* Featured Badge */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                className="flex items-center gap-2"
+              >
+                <span className="px-3 py-1 bg-accent/20 border border-accent/50 text-accent text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] rounded-full backdrop-blur-md shadow-[0_0_15px_rgba(var(--accent-rgb),0.3)]">
+                  Featured
+                </span>
+                <span className="text-[10px] sm:text-xs font-bold text-white/50 uppercase tracking-widest">{activeHero.category || 'Exclusive'}</span>
+              </motion.div>
+
+              {/* Title & Description */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="max-w-3xl">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white drop-shadow-2xl leading-[1.1] mb-2 sm:mb-4">
+                  {activeHero.title}
+                </h1>
+                <p className="text-xs sm:text-sm text-white/70 font-medium line-clamp-2 md:line-clamp-3 max-w-xl hidden sm:block">
+                  {activeHero.description || 'Experience the best premium entertainment exclusively on MacFeed. Dive into this amazing content right now.'}
+                </p>
+              </motion.div>
+
+              {/* Buttons */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2">
                 <button
                   onClick={() => navigate('/watch/' + activeHero.id)}
-                  className="flex items-center gap-1 bg-[#00f2fe] hover:bg-cyan-400 text-black font-black uppercase text-[7px] sm:text-[8px] md:text-[9px] tracking-widest px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 rounded-lg shadow-[0_0_15px_rgba(0,242,254,0.3)] hover:shadow-[0_0_25px_rgba(0,242,254,0.6)] transition-all hover:scale-105 active:scale-95 border border-[#00f2fe]/20"
+                  className="group flex items-center gap-2 sm:gap-3 bg-white text-black font-black uppercase text-[10px] sm:text-xs tracking-widest px-6 sm:px-8 py-3 sm:py-3.5 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:shadow-[0_0_30px_rgba(255,255,255,0.6)] transition-all hover:scale-105 active:scale-95"
                 >
-                  <Play className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 fill-black text-black" /> Play
+                  <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-black transition-transform group-hover:scale-110" /> Play Now
                 </button>
                 <button
                   onClick={() => navigate('/movies')}
-                  className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg border border-white/20 hover:border-white/50 bg-black/40 backdrop-blur-md flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95"
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-white/20 hover:border-white/80 bg-white/5 backdrop-blur-xl flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95"
                 >
-                  <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 h-4" />
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
-                <button className="h-10 px-5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] group hover:scale-105 active:scale-95"
+                <button className="h-10 sm:h-12 px-6 bg-white/10 hover:bg-white/20 backdrop-blur-xl border-2 border-white/10 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-black uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95"
                   onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-info-modal', { detail: { title: activeHero.title, content: activeHero.description || 'MacFeed Exclusive Content.' } })); }}>
-                  <Info className="w-3.5 h-3.5 mr-2" />
-                  Info
+                  <Info className="w-4 h-4 mr-2 opacity-70" />
+                  More Info
                 </button>
-              </div>
-
-              {/* Small title text below the play button */}
-              <p className="text-[9px] sm:text-[11px] md:text-xs font-black uppercase tracking-wider text-white/95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] max-w-[85%] text-left font-sans">
-                {activeHero.title}
-              </p>
+              </motion.div>
             </div>
           </motion.div>
         </AnimatePresence>
