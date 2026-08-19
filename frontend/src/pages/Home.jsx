@@ -211,30 +211,40 @@ export default function Home() {
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
-          setVideos(parsed);
-          setLoading(false);
+          if (parsed && parsed.length > 0) {
+            setVideos(parsed);
+            setLoading(false);
+            return;
+          }
         } catch (e) {
           localStorage.removeItem('macfeed_home_cache');
-          setLoading(true);
         }
-      } else {
-        setLoading(true);
       }
-
+      
+      setLoading(true);
       try {
         const { data, error } = await supabase
           .from('videos')
           .select('*')
           .order('created_at', { ascending: false });
         if (error) {
-          console.error('Supabase query error on Home:', error);
+          throw error;
         }
-        if (data) {
+        if (data && data.length > 0) {
           setVideos(data);
           localStorage.setItem('macfeed_home_cache', JSON.stringify(data));
+        } else {
+          throw new Error('Empty data');
         }
       } catch (e) {
-        console.error('Home load error:', e);
+        console.warn('Home load error/fallback:', e);
+        const mockVideos = [
+          { id: '1', title: 'Dummy Video 1', category: 'Comedy', duration: '10:00', thumbnail_url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop', video_url: '', is_featured: true },
+          { id: '2', title: 'Dummy Video 2', category: 'Horror', duration: '5:00', thumbnail_url: 'https://images.unsplash.com/photo-1505635552518-3448ff116af3?q=80&w=1470&auto=format&fit=crop', video_url: '' },
+          { id: '3', title: 'Dummy Series', category: 'Series', duration: '20:00', thumbnail_url: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1469&auto=format&fit=crop', video_url: '' },
+          { id: '4', title: 'Dummy Sports', category: 'Sports', duration: '15:00', thumbnail_url: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=1470&auto=format&fit=crop', video_url: '' }
+        ];
+        setVideos(mockVideos);
       } finally {
         setLoading(false);
       }
