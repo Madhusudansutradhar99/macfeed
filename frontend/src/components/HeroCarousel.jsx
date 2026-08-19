@@ -145,65 +145,6 @@ export default function HeroCarousel({ slides = [] }) {
           </motion.div>
         </AnimatePresence>
       </div>
-
-      {/* Overlapping Cyberpunk Slide Previews Carousel (Symmetrical 7-card layout centered on active) */}
-      <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center justify-center -space-x-4 sm:-space-x-8 md:-space-x-12 z-30 w-full overflow-x-auto no-scrollbar py-4 px-6 hidden sm:flex pointer-events-none">
-        {[-3, -2, -1, 0, 1, 2, 3].map((offset) => {
-          const L = heroSlides.length;
-          const slideIdx = (heroIdx + offset + L) % L;
-          const slide = heroSlides[slideIdx];
-          const isActive = offset === 0;
-
-          let cardStyle = "";
-          if (offset === 0) {
-            cardStyle = "w-[65px] sm:w-[115px] md:w-[145px] z-30 scale-105 sm:scale-110 border-[#ff007f] shadow-[0_0_15px_rgba(255,0,127,0.4)] sm:shadow-[0_0_25px_rgba(255,0,127,0.6)]";
-          } else if (offset === -1 || offset === 1) {
-            cardStyle = "w-[55px] sm:w-[100px] md:w-[125px] z-20 scale-95 opacity-80 border-[#ff007f]/40";
-          } else if (offset === -2 || offset === 2) {
-            cardStyle = "w-[45px] sm:w-[85px] md:w-[105px] z-10 scale-85 opacity-55 border-[#ff007f]/20";
-          } else {
-            cardStyle = "w-[35px] sm:w-[70px] md:w-[85px] z-0 scale-75 opacity-35 border-transparent hidden sm:flex";
-          }
-
-          return (
-            <div
-              key={slide.id + '-' + offset}
-              onClick={() => {
-                {
-                  setHeroIdx(slideIdx);
-                }
-              }}
-              className={`aspect-[3/4.2] rounded-xl sm:rounded-2xl overflow-visible border cursor-pointer transition-all duration-500 shrink-0 relative flex flex-col justify-end p-2 sm:p-3 shadow-2xl bg-black pointer-events-auto ${cardStyle}`}
-            >
-              {isActive && (
-                <div 
-                  style={{ animation: 'spin 15s linear infinite' }}
-                  className="absolute inset-[-12px] sm:inset-[-18px] rounded-full border border-dashed border-[#ff007f] opacity-50 blur-[1px] z-[-1] pointer-events-none" 
-                />
-              )}
-
-              <div className="absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl overflow-hidden pointer-events-none">
-                <img src={slide.thumbnail_url?.replace('mqdefault', 'hqdefault')} className="w-full h-full object-cover" draggable="false" alt="" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-              </div>
-              
-              <div className="relative z-10 w-full flex flex-col gap-0.5 sm:gap-1 pointer-events-none">
-                {isActive && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate('/watch/' + slide.id);
-                    }}
-                    className="bg-[#00f2fe] hover:bg-cyan-400 text-black text-[7px] sm:text-[8px] font-black uppercase tracking-wider py-1.5 rounded-lg w-full text-center shadow-[0_0_12px_rgba(0,242,254,0.5)] border border-cyan-300/20 transition-all select-none pointer-events-auto hover:scale-105 active:scale-95 animate-pulse"
-                  >
-                    Play Now
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
     </section>
   );
 }
