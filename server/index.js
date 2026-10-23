@@ -254,55 +254,64 @@ app.get('/api/search', async (req, res) => {
   // 1. Try Official YouTube API via Backend
   if (YT_API_KEY) {
     try {
+      let apiQ = normalizedQ;
+      if (normalizedQ === 'movie' || normalizedQ === 'movies') {
+        apiQ = 'full movie hindi blockbuster';
+      }
       const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
         params: { 
           part: 'snippet', 
-          q: normalizedQ, 
+          q: apiQ, 
           type: 'video', 
-          maxResults: 20, 
-          order: 'viewCount',
+          maxResults: 25, 
+          order: 'relevance',
           key: YT_API_KEY 
         },
         timeout: 5000
       });
       cacheStats.apiCalls++;
       results = response.data.items.map(item => ({
-        id: item.id.videoId,
+        id: `yt-${item.id.videoId}`,
         ytId: item.id.videoId,
         title: item.snippet.title,
-        thumbnail: item.snippet.thumbnails.high.url,
+        thumbnail: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${item.id.videoId}/hqdefault.jpg`,
         source: 'youtube'
       }));
     } catch (error) {
-      console.warn('Backend YT API failed, trying fallback...');
+      console.warn('Backend YT API failed, trying yt-search fallback...');
     }
   }
 
-  // 2. Fallback to Piped Instances (Server-to-Server)
+  // 2. High-Accuracy yt-search Fallback
   if (results.length === 0) {
-    const instances = [
-      "https://pipedapi.kavin.rocks",
-      "https://pipedapi.tokhmi.xyz",
-      "https://pipedapi.moomoo.me"
-    ];
-    for (const instance of instances) {
-      try {
-        const pRes = await axios.get(`${instance}/search?q=${encodeURIComponent(normalizedQ)}&filter=videos`, { timeout: 4000 });
-        const items = pRes.data.items || pRes.data;
-        if (items?.length > 0) {
-          results = items.slice(0, 20).map(v => {
-            const vidId = v.url?.split('v=')[1] || v.url?.split('/').pop() || v.videoId;
-            return {
-              id: vidId,
-              ytId: vidId,
-              title: v.title,
-              thumbnail: v.thumbnail || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`,
-              source: 'youtube'
-            };
-          });
-          if (results.length > 0) break;
-        }
-      } catch (e) {}
+    try {
+      const yts = require('yt-search');
+      let searchTarget = normalizedQ;
+      if (normalizedQ === 'movie' || normalizedQ === 'movies') {
+        searchTarget = 'full movie hindi blockbuster';
+      } else if (normalizedQ.includes('movie') || normalizedQ.includes('film')) {
+        searchTarget = `${normalizedQ} full movie`;
+      }
+      const searchRes = await yts(searchTarget);
+      if (searchRes && searchRes.videos && searchRes.videos.length > 0) {
+        results = searchRes.videos
+          .filter(v => {
+            const title = (v.title || '').toLowerCase();
+            return !title.includes('#short') && (v.seconds >= 90 || !v.seconds);
+          })
+          .slice(0, 30)
+          .map(v => ({
+            id: `yt-${v.videoId}`,
+            ytId: v.videoId,
+            title: v.title,
+            thumbnail: v.thumbnail || `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`,
+            duration: v.timestamp || '--:--',
+            views: v.views,
+            source: 'youtube'
+          }));
+      }
+    } catch (e) {
+      console.warn('yt-search error:', e.message);
     }
   }
 

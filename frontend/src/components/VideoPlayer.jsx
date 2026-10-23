@@ -395,7 +395,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         height: '100%',
         playerVars: {
           autoplay: 1,
-          controls: 1,
+          controls: 0,
           rel: 0,
           modestbranding: 1,
           showinfo: 0,
@@ -403,7 +403,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
           autohide: 1,
           enablejsapi: 1,
           playsinline: 1,
-          fs: 1,
+          fs: 0,
           origin: window.location.origin,
           widget_referrer: window.location.origin,
         },
@@ -546,7 +546,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         ytPlayerRef.current = null;
       }
     };
-  }, [isYouTube, video?.video_url]);
+  }, [isYouTube, video?.id, video?.youtube_id, video?.ytId, video?.video_url]);
 
   useEffect(() => {
     if (!isYouTube) return;
@@ -674,8 +674,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               </div>
             ) : null}
 
-            {/* Fullscreen Swipe Overlay - FIX 1 & 3 */}
-            {/* Left-Side Swipe Zone: Allows 'Swipe Down to Exit' without blocking ANY YouTube controls (since they are in the center/right) */}
+            {/* Fullscreen Swipe Overlay */}
             {isFullscreen && (
               <div 
                 className="absolute top-0 bottom-0 left-0 w-[100px] z-[60] bg-transparent pointer-events-auto"
@@ -685,7 +684,57 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               />
             )}
 
-            <div ref={ytDomContainer} className="absolute inset-0 h-full w-full z-[10]" />
+            {/* Click overlay for full play/pause and control toggle */}
+            <div 
+              className="absolute inset-0 z-[15] cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (isYouTube && ytPlayerRef.current) {
+                  const state = ytPlayerRef.current.getPlayerState?.();
+                  if (state === 1) {
+                    ytPlayerRef.current.pauseVideo?.();
+                    setPlaying(false);
+                  } else {
+                    ytPlayerRef.current.playVideo?.();
+                    setPlaying(true);
+                  }
+                }
+                toggleControls();
+              }}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                toggleFullscreen();
+              }}
+            />
+
+            <div ref={ytDomContainer} className="absolute inset-0 h-full w-full z-[10] pointer-events-none" />
+
+            {/* MacFeed Center Play Button Overlay when paused */}
+            <AnimatePresence>
+              {!playing && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="absolute inset-0 z-[25] flex items-center justify-center pointer-events-none"
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (ytPlayerRef.current) {
+                        ytPlayerRef.current.playVideo?.();
+                        setPlaying(true);
+                      }
+                    }}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#f5b700] via-amber-400 to-[#f5b700] text-black flex items-center justify-center shadow-[0_0_40px_rgba(245,183,0,0.65)] pointer-events-auto hover:scale-110 active:scale-95 transition-transform"
+                    title="Play Video"
+                  >
+                    <Play className="w-8 h-8 fill-black ml-1" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
             
             {/* Transparent overlay for mini mode maximize only */}
             {viewMode === 'mini' && (
@@ -716,11 +765,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 <img src="/watermark.png" className="absolute top-4 right-4 w-12 h-12 z-[90] opacity-100 pointer-events-none drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]" alt="watermark" />
 </>
 )}
-
-        {/* NATIVE UI SHIELD: Hides YT controls in normal view, disappears in fullscreen */}
-        {!isFullscreen && (
-          <div className="absolute bottom-0 left-0 right-0 h-[45px] bg-black z-[5] pointer-events-auto select-none" />
-        )}
 
         {viewMode === 'full' && (
           <>
@@ -811,13 +855,13 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               </div>
             ) : null}
 
-          {/* CUSTOM CONTROLS: Hidden in fullscreen to show Native YT Quality Selector */}
+          {/* MACFEED CUSTOM CONTROLS */}
           <div 
-            className={`absolute bottom-0 left-0 right-0 p-1.5 pt-6 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 z-[100] ${isFullscreen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+            className={`absolute bottom-0 left-0 right-0 p-2 sm:p-3 pt-8 bg-gradient-to-t from-black/95 via-black/60 to-transparent transition-opacity duration-300 z-[100] ${showControls ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
             onClick={(e) => e.stopPropagation()}
           >
-              {/* YouTube Style Progress Bar */}
-              <div className="mb-0.5 w-full group relative flex items-center h-2.5">
+              {/* Luxury Amber Progress Bar */}
+              <div className="mb-1 w-full group relative flex items-center h-3">
                 <input
                   ref={inputRangeRef}
                   type="range"
@@ -827,50 +871,58 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                   onChange={handleSeek}
                   onMouseDown={(e) => e.stopPropagation()}
                   onTouchStart={(e) => e.stopPropagation()}
-                  className="absolute w-full h-1.5 opacity-0 cursor-pointer z-20"
+                  className="absolute w-full h-2 opacity-0 cursor-pointer z-20"
                 />
-                <div className="w-full h-1 bg-white/20 rounded-full relative overflow-hidden pointer-events-none">
+                <div className="w-full h-1.5 bg-white/20 rounded-full relative overflow-hidden pointer-events-none">
                   {/* Buffer Bar */}
                   <div ref={bufferBarRef} className="absolute inset-y-0 left-0 bg-white/30 transition-all duration-300" style={{ width: '0%' }} />
-                  {/* Progress Bar (Red) */}
-                  <div ref={progressBarRef} className="absolute inset-y-0 left-0 bg-[#FF0000] shadow-[0_0_10px_rgba(255,0,0,0.5)]" style={{ width: '0%' }} />
+                  {/* Progress Bar (Gold / Amber) */}
+                  <div ref={progressBarRef} className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-400 to-[#f5b700] shadow-[0_0_12px_rgba(245,183,0,0.7)]" style={{ width: '0%' }} />
                 </div>
                 {/* Scrubber Knob */}
                 <div 
-                  className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-[#FF0000] rounded-full scale-0 group-hover:scale-100 transition-transform pointer-events-none z-10 shadow-lg"
+                  className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-[#f5b700] rounded-full scale-0 group-hover:scale-100 transition-transform pointer-events-none z-10 shadow-[0_0_10px_rgba(245,183,0,0.8)]"
                   style={{ left: inputRangeRef.current?.value ? `${inputRangeRef.current.value}%` : '0%', transform: 'translate(-50%, -50%)' }}
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-0 text-white">
-                <div className="flex items-center gap-0">
-                  {/* FIX 4: playBtnRef tracks state for icon swap without extra re-render */}
-                  <ControlBtn onClick={(e) => {
-                    e.stopPropagation();
-                    if (isYouTube && ytPlayerRef.current) {
-                      const state = ytPlayerRef.current.getPlayerState?.();
-                      // Force correct command based on ACTUAL player state
-                      if (state === 1) {
-                        ytPlayerRef.current.pauseVideo?.();
-                        setPlaying(false);
-                      } else {
-                        ytPlayerRef.current.playVideo?.();
-                        setPlaying(true);
+              <div className="flex items-center justify-between gap-1 text-white">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  {/* MacFeed Gold Transport Play Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isYouTube && ytPlayerRef.current) {
+                        const state = ytPlayerRef.current.getPlayerState?.();
+                        if (state === 1) {
+                          ytPlayerRef.current.pauseVideo?.();
+                          setPlaying(false);
+                        } else {
+                          ytPlayerRef.current.playVideo?.();
+                          setPlaying(true);
+                        }
+                      } else if (nativeVideoRef.current) {
+                        if (nativeVideoRef.current.paused) {
+                          nativeVideoRef.current.play();
+                          setPlaying(true);
+                        } else {
+                          nativeVideoRef.current.pause();
+                          setPlaying(false);
+                        }
                       }
-                    } else if (nativeVideoRef.current) {
-                      if (nativeVideoRef.current.paused) {
-                        nativeVideoRef.current.play();
-                        setPlaying(true);
-                      } else {
-                        nativeVideoRef.current.pause();
-                        setPlaying(false);
-                      }
-                    }
-                  }} title={playing ? 'Pause' : 'Play'}>
+                    }}
+                    title={playing ? 'Pause' : 'Play'}
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 border shadow-lg mr-1 ${
+                      playing
+                        ? 'bg-gradient-to-tr from-[#f5b700] to-amber-400 text-black border-[#f5b700] shadow-[0_0_15px_rgba(245,183,0,0.55)]'
+                        : 'bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-amber-400/50 shadow-[0_4px_12px_rgba(0,0,0,0.4)]'
+                    }`}
+                  >
                     <span ref={playBtnRef} data-playing={playing ? '1' : '0'}>
-                      {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 fill-white" />}
+                      {playing ? <Pause className="h-4 w-4 fill-black text-black" /> : <Play className="h-4 w-4 fill-current ml-0.5" />}
                     </span>
-                  </ControlBtn>
+                  </button>
                   <ControlBtn onClick={() => skip(-10)} title="Back 10s">
                     <SkipBack className="h-5 w-5" />
                   </ControlBtn>
@@ -892,16 +944,27 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                         setVolume(v);
                         if (v > 0) setMuted(false);
                       }}
-                      className="w-10 h-0.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-white"
+                      className="w-12 h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-[#f5b700]"
                     />
                   </div>
-                  {/* FIX 3: Time display via DOM refs — zero re-render */}
-                  <span className="ml-0.5 font-mono text-[9px] tabular-nums text-white/60">
-                    <span ref={currentTimeRef}>0:00</span> / <span ref={durationRef}>0:00</span>
+                  {/* Time display */}
+                  <span className="ml-1 font-mono text-[10px] sm:text-xs tabular-nums text-white/70">
+                    <span ref={currentTimeRef} className="text-white font-bold">0:00</span> / <span ref={durationRef}>0:00</span>
                   </span>
                 </div>
 
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent('open-jog-wheel'));
+                    }}
+                    title="Open Master Jog Wheel"
+                    className="hidden xs:flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#f5b700]/15 hover:bg-[#f5b700]/30 border border-[#f5b700]/40 text-[#f5b700] text-[11px] font-bold transition active:scale-95 shadow-[0_0_10px_rgba(245,183,0,0.2)]"
+                  >
+                    <span>Jog Wheel 🎛️</span>
+                  </button>
+
                   <ControlBtn onClick={toggleFullscreen} title="Fullscreen">
                     {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
                   </ControlBtn>

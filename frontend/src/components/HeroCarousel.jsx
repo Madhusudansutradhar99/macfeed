@@ -11,7 +11,7 @@ export default function HeroCarousel({ slides = [] }) {
       return [{
         id: 'raya',
         title: 'Raya and the Last Dragon',
-        category: 'Adventure • 4K HDR',
+        category: 'Adventure â€¢ 4K HDR',
         duration: '1h 47m',
         thumbnail_url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025',
         description: 'Curated high-resolution cinema with instant buffer-free streaming.'
@@ -44,6 +44,25 @@ export default function HeroCarousel({ slides = [] }) {
     return heroSlides[heroIdx] || heroSlides[0];
   }, [heroSlides, heroIdx]);
 
+  const [imgSrc, setImgSrc] = useState(() => activeHero?.thumbnail_url || '');
+
+  useEffect(() => {
+    if (!activeHero) return;
+    let url = activeHero.thumbnail_url || '';
+    if (url.includes('ytimg.com') || url.includes('youtube.com')) {
+      url = url.replace('mqdefault.jpg', 'maxresdefault.jpg');
+    }
+    setImgSrc(url);
+  }, [activeHero]);
+
+  const handleImageError = () => {
+    if (imgSrc.includes('maxresdefault.jpg')) {
+      setImgSrc(imgSrc.replace('maxresdefault.jpg', 'hqdefault.jpg'));
+    } else if (imgSrc.includes('hqdefault.jpg')) {
+      setImgSrc(activeHero?.thumbnail_url || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025');
+    }
+  };
+
   const handlePlay = (e) => {
     e.stopPropagation();
     navigate(`/watch/${activeHero.id}`, { state: { video: activeHero } });
@@ -51,7 +70,7 @@ export default function HeroCarousel({ slides = [] }) {
 
   return (
     <section className="relative w-full max-w-7xl mx-auto px-3 sm:px-6 mt-2 mb-6">
-      <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] min-h-[240px] sm:min-h-[340px] md:min-h-[420px] rounded-2xl md:rounded-3xl overflow-hidden select-none bg-[#11131a] border border-white/10 shadow-2xl">
+      <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] min-h-[240px] sm:min-h-[340px] md:min-h-[420px] rounded-2xl md:rounded-3xl overflow-hidden select-none bg-[#091626] border border-sky-400/20 shadow-2xl">
         
         {/* Background Slide Image */}
         <AnimatePresence mode="wait">
@@ -64,14 +83,15 @@ export default function HeroCarousel({ slides = [] }) {
             className="absolute inset-0 w-full h-full"
           >
             <img
-              src={activeHero.thumbnail_url?.replace('mqdefault.jpg', 'maxresdefault.jpg') || activeHero.thumbnail_url}
+              src={imgSrc}
+              onError={handleImageError}
               alt={activeHero.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-center"
             />
 
             {/* Digen Deep Scrim */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0b0c10] via-[#0b0c10]/60 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0b0c10] via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#08182b] via-[#08182b]/65 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#08182b] via-transparent to-transparent" />
           </motion.div>
         </AnimatePresence>
 

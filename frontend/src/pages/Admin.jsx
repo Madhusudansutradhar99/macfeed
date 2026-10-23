@@ -704,6 +704,14 @@ export default function Admin() {
   };
 
   const handleToggle = async (id, field, val) => {
+    if (field === 'is_featured') {
+      try {
+        const featList = JSON.parse(localStorage.getItem('macfeed_admin_featured') || '[]');
+        const updated = val ? [...new Set([...featList, id])] : featList.filter(fId => fId !== id);
+        localStorage.setItem('macfeed_admin_featured', JSON.stringify(updated));
+        window.dispatchEvent(new CustomEvent('categorized-videos-updated'));
+      } catch (e) {}
+    }
     await supabase
       .from('videos')
       .update({ [field]: val })

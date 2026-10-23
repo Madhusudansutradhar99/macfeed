@@ -34,130 +34,107 @@ export default function VideoPlayerPage() {
 
   useEffect(() => {
     let isCancelled = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    async function loadData() {
-      // 0. If video was already supplied via router state, immediately play it
-      if (location.state?.video) {
-        setVideo(location.state.video);
-        playVideo(location.state.video);
-        setLoading(false);
-      }
+    // 0. Compute base video for the new id immediately on every navigation
+    let resolvedVideo = null;
+    if (location.state?.video && (location.state.video.id === id || location.state.video.ytId === id?.replace('yt-', ''))) {
+      const v = location.state.video;
+      const ytId = v.ytId || (typeof v.id === 'string' && v.id.startsWith('yt-') ? v.id.replace('yt-', '') : v.youtube_id);
+      resolvedVideo = {
+        ...v,
+        id: id,
+        ytId: ytId || v.ytId,
+        youtube_id: ytId || v.youtube_id,
+        source: ytId ? 'youtube' : (v.source || 'local'),
+        video_url: ytId ? `https://www.youtube.com/embed/${ytId}` : v.video_url,
+      };
+    }
 
-      // 1. Device Song
-      if (id?.toString().startsWith('device-')) {
-        const deviceSong = deviceSongs.find((s) => s.id === id);
-        if (deviceSong) {
-          setVideo(deviceSong);
-          playVideo(deviceSong);
-          setLoading(false);
-          return;
-        }
-      }
+    if (!resolvedVideo && id?.toString().startsWith('device-')) {
+      resolvedVideo = deviceSongs.find((s) => s.id === id);
+    }
 
-      // 2. YouTube ID
-      if (id?.toString().startsWith('yt-')) {
-        const ytId = id.replace('yt-', '');
-        const baseVideo = location.state?.video || {
-          id: id,
-          youtube_id: ytId,
-          title: searchParams.get('title') || 'YouTube Video',
-          thumbnail_url: `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`,
-          video_url: `https://www.youtube.com/embed/${ytId}`,
-          source: 'youtube',
-          category: 'YouTube',
-        };
+    if (!resolvedVideo && id?.toString().startsWith('yt-')) {
+      const ytId = id.replace('yt-', '');
+      resolvedVideo = {
+        id: id,
+        ytId: ytId,
+        youtube_id: ytId,
+        title: searchParams.get('title') || 'YouTube Video',
+        thumbnail_url: `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`,
+        video_url: `https://www.youtube.com/embed/${ytId}`,
+        source: 'youtube',
+        category: 'YouTube',
+      };
+    }
 
-        if (!video) {
-          setVideo(baseVideo);
-          playVideo(baseVideo);
-          setLoading(false);
-        }
+    if (!resolvedVideo) {
+      const catMatch = getAllCategorizedVideos().find((v) => v.id === id);
+      const fbMatch = catMatch || FALLBACK_VIDEOS.find((v) => v.id === id);
+      if (fbMatch) resolvedVideo = fbMatch;
+    }
 
-        // Fetch related or metadata in background without blocking player
-        try {
-          const { data: d } = await fetchJson(`/api/search?q=${encodeURIComponent(baseVideo.title || 'trending')}`, {}, { timeoutMs: 5000 });
-          if (!isCancelled && d?.results) {
-            setRelated(d.results.slice(0, 12).map((r) => ({
-              id: `yt-${r.ytId || r.id}`,
-              title: r.title,
-              thumbnail_url: r.thumbnail || r.thumbnail_url,
-              category: 'Related',
-            })));
-          }
-        } catch (e) {
-          // Non-blocking
-        }
-        return;
-      }
-
-      // 3. Check searched/categorized videos & Fallback for instant 0ms playback
-      const categorizedMatch = getAllCategorizedVideos().find((v) => v.id === id);
-      const fallbackMatch = categorizedMatch || FALLBACK_VIDEOS.find((v) => v.id === id);
-      if (fallbackMatch && !video) {
-        setVideo(fallbackMatch);
-        playVideo(fallbackMatch);
-        setRelated(FALLBACK_VIDEOS.filter((v) => v.id !== id).slice(0, 10));
-        setLoading(false);
-        return;
-      }
-
-      // 4. Database fetch if not already in state
-      if (!video) {
-        setLoading(true);
-        try {
-          const { data, error } = await supabase
-            .from('videos')
-            .select('*')
-            .eq('id', id)
-            .single();
-
+    if (resolvedVideo) {
+      setVideo(resolvedVideo);
+      playVideo(resolvedVideo);
+      setLoading(false);
+    } else {
+      setLoading(true);
+      supabase
+        .from('videos')
+        .select('*')
+        .eq('id', id)
+        .single()
+        .then(({ data, error }) => {
           if (!isCancelled && !error && data) {
             setVideo(data);
             playVideo(data);
             setLoading(false);
-
-            // Fetch related videos
-            const { data: rel } = await supabase
-              .from('videos')
-              .select('*')
-              .eq('category', data.category)
-              .neq('id', id)
-              .limit(12);
-            if (!isCancelled) setRelated(rel || []);
-          } else {
+          } else if (!isCancelled) {
             const fb = FALLBACK_VIDEOS[0];
             setVideo(fb);
             playVideo(fb);
-            setRelated(FALLBACK_VIDEOS.slice(1, 11));
-            if (!isCancelled) setLoading(false);
+            setLoading(false);
           }
-        } catch (e) {
-          const fb = FALLBACK_VIDEOS[0];
-          setVideo(fb);
-          playVideo(fb);
-          setRelated(FALLBACK_VIDEOS.slice(1, 11));
-          if (!isCancelled) setLoading(false);
-        }
-      } else {
-        // Fetch related in background
-        supabase
-          .from('videos')
-          .select('*')
-          .eq('category', video.category || 'Movie')
-          .neq('id', id)
-          .limit(12)
-          .then(({ data: rel }) => {
-            if (!isCancelled && rel) setRelated(rel);
-          });
-      }
+        });
     }
 
-    loadData();
+    // Fetch recommendations for this specific video
+    const searchTerm = resolvedVideo?.title || searchParams.get('title') || 'trending movies';
+    fetchJson(`/api/search?q=${encodeURIComponent(searchTerm)}`, {}, { timeoutMs: 5000 })
+      .then(({ data: d }) => {
+        if (!isCancelled && d?.results) {
+          const cleanId = id?.replace('yt-', '');
+          const mapped = d.results
+            .filter((r) => r.ytId !== cleanId && `yt-${r.ytId}` !== id)
+            .slice(0, 12)
+            .map((r) => {
+              const ytId = r.ytId || r.id;
+              return {
+                id: `yt-${ytId}`,
+                ytId: ytId,
+                youtube_id: ytId,
+                title: r.title,
+                thumbnail_url: r.thumbnail || r.thumbnail_url || `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`,
+                video_url: `https://www.youtube.com/embed/${ytId}`,
+                source: 'youtube',
+                category: 'Related',
+              };
+            });
+          setRelated(mapped);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setRelated(FALLBACK_VIDEOS.filter((v) => v.id !== id).slice(0, 10));
+        }
+      });
 
-    // Check likes
     try {
       const likedObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
       if (likedObj[id]) setIsLiked(true);
+      else setIsLiked(false);
     } catch (e) {}
 
     return () => {
@@ -253,7 +230,7 @@ export default function VideoPlayerPage() {
 
         {/* Video Player Box */}
         <div className="w-full rounded-2xl overflow-hidden bg-black shadow-2xl border border-white/10 mb-4">
-          <VideoPlayer video={video} onClose={() => navigate(-1)} />
+          <VideoPlayer key={id || video?.id} video={video} onClose={() => navigate(-1)} />
         </div>
 
         {/* Video Meta Info */}

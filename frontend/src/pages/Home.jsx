@@ -230,6 +230,29 @@ export default function Home() {
     );
   }, [videos, selectedCategory]);
 
+  // Admin Controlled Hero Slides: Only videos explicitly starred / marked as featured by Admin appear here
+  const heroSlides = useMemo(() => {
+    // 1. Check videos marked as is_featured in DB
+    const adminFeatured = videos.filter((v) => v.is_featured === true || v.featured === true);
+
+    // 2. Check localStorage admin-starred selections
+    try {
+      const localFeaturedIds = JSON.parse(localStorage.getItem('macfeed_admin_featured') || '[]');
+      if (localFeaturedIds.length > 0) {
+        const idSet = new Set(localFeaturedIds);
+        const locallyChosen = videos.filter((v) => idSet.has(v.id));
+        if (locallyChosen.length > 0) return locallyChosen.slice(0, 7);
+      }
+    } catch (e) {}
+
+    if (adminFeatured.length > 0) {
+      return adminFeatured.slice(0, 7);
+    }
+
+    // 3. Fallback: Curated 4K blockbuster movies only (NEVER random search items)
+    return FALLBACK_VIDEOS.slice(0, 6);
+  }, [videos]);
+
   if (loading && videos.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-transparent">
@@ -240,8 +263,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-transparent text-white">
-      {/* --- Hero Spotlight Banner --- */}
-      <HeroCarousel slides={videos.slice(0, 7)} />
+      {/* --- Hero Spotlight Banner (Strictly Admin / Curated Only) --- */}
+      <HeroCarousel slides={heroSlides} />
 
       {/* --- Row 1: MINISORA / TRENDING VERTICAL CAROUSEL (Directly matching Screenshot) --- */}
       <DigenSectionRow
