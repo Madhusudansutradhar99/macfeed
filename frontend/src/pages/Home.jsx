@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Loader from '../components/Loader';
-import { ChevronLeft, ChevronRight, ChevronRight as ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronRight as ArrowRight, Sparkles, X } from 'lucide-react';
 import VideoCard from '../components/VideoCard';
 import HeroCarousel from '../components/HeroCarousel';
 import { FALLBACK_VIDEOS } from '../data/fallbackVideos';
@@ -265,6 +265,37 @@ export default function Home() {
     <div className="min-h-screen bg-transparent text-white">
       {/* --- Hero Spotlight Banner (Strictly Admin / Curated Only) --- */}
       <HeroCarousel slides={heroSlides} />
+
+      {/* --- Intro Spotlight Banner --- */}
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 mb-8 mt-2">
+        <div className="relative rounded-2xl overflow-hidden p-4 sm:p-5 bg-gradient-to-r from-blue-950/40 via-cyan-950/20 to-black/60 border border-cyan-500/20 backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500/20 to-blue-600/30 border border-cyan-400/30 flex items-center justify-center text-cyan-400 shrink-0 shadow-lg">
+              <Sparkles className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-400 bg-cyan-400/10 px-2 py-0.5 rounded-full border border-cyan-400/20">
+                  Welcome Tour
+                </span>
+                <span className="text-[10px] text-gray-400 font-semibold hidden xs:inline">
+                  Beyond Streaming
+                </span>
+              </div>
+              <h3 className="text-sm sm:text-base font-bold text-white mt-0.5">
+                New to MacFeed? Discover our next-generation streaming & floating playback engine.
+              </h3>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/intro')}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-black font-black uppercase text-xs tracking-wider transition-transform active:scale-95 shadow-[0_0_20px_rgba(34,211,238,0.35)] shrink-0"
+          >
+            <span>Launch Intro Tour</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
 
       {/* --- Row 1: MINISORA / TRENDING VERTICAL CAROUSEL (Directly matching Screenshot) --- */}
       <DigenSectionRow

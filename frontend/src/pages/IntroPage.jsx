@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  TrendingUp, PlayCircle, Music, Search, Layers, ChevronRight, Zap, Shield, Smartphone, Globe, Sparkles
+  TrendingUp, PlayCircle, Music, Search, Layers, ChevronRight, Zap, Shield, Smartphone, Globe, Sparkles, ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -34,15 +34,6 @@ const FeatureCard = ({ feature, index }) => (
 export default function IntroPage() {
   const navigate = useNavigate();
   const { user, guestLogin, setAuthModalOpen } = useAuth();
-
-  useEffect(() => {
-    if (user) {
-      try {
-        localStorage.setItem('macfeed_has_seen_intro', 'true');
-      } catch (e) {}
-      navigate('/', { replace: true });
-    }
-  }, [user, navigate]);
 
   const handleGetStarted = () => {
     try {
@@ -80,6 +71,20 @@ export default function IntroPage() {
   return (
     <div className="min-h-screen text-white flex flex-col items-center justify-start relative overflow-hidden selection:bg-cyan-500/30" style={{ backgroundColor: 'var(--bg-primary)' }}>
       
+      {/* Floating Back to App Button */}
+      <div className="fixed top-5 left-5 z-50">
+        <button
+          onClick={() => {
+            try { localStorage.setItem('macfeed_has_seen_intro', 'true'); } catch (e) {}
+            navigate('/');
+          }}
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/60 hover:bg-black/90 border border-white/15 backdrop-blur-xl text-xs font-bold text-gray-200 hover:text-white transition shadow-lg active:scale-95"
+        >
+          <ArrowLeft className="w-4 h-4 text-cyan-400" />
+          <span>Back to App</span>
+        </button>
+      </div>
+
       {/* Dynamic Background Elements */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <motion.div 
@@ -142,28 +147,51 @@ export default function IntroPage() {
           transition={{ duration: 1, delay: 0.6 }}
           className="flex flex-col sm:flex-row items-center gap-4 mb-24"
         >
-          <div 
-            className="relative group cursor-pointer"
-            onClick={handleGetStarted}
-          >
-            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse" />
-            <button 
-              className="relative flex items-center gap-4 px-10 py-5 rounded-full leading-none overflow-hidden border transition-colors" style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'rgba(255,255,255,0.10)' }}>
-              <span className="text-white font-black uppercase tracking-[0.2em] text-sm md:text-base z-10 group-hover:text-cyan-300 transition-colors">
-                Unlock MacFeed
-              </span>
-              <div className="w-9 h-9 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full flex items-center justify-center z-10 group-hover:translate-x-1.5 transition-transform duration-300 shadow-lg">
-                <ChevronRight className="w-4 h-4 text-white" />
+          {user ? (
+            <div 
+              className="relative group cursor-pointer"
+              onClick={() => {
+                try { localStorage.setItem('macfeed_has_seen_intro', 'true'); } catch (e) {}
+                navigate('/');
+              }}
+            >
+              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse" />
+              <button 
+                className="relative flex items-center gap-4 px-10 py-5 rounded-full leading-none overflow-hidden border transition-colors" style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'rgba(255,255,255,0.10)' }}>
+                <span className="text-white font-black uppercase tracking-[0.2em] text-sm md:text-base z-10 group-hover:text-cyan-300 transition-colors">
+                  Enter MacFeed AI Hub
+                </span>
+                <div className="w-9 h-9 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full flex items-center justify-center z-10 group-hover:translate-x-1.5 transition-transform duration-300 shadow-lg">
+                  <ChevronRight className="w-4 h-4 text-white" />
+                </div>
+              </button>
+            </div>
+          ) : (
+            <>
+              <div 
+                className="relative group cursor-pointer"
+                onClick={handleGetStarted}
+              >
+                <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse" />
+                <button 
+                  className="relative flex items-center gap-4 px-10 py-5 rounded-full leading-none overflow-hidden border transition-colors" style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'rgba(255,255,255,0.10)' }}>
+                  <span className="text-white font-black uppercase tracking-[0.2em] text-sm md:text-base z-10 group-hover:text-cyan-300 transition-colors">
+                    Unlock MacFeed
+                  </span>
+                  <div className="w-9 h-9 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full flex items-center justify-center z-10 group-hover:translate-x-1.5 transition-transform duration-300 shadow-lg">
+                    <ChevronRight className="w-4 h-4 text-white" />
+                  </div>
+                </button>
               </div>
-            </button>
-          </div>
 
-          <button
-            onClick={handleExploreGuest}
-            className="px-8 py-5 rounded-full border border-white/20 hover:border-white/40 text-gray-300 hover:text-white font-black uppercase tracking-[0.15em] text-xs sm:text-sm transition-all hover:bg-white/5 active:scale-95"
-          >
-            Explore as Guest
-          </button>
+              <button
+                onClick={handleExploreGuest}
+                className="px-8 py-5 rounded-full border border-white/20 hover:border-white/40 text-gray-300 hover:text-white font-black uppercase tracking-[0.15em] text-xs sm:text-sm transition-all hover:bg-white/5 active:scale-95"
+              >
+                Explore as Guest
+              </button>
+            </>
+          )}
         </motion.div>
 
         {/* Bento Grid Features */}

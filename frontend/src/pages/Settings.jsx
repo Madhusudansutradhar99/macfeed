@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Trash2, LogOut, Shield, Settings as SettingsIcon, AlertCircle, ChevronRight, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Settings() {
+  const navigate = useNavigate();
   const { user, logout, setAuthModalOpen } = useAuth();
   const [toast, setToast] = useState(null);
 
@@ -132,6 +134,17 @@ export default function Settings() {
               Privacy & Local Storage
             </h2>
             <div className="space-y-3">
+              <button 
+                onClick={() => navigate('/intro')}
+                className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-cyan-950/30 to-blue-950/20 hover:from-cyan-900/40 hover:to-blue-900/30 border border-cyan-500/20 rounded-xl transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-4 h-4 text-cyan-400" />
+                  <span className="text-xs font-semibold text-white">Replay Welcome Intro Tour</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-cyan-400" />
+              </button>
+
               <button 
                 onClick={handleClearData}
                 className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"

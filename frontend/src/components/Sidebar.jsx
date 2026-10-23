@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Home, Film, Tv, Music, Zap, Flame, Folder, ThumbsUp, User, Trophy, ShoppingCart, Download, ShieldCheck, History
+  Home, Film, Tv, Music, Zap, Flame, Folder, ThumbsUp, User, Trophy, ShoppingCart, Download, ShieldCheck, History, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
   { label: 'Home', icon: Home, path: '/' },
+  { label: 'Intro Tour', icon: Sparkles, path: '/intro' },
   { label: 'Movies', icon: Film, path: '/movies' },
   { label: 'Series', icon: Tv, path: '/series' },
   { label: 'Music', icon: Music, path: '/music' },

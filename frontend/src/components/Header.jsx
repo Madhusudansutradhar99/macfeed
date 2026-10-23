@@ -37,6 +37,7 @@ export default function Header() {
 
   const navLinks = [
     { label: 'Explore', path: '/', icon: Compass },
+    { label: 'Intro Tour', path: '/intro', icon: Sparkles, badge: 'Tour', badgeColor: 'digen-badge-amber' },
     { label: 'Movies', path: '/movies', icon: Film, badge: 'HD', badgeColor: 'digen-badge-teal' },
     { label: 'Music', path: '/music', icon: Music, badge: 'Audio', badgeColor: 'digen-badge-teal' },
     { label: 'Shorts', path: '/shorts', icon: Zap, badge: 'Hot', badgeColor: 'digen-badge-amber' },
