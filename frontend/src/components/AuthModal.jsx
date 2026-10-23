@@ -370,6 +370,20 @@ export default function AuthModal() {
                   </svg>
                   <span>Continue with Google</span>
                 </button>
+
+                {/* Instant Guest Login Fallback */}
+                <button
+                  type="button"
+                  onClick={() => { guestLogin(); handlePostAuthRedirect(); onClose(); }}
+                  className="w-full flex items-center justify-center gap-2 bg-[#f5b700]/15 hover:bg-[#f5b700]/25 border border-[#f5b700]/40 h-10 rounded-xl transition active:scale-95 text-xs font-bold text-[#f5b700] mb-2"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Instant Guest Login (1-Click, No Setup)</span>
+                </button>
+
+                <p className="text-[10px] text-gray-500 text-center mt-1">
+                  Tip: Agar Google login me origin_mismatch error aaye to upar diye gaye Guest ya Email se login karein.
+                </p>
               </div>
             )}
           </div>
