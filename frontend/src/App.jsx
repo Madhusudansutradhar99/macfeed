@@ -79,14 +79,18 @@ function AppContent() {
   const navigate = useNavigate();
   const { user, setAuthModalOpen } = useAuth();
   
-  // Show intro for new visitors who haven't seen it yet
+  // Always route unauthenticated visitors to /intro so they can sign in and enter the app
   useEffect(() => {
-    try {
-      const hasSeenIntro = localStorage.getItem('macfeed_has_seen_intro');
-      if (!user && !hasSeenIntro && (location.pathname === '/' || location.pathname === '')) {
-        navigate('/intro', { replace: true });
+    const hasUser = user || (() => {
+      try {
+        return !!localStorage.getItem('macfeed_user');
+      } catch (e) {
+        return false;
       }
-    } catch (e) {}
+    })();
+    if (!hasUser && location.pathname !== '/intro') {
+      navigate('/intro', { replace: true });
+    }
   }, [user, location.pathname, navigate]);
 
   // Use a ref for location to avoid listener duplication

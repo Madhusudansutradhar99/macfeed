@@ -135,7 +135,7 @@ export default function Settings() {
             </h2>
             <div className="space-y-3">
               <button 
-                onClick={() => navigate('/intro')}
+                onClick={() => navigate('/intro?tour=true')}
                 className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-cyan-950/30 to-blue-950/20 hover:from-cyan-900/40 hover:to-blue-900/30 border border-cyan-500/20 rounded-xl transition-all"
               >
                 <div className="flex items-center gap-3">

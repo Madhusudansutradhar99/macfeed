@@ -37,7 +37,7 @@ export default function Header() {
 
   const navLinks = [
     { label: 'Explore', path: '/', icon: Compass },
-    { label: 'Intro Tour', path: '/intro', icon: Sparkles, badge: 'Tour', badgeColor: 'digen-badge-amber' },
+    { label: 'Intro Tour', path: '/intro?tour=true', icon: Sparkles, badge: 'Tour', badgeColor: 'digen-badge-amber' },
     { label: 'Movies', path: '/movies', icon: Film, badge: 'HD', badgeColor: 'digen-badge-teal' },
     { label: 'Music', path: '/music', icon: Music, badge: 'Audio', badgeColor: 'digen-badge-teal' },
     { label: 'Shorts', path: '/shorts', icon: Zap, badge: 'Hot', badgeColor: 'digen-badge-amber' },
@@ -227,21 +227,35 @@ export default function Header() {
           <Gauge className="w-4 h-4" />
         </button>
 
-        {/* User Profile Avatar Pill */}
-        <button
-          onClick={() => {
-            if (!user) setAuthModalOpen(true);
-            else navigate('/settings');
-          }}
-          className="flex items-center gap-1.5 p-1 sm:px-2.5 sm:py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white transition"
-        >
-          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-700 to-gray-500 flex items-center justify-center text-[10px] font-bold">
-            {user?.email ? user.email.charAt(0).toUpperCase() : <User className="w-3.5 h-3.5" />}
-          </div>
-          <span className="hidden sm:inline text-xs font-semibold text-gray-300">
-            {user?.email ? user.email.split('@')[0] : 'Sign In'}
-          </span>
-        </button>
+        {/* User Profile Avatar / Sign In Pill */}
+        {user ? (
+          <button
+            onClick={() => navigate('/settings')}
+            className="flex items-center gap-1.5 p-1 sm:px-2.5 sm:py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white transition"
+          >
+            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-700 to-gray-500 flex items-center justify-center text-[10px] font-bold overflow-hidden">
+              {user?.picture ? (
+                <img src={user.picture} alt="" className="w-full h-full object-cover" />
+              ) : user?.email ? (
+                user.email.charAt(0).toUpperCase()
+              ) : (
+                <User className="w-3.5 h-3.5" />
+              )}
+            </div>
+            <span className="hidden sm:inline text-xs font-semibold text-gray-300">
+              {user?.name || (user?.email ? user.email.split('@')[0] : 'Profile')}
+            </span>
+          </button>
+        ) : (
+          <button
+            onClick={() => setAuthModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f5b700] hover:bg-amber-400 text-black text-xs font-black uppercase tracking-wider transition shadow-[0_0_15px_rgba(245,183,0,0.45)] active:scale-95"
+            title="Sign In to MacFeed"
+          >
+            <User className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>Sign In</span>
+          </button>
+        )}
       </div>
 
       {/* --- Search Overlay Modal / Dropdown --- */}

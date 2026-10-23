@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play,
@@ -73,6 +74,8 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     setViewMode,
     ytPlayerRef 
   } = useVideoMiniPlayer();
+  const navigate = useNavigate();
+  const localYTPlayerRef = useRef(null);
   const containerRef = useRef(null);
   const ytDomContainer = useRef(null);
   const ytTimerRef = useRef(null);
@@ -151,29 +154,31 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const handleToggleMiniPlayer = useCallback(() => {
     if (viewMode === 'mini') {
       setViewMode('full');
+      if (video?.id) navigate(`/watch/${video.id}`, { state: { video } });
     } else {
       setViewMode('mini');
-      if (onClose) onClose();
+      navigate('/');
     }
-  }, [viewMode, setViewMode, onClose]);
+  }, [viewMode, setViewMode, navigate, video]);
 
   const togglePlayPause = useCallback(() => {
-    if (isYouTube && ytPlayerRef.current) {
+    const player = localYTPlayerRef.current || ytPlayerRef.current;
+    if (isYouTube && player) {
       try {
-        const state = ytPlayerRef.current.getPlayerState?.();
+        const state = player.getPlayerState?.();
         if (state === 1) {
-          ytPlayerRef.current.pauseVideo?.();
+          player.pauseVideo?.();
           setPlaying(false);
         } else {
-          ytPlayerRef.current.playVideo?.();
+          player.playVideo?.();
           setPlaying(true);
         }
       } catch (err) {
         if (playing) {
-          ytPlayerRef.current.pauseVideo?.();
+          player.pauseVideo?.();
           setPlaying(false);
         } else {
-          ytPlayerRef.current.playVideo?.();
+          player.playVideo?.();
           setPlaying(true);
         }
       }
@@ -191,11 +196,12 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const skip = useCallback(
     (seconds) => {
       try {
-        if (isYouTube && ytPlayerRef.current?.seekTo) {
-          const cur = ytPlayerRef.current.getCurrentTime?.() || playbackTime || 0;
-          const vDur = ytPlayerRef.current.getDuration?.() || durationStateRef.current || duration || 0;
+        const player = localYTPlayerRef.current || ytPlayerRef.current;
+        if (isYouTube && player?.seekTo) {
+          const cur = player.getCurrentTime?.() || playbackTime || 0;
+          const vDur = player.getDuration?.() || durationStateRef.current || duration || 0;
           const target = Math.max(0, Math.min(vDur > 0 ? vDur : cur + seconds, cur + seconds));
-          ytPlayerRef.current.seekTo(target, true);
+          player.seekTo(target, true);
           setPlaybackTime(target);
           setCurrentTime(target);
           if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(target);
@@ -250,8 +256,9 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
       setPlaybackTime(targetTime);
       setCurrentTime(targetTime);
 
-      if (isYouTube && ytPlayerRef.current?.seekTo) {
-        ytPlayerRef.current.seekTo(targetTime, true);
+      const player = localYTPlayerRef.current || ytPlayerRef.current;
+      if (isYouTube && player?.seekTo) {
+        player.seekTo(targetTime, true);
       } else if (nativeVideoRef.current) {
         nativeVideoRef.current.currentTime = targetTime;
       }
@@ -450,15 +457,28 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   useEffect(() => {
+    // Reset playback & duration states for new video immediately
+    durationStateRef.current = 0;
+    setPlaybackTime(0);
+    setVideoDuration(0);
+    if (currentTimeRef.current) currentTimeRef.current.textContent = '0:00';
+    if (durationRef.current) durationRef.current.textContent = '0:00';
+    if (progressBarRef.current) progressBarRef.current.style.width = '0%';
+    if (scrubberKnobRef.current) scrubberKnobRef.current.style.left = '0%';
+    if (inputRangeRef.current) inputRangeRef.current.value = 0;
+
     if (!isYouTube || !youtubeVideoId) {
       if (ytTimerRef.current) clearInterval(ytTimerRef.current);
       if (ytFailSafeRef.current) clearTimeout(ytFailSafeRef.current);
-      if (ytPlayerRef.current) {
+      if (localYTPlayerRef.current) {
         try {
-          ytPlayerRef.current.destroy();
+          localYTPlayerRef.current.destroy();
         } catch (err) {
           // ignore
         }
+        localYTPlayerRef.current = null;
+      }
+      if (ytPlayerRef.current === localYTPlayerRef.current) {
         ytPlayerRef.current = null;
       }
       return;
@@ -494,7 +514,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         playerParams.origin = window.location.origin;
       }
 
-      ytPlayerRef.current = new window.YT.Player(host, {
+      const ytInstance = new window.YT.Player(host, {
         videoId: youtubeVideoId,
         width: '100%',
         height: '100%',
@@ -502,6 +522,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         events: {
           onReady: (event) => {
             if (isDisposed) return;
+            localYTPlayerRef.current = event.target;
             ytPlayerRef.current = event.target;
             setLoadFailed(false);
             try {
@@ -552,6 +573,8 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
           },
         },
       });
+      localYTPlayerRef.current = ytInstance;
+      ytPlayerRef.current = ytInstance;
     };
 
     if (!window.YT || !window.YT.Player) {
@@ -585,7 +608,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     const syncProgress = () => {
       if (isDisposed) return;
       try {
-        const player = ytPlayerRef.current;
+        const player = localYTPlayerRef.current || ytPlayerRef.current;
         if (!player || typeof player.getCurrentTime !== 'function') return;
 
         const cur = player.getCurrentTime() || 0;
@@ -641,20 +664,23 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
       isDisposed = true;
       clearInterval(syncInterval);
       if (ytFailSafeRef.current) clearTimeout(ytFailSafeRef.current);
-      if (ytPlayerRef.current) {
+      if (localYTPlayerRef.current) {
         try {
-          ytPlayerRef.current.destroy();
+          localYTPlayerRef.current.destroy();
         } catch (err) {
           // ignore
         }
+      }
+      if (ytPlayerRef.current === localYTPlayerRef.current) {
         ytPlayerRef.current = null;
       }
+      localYTPlayerRef.current = null;
     };
   }, [isYouTube, youtubeVideoId]);
 
   useEffect(() => {
     if (!isYouTube) return;
-    const player = ytPlayerRef.current;
+    const player = localYTPlayerRef.current || ytPlayerRef.current;
     if (!player) return;
 
     if (playing) player.playVideo?.();
@@ -663,7 +689,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
   useEffect(() => {
     if (!isYouTube) return;
-    const player = ytPlayerRef.current;
+    const player = localYTPlayerRef.current || ytPlayerRef.current;
     if (!player) return;
 
     if (muted) player.mute?.();

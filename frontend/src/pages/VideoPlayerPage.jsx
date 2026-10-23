@@ -18,7 +18,7 @@ import { FALLBACK_VIDEOS } from '../data/fallbackVideos';
 import { getAllCategorizedVideos } from '../utils/categoryDetector';
 
 export default function VideoPlayerPage() {
-  const { playVideo } = useVideoMiniPlayer();
+  const { playVideo, viewMode } = useVideoMiniPlayer();
   const { deviceSongs } = useMusicPlayer();
   const { id } = useParams();
   const location = useLocation();
@@ -31,6 +31,13 @@ export default function VideoPlayerPage() {
   const [isLiked, setIsLiked] = useState(false);
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
+
+  // Clean unmount from full page when miniplayer is active
+  useEffect(() => {
+    if (viewMode === 'mini') {
+      navigate('/', { replace: true });
+    }
+  }, [viewMode, navigate]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -233,11 +240,11 @@ export default function VideoPlayerPage() {
         {/* Back Link */}
         <div className="mb-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/')}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back</span>
+            <span>Explore</span>
           </button>
         </div>
 
@@ -246,7 +253,7 @@ export default function VideoPlayerPage() {
           <VideoPlayer
             key={id || video?.id}
             video={video}
-            onClose={() => navigate(-1)}
+            onClose={() => navigate('/')}
             onNext={handleNextVideo}
           />
         </div>

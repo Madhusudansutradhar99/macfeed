@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Maximize2, X, Play, Pause, SkipForward } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -17,17 +17,15 @@ export default function VideoMiniPlayer() {
   } = useVideoMiniPlayer();
   const navigate = useNavigate();
 
-  if (viewMode !== 'mini' || !activeVideo) {
-    return null;
-  }
-
   const handleMaximize = () => {
     setViewMode('full');
-    navigate(`/watch/${activeVideo.id}`, { state: { video: activeVideo } });
+    if (activeVideo?.id) {
+      navigate(`/watch/${activeVideo.id}`, { state: { video: activeVideo } });
+    }
   };
 
   const handleTogglePlay = (e) => {
-    e.stopPropagation();
+    if (e?.stopPropagation) e.stopPropagation();
     if (ytPlayerRef?.current) {
       const state = ytPlayerRef.current.getPlayerState?.();
       if (state === 1) {
@@ -41,6 +39,31 @@ export default function VideoMiniPlayer() {
       setPlaying(!playing);
     }
   };
+
+  // Keyboard shortcut listener for miniplayer
+  useEffect(() => {
+    if (viewMode !== 'mini' || !activeVideo) return;
+
+    const onKeyDown = (e) => {
+      const tag = e.target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+      if (e.key.toLowerCase() === 'i') {
+        e.preventDefault();
+        handleMaximize();
+      } else if (e.key === ' ' || e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        handleTogglePlay();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [viewMode, activeVideo, playing, ytPlayerRef]);
+
+  if (viewMode !== 'mini' || !activeVideo) {
+    return null;
+  }
 
   const isYouTube = activeVideo.source === 'youtube' ||
     Boolean(activeVideo.youtube_id) ||

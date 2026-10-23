@@ -288,7 +288,7 @@ export default function Home() {
             </div>
           </div>
           <button
-            onClick={() => navigate('/intro')}
+            onClick={() => navigate('/intro?tour=true')}
             className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-black font-black uppercase text-xs tracking-wider transition-transform active:scale-95 shadow-[0_0_20px_rgba(34,211,238,0.35)] shrink-0"
           >
             <span>Launch Intro Tour</span>
