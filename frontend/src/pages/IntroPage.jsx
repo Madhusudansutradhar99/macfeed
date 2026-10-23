@@ -35,6 +35,15 @@ export default function IntroPage() {
   const navigate = useNavigate();
   const { user, guestLogin, setAuthModalOpen } = useAuth();
 
+  useEffect(() => {
+    if (user) {
+      try {
+        localStorage.setItem('macfeed_has_seen_intro', 'true');
+      } catch (e) {}
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
+
   const handleGetStarted = () => {
     try {
       localStorage.setItem('macfeed_has_seen_intro', 'true');

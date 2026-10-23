@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Lock, Loader2, AlertCircle, Sparkles, User, LogOut, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useGoogleLogin } from '@react-oauth/google';
 import { supabase } from '../supabaseClient';
 
 export default function AuthModal() {
   const { user, login, guestLogin, logout, isAuthModalOpen, setAuthModalOpen } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -15,6 +18,15 @@ export default function AuthModal() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+
+  const handlePostAuthRedirect = () => {
+    try {
+      localStorage.setItem('macfeed_has_seen_intro', 'true');
+    } catch (e) {}
+    if (location.pathname === '/intro') {
+      navigate('/', { replace: true });
+    }
+  };
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -34,6 +46,7 @@ export default function AuthModal() {
         };
 
         login(userData);
+        handlePostAuthRedirect();
       } catch (err) {
         console.error('Login Failed:', err);
         setError('Failed to fetch user information from Google.');
@@ -75,6 +88,7 @@ export default function AuthModal() {
               name: data.user.user_metadata?.full_name || email.split('@')[0],
               picture: data.user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
             });
+            handlePostAuthRedirect();
             setLoading(false);
             return;
           }
@@ -91,6 +105,7 @@ export default function AuthModal() {
               name: name || email.split('@')[0],
               picture: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
             });
+            handlePostAuthRedirect();
             setLoading(false);
             return;
           }
@@ -104,6 +119,7 @@ export default function AuthModal() {
         name: name || email.split('@')[0],
         picture: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
       });
+      handlePostAuthRedirect();
     } catch (err) {
       console.warn('Auth fallback:', err);
       login({
@@ -112,6 +128,7 @@ export default function AuthModal() {
         name: name || email.split('@')[0],
         picture: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
       });
+      handlePostAuthRedirect();
     } finally {
       setLoading(false);
     }
@@ -122,6 +139,9 @@ export default function AuthModal() {
   const onClose = () => {
     setAuthModalOpen(false);
     setError(null);
+    if (user && location.pathname === '/intro') {
+      handlePostAuthRedirect();
+    }
   };
 
   return (
@@ -193,7 +213,7 @@ export default function AuthModal() {
             <div className="relative z-10 pt-6">
               <button
                 type="button"
-                onClick={() => { guestLogin(); onClose(); }}
+                onClick={() => { guestLogin(); handlePostAuthRedirect(); onClose(); }}
                 className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[#f5b700]/50 p-3.5 rounded-2xl transition-all group active:scale-95 text-white text-xs font-bold"
               >
                 <Sparkles className="w-4 h-4 text-[#f5b700]" />
@@ -224,7 +244,7 @@ export default function AuthModal() {
                 
                 <div className="w-full max-w-sm space-y-3">
                   <button 
-                    onClick={onClose}
+                    onClick={() => { handlePostAuthRedirect(); onClose(); }}
                     className="w-full h-12 bg-[#f5b700] text-black font-black uppercase text-xs tracking-wider rounded-2xl transition hover:brightness-110 active:scale-95 shadow-lg shadow-amber-500/20"
                   >
                     Start Streaming
