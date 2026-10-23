@@ -13,6 +13,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import MainLayout from './layout/MainLayout';
 import MusicMiniPlayer from './components/MusicMiniPlayer';
+import VideoMiniPlayer from './components/VideoMiniPlayer';
 import AuthModal from './components/AuthModal';
 import AdBanner from './components/AdBanner';
 import Loader from './components/Loader';
@@ -78,22 +79,15 @@ function AppContent() {
   const navigate = useNavigate();
   const { user, setAuthModalOpen } = useAuth();
   
-  // Redirect to intro if not logged in and trying to access the root
-  // useEffect(() => {
-  //   if (!user && location.pathname === '/') {
-  //     navigate('/intro', { replace: true });
-  //   }
-  // }, [user, location.pathname, navigate]);
-
-  // Strict Auth Guard: If no user and not on intro page, force open auth modal
-  // useEffect(() => {
-  //   const timer = setTimeout(() => {
-  //     if (!user && location.pathname !== '/intro') {
-  //       setAuthModalOpen(true);
-  //     }
-  //   }, 100);
-  //   return () => clearTimeout(timer);
-  // }, [user, setAuthModalOpen, location.pathname]);
+  // Show intro for new visitors who haven't seen it yet
+  useEffect(() => {
+    try {
+      const hasSeenIntro = localStorage.getItem('macfeed_has_seen_intro');
+      if (!user && !hasSeenIntro && (location.pathname === '/' || location.pathname === '')) {
+        navigate('/intro', { replace: true });
+      }
+    } catch (e) {}
+  }, [user, location.pathname, navigate]);
 
   // Use a ref for location to avoid listener duplication
   const locationRef = useRef(location);
@@ -179,6 +173,7 @@ function AppContent() {
           </Suspense>
           {/* Global persistent overlays */}
           <MusicMiniPlayer />
+          <VideoMiniPlayer />
           <LocalPlayerOverlay />
           <AuthModal />
           <InstallPWA />

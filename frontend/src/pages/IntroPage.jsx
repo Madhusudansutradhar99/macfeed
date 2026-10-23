@@ -33,16 +33,21 @@ const FeatureCard = ({ feature, index }) => (
 
 export default function IntroPage() {
   const navigate = useNavigate();
-  const { user, setAuthModalOpen } = useAuth();
-
-  useEffect(() => {
-    if (user) {
-      navigate('/', { replace: true });
-    }
-  }, [user, navigate]);
+  const { user, guestLogin, setAuthModalOpen } = useAuth();
 
   const handleGetStarted = () => {
+    try {
+      localStorage.setItem('macfeed_has_seen_intro', 'true');
+    } catch (e) {}
     setAuthModalOpen(true);
+  };
+
+  const handleExploreGuest = () => {
+    try {
+      localStorage.setItem('macfeed_has_seen_intro', 'true');
+    } catch (e) {}
+    if (!user) guestLogin();
+    navigate('/');
   };
 
   const features = [
@@ -121,23 +126,34 @@ export default function IntroPage() {
           Step into a revolutionary entertainment ecosystem. Zero boundaries. Infinite content. Crafted for the absolute elite.
         </motion.p>
 
-        {/* CTA Button */}
+        {/* CTA Buttons */}
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.6 }}
-          className="relative group mb-32 cursor-pointer"
-          onClick={handleGetStarted}
+          className="flex flex-col sm:flex-row items-center gap-4 mb-24"
         >
-          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse" />
-          <button 
-            className="relative flex items-center gap-4 px-14 py-6 rounded-full leading-none overflow-hidden border transition-colors" style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'rgba(255,255,255,0.10)' }}>
-            <span className="text-white font-black uppercase tracking-[0.2em] text-sm md:text-base z-10 group-hover:text-cyan-300 transition-colors">
-              Unlock MacFeed
-            </span>
-            <div className="w-10 h-10 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full flex items-center justify-center z-10 group-hover:translate-x-2 transition-transform duration-300 shadow-lg">
-              <ChevronRight className="w-5 h-5 text-white" />
-            </div>
+          <div 
+            className="relative group cursor-pointer"
+            onClick={handleGetStarted}
+          >
+            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse" />
+            <button 
+              className="relative flex items-center gap-4 px-10 py-5 rounded-full leading-none overflow-hidden border transition-colors" style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'rgba(255,255,255,0.10)' }}>
+              <span className="text-white font-black uppercase tracking-[0.2em] text-sm md:text-base z-10 group-hover:text-cyan-300 transition-colors">
+                Unlock MacFeed
+              </span>
+              <div className="w-9 h-9 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full flex items-center justify-center z-10 group-hover:translate-x-1.5 transition-transform duration-300 shadow-lg">
+                <ChevronRight className="w-4 h-4 text-white" />
+              </div>
+            </button>
+          </div>
+
+          <button
+            onClick={handleExploreGuest}
+            className="px-8 py-5 rounded-full border border-white/20 hover:border-white/40 text-gray-300 hover:text-white font-black uppercase tracking-[0.15em] text-xs sm:text-sm transition-all hover:bg-white/5 active:scale-95"
+          >
+            Explore as Guest
           </button>
         </motion.div>
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import VideoPlayer from '../components/VideoPlayer';
@@ -192,6 +192,19 @@ export default function VideoPlayerPage() {
     } catch (e) {}
   };
 
+  const handleNextVideo = useCallback(() => {
+    let nextVideo = null;
+    if (related && related.length > 0) {
+      nextVideo = related[0];
+    } else {
+      const fb = FALLBACK_VIDEOS.find((v) => v.id !== id);
+      nextVideo = fb || FALLBACK_VIDEOS[0];
+    }
+    if (nextVideo) {
+      navigate(`/watch/${nextVideo.id}`, { state: { video: nextVideo } });
+    }
+  }, [related, id, navigate]);
+
   if (loading && !video) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-transparent">
@@ -230,7 +243,12 @@ export default function VideoPlayerPage() {
 
         {/* Video Player Box */}
         <div className="w-full rounded-2xl overflow-hidden bg-black shadow-2xl border border-white/10 mb-4">
-          <VideoPlayer key={id || video?.id} video={video} onClose={() => navigate(-1)} />
+          <VideoPlayer
+            key={id || video?.id}
+            video={video}
+            onClose={() => navigate(-1)}
+            onNext={handleNextVideo}
+          />
         </div>
 
         {/* Video Meta Info */}

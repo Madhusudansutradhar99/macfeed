@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext({});
 
@@ -7,27 +7,53 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('macfeed_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(false);
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
-    // Authentication is bypassed for now as requested
-    const dummyUser = { id: 'admin-123', name: 'Admin', email: 'admin@macfeed.local', picture: '' };
-    setUser(dummyUser);
-    setLoading(false);
+    try {
+      const stored = localStorage.getItem('macfeed_user');
+      if (stored) {
+        setUser(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.warn('Could not read user from storage', e);
+    }
   }, []);
 
-  const login = (userData) => {
+  const login = useCallback((userData) => {
     setUser(userData);
-    localStorage.setItem('macfeed_user', JSON.stringify(userData));
+    try {
+      localStorage.setItem('macfeed_user', JSON.stringify(userData));
+    } catch (e) {}
     setAuthModalOpen(false);
-  };
+  }, []);
 
-  const logout = () => {
+  const guestLogin = useCallback(() => {
+    const guestUser = {
+      id: `guest_${Date.now()}`,
+      name: 'Guest Explorer',
+      email: 'guest@macfeed.app',
+      picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces',
+      isGuest: true,
+    };
+    login(guestUser);
+  }, [login]);
+
+  const logout = useCallback(() => {
     setUser(null);
-    localStorage.removeItem('macfeed_user');
-  };
+    try {
+      localStorage.removeItem('macfeed_user');
+    } catch (e) {}
+  }, []);
 
   // Legacy support for methods that might be called elsewhere
   const signOut = logout;
@@ -38,6 +64,7 @@ export function AuthProvider({ children }) {
         user, 
         loading, 
         login,
+        guestLogin,
         logout,
         signOut,
         isAuthModalOpen, 
