@@ -17,6 +17,8 @@ import { createClient } from '@supabase/supabase-js';
 import 'swiper/css';
 import 'swiper/css/free-mode';
 import { fetchJson } from '../utils/request';
+import { FALLBACK_VIDEOS } from '../data/fallbackVideos';
+import { getCategorizedVideos } from '../utils/categoryDetector';
 
 if (typeof window !== 'undefined') window.Buffer = window.Buffer || Buffer;
 
@@ -31,16 +33,12 @@ const themes = [
   { name: 'Cosmic', bg1: '#312E81', bg2: '#831843', bg3: '#4C1D95', bg4: '#4F46E5', bg5: '#BE185D', bg6: '#D946EF', bg7: '#1E1B4B', blur1: '#818CF8', blur2: '#F472B6', border: 'border-purple-400/50', bgBorder: 'bg-purple-400/50' }
 ];
 
-const MusicBackground = memo(({ themeIdx = 0 }) => {
-  const t = themes[themeIdx] || themes[0];
+const MusicBackground = memo(() => {
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none transition-colors duration-1000">
-      <div className="absolute inset-0 transition-all duration-1000" style={{ background: `radial-gradient(ellipse at center, ${t.bg1} 0%, ${t.bg2} 50%, ${t.bg3} 100%)` }}>
-        <div className="absolute inset-0 opacity-60 mix-blend-overlay transition-all duration-1000" style={{ background: `linear-gradient(135deg, ${t.bg4} 0%, ${t.bg5} 40%, ${t.bg6} 70%, ${t.bg7} 100%)` }} />
-        <div className="absolute inset-0 bg-[#041D24]/30" />
-        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] blur-[130px] rounded-full transition-colors duration-1000" style={{ backgroundColor: t.blur1, opacity: 0.1 }} />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] blur-[130px] rounded-full transition-colors duration-1000" style={{ backgroundColor: t.blur2, opacity: 0.15 }} />
-      </div>
+    <div className="fixed inset-0 z-0 pointer-events-none bg-[#0b0c10]">
+      <div className="absolute inset-0 bg-[#0b0c10]" />
+      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] blur-[140px] rounded-full bg-[#f5b700]/5" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] blur-[140px] rounded-full bg-[#2dd4bf]/5" />
     </div>
   );
 });
@@ -158,16 +156,34 @@ export default function Music() {
       }
 
       const { data } = await query.order('created_at', { ascending: false });
-      const musicData = deduplicate(data || []);
+      const searchedMusic = getCategorizedVideos('Music');
+      const baseMusic = (data && data.length > 0) ? data : FALLBACK_VIDEOS.filter(v => v.category === 'Music');
+      let musicData = deduplicate([...searchedMusic, ...baseMusic]);
       setSongs(musicData);
       setFilteredSongs(musicData);
       localStorage.setItem('macfeed_music_cache', JSON.stringify(musicData));
     } catch (e) {
       console.error(e);
+      const searchedMusic = getCategorizedVideos('Music');
+      const fallback = FALLBACK_VIDEOS.filter(v => v.category === 'Music');
+      const musicData = deduplicate([...searchedMusic, ...fallback]);
+      setSongs(musicData);
+      setFilteredSongs(musicData);
     } finally {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      const searchedMusic = getCategorizedVideos('Music');
+      if (searchedMusic.length > 0) {
+        setSongs(prev => deduplicate([...searchedMusic, ...prev]));
+      }
+    };
+    window.addEventListener('categorized-videos-updated', handleUpdate);
+    return () => window.removeEventListener('categorized-videos-updated', handleUpdate);
+  }, []);
 
   const scrapeGlobal = async (q) => {
     const strictQuery = (q.toLowerCase().includes('song') || q.toLowerCase().includes('music') || q.toLowerCase().includes('audio'))
@@ -552,9 +568,7 @@ export default function Music() {
     }
   };
 
-  const handleSongClick = async (song, list = displaySongs) => {
-    if (isProcessing) return;
-
+  const handleSongClick = (song, list = displaySongs) => {
     // Repair device song URL if stale (e.g. from history/likes)
     let songToPlay = song;
     if (song?.source === 'device') {
@@ -564,23 +578,19 @@ export default function Music() {
       }
     }
 
+    // 1. INSTANT 0MS PLAYBACK - NEVER BLOCK ON SUPABASE
+    playVideo(songToPlay, list);
+    addToHistory(songToPlay);
+    setIsExpanded(true);
+
+    // 2. NON-BLOCKING ASYNC BACKGROUND DB RECORD
     if (songToPlay?.id?.toString().startsWith('yt-')) {
-      setIsProcessing(true);
       const ytId = songToPlay.youtube_id || songToPlay.youtubeId || songToPlay.id.replace('yt-', '');
-      try {
-        const { data: existing } = await supabase.from('videos').select('*').eq('youtube_id', ytId).limit(1);
-        if (existing && existing.length > 0) {
-          playVideo(existing[0], list);
-          addToHistory(existing[0]);
-          setIsExpanded(true);
-        } else {
-          // Prevent duplicates by checking again right before insert
-          const { data: checkAgain } = await supabase.from('videos').select('id').eq('youtube_id', ytId).limit(1);
-          if (checkAgain?.length) {
-            playVideo(checkAgain[0], list);
-            setIsExpanded(true);
-          } else {
-            const { data: inserted, error } = await supabase.from('videos').insert([{
+      setTimeout(async () => {
+        try {
+          const { data: existing } = await supabase.from('videos').select('id').eq('youtube_id', ytId).limit(1);
+          if (!existing || existing.length === 0) {
+            await supabase.from('videos').insert([{
               title: songToPlay?.title || 'Untitled Video',
               video_url: `https://www.youtube.com/embed/${ytId}`,
               youtube_id: ytId,
@@ -589,32 +599,12 @@ export default function Music() {
               category: 'Music',
               views: 0,
               user_id: user?.id || null
-            }]).select('*').single();
-
-            if (error) console.error('Supabase Insert Error:', error);
-
-            if (inserted) {
-              playVideo(inserted, list);
-              addToHistory(inserted);
-              setIsExpanded(true);
-            } else {
-              // Fallback: play directly without saving if insert failed
-              playVideo(songToPlay, list);
-              setIsExpanded(true);
-            }
+            }]);
           }
+        } catch (_) {
+          // Non-blocking background sync error ignored
         }
-      } catch (e) {
-        console.error('handleSongClick error:', e);
-        playVideo(songToPlay, list);
-        setIsExpanded(true);
-      } finally {
-        setIsProcessing(false);
-      }
-    } else {
-      playVideo(songToPlay, list);
-      addToHistory(songToPlay);
-      setIsExpanded(true);
+      }, 500);
     }
   };
 

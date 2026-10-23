@@ -102,7 +102,7 @@ export default function Shopping() {
   const scaleValue = isMobile ? 0.38 : 0.6;
 
   return (
-    <div className="min-h-screen bg-primary text-primary flex items-center justify-center relative overflow-y-auto overflow-x-hidden transition-colors duration-500 py-10">
+    <div className="min-h-screen bg-[#0b0c10] text-white flex items-center justify-center relative overflow-y-auto overflow-x-hidden transition-colors duration-500 py-10">
       
       {/* Background Atmosphere */}
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-accent/5 blur-[150px] rounded-full pointer-events-none -z-10" />

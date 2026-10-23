@@ -1,220 +1,151 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Play, X, AlertTriangle, Database } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import React, { useState } from 'react';
+import { Search, Play, AlertTriangle, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { fetchJson } from '../utils/request';
+import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const SmartYoutubeSearch = () => {
-  const { user, setAuthModalOpen } = useAuth();
+  const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [warning, setWarning] = useState(null);
-  const [selectedVideo, setSelectedVideo] = useState(null);
-  const [saveStatus, setSaveStatus] = useState({});
-
-  const determineCategory = (title, q) => {
-    const text = (title + ' ' + q).toLowerCase();
-    if (text.includes('comedy') || text.includes('funny') || text.includes('laugh')) return 'Comedy';
-    if (text.includes('horror') || text.includes('scary') || text.includes('ghost')) return 'Horror';
-    if (text.includes('drama')) return 'Drama';
-    if (text.includes('animation') || text.includes('anime')) return 'Animation';
-    if (text.includes('cartoon') || text.includes('kids')) return 'Cartoon';
-    if (text.includes('movie') || text.includes('film') || text.includes('trailer')) return 'Movies';
-    if (text.includes('song') || text.includes('music') || text.includes('lyrics')) return 'Music';
-    if (text.includes('cricket') || text.includes('football') || text.includes('match') || text.includes('sports')) return 'Sports';
-    if (text.includes('episode') || text.includes('series')) return 'Series';
-    return 'Trending'; // Default category
-  };
-
-  const saveToDatabase = async (video) => {
-    const category = determineCategory(video.title, query);
-    
-    try {
-      setSaveStatus(prev => ({ ...prev, [video.id]: 'saving' }));
-      
-      const { error: dbError } = await supabase
-        .from('videos')
-        .upsert({
-          youtube_id: video.youtubeId,
-          title: video.title,
-          thumbnail_url: video.thumbnail,
-          video_url: `https://www.youtube.com/embed/${video.youtubeId}`,
-          category: category,
-          source: 'YouTube',
-          views: Math.floor(Math.random() * 1000) // Initial placeholder views
-        }, { onConflict: 'youtube_id' });
-
-      if (dbError) throw dbError;
-      
-      setSaveStatus(prev => ({ ...prev, [video.id]: 'saved' }));
-      console.log(`Saved to ${category} section!`);
-    } catch (err) {
-      console.error('Save failed:', err);
-      setSaveStatus(prev => ({ ...prev, [video.id]: 'error' }));
-    }
-  };
+  const navigate = useNavigate();
 
   const handleVideoSelect = (video) => {
-    setSelectedVideo(video);
-    saveToDatabase(video);
+    const rawId = video.youtubeId || video.id;
+    const ytId = rawId ? String(rawId).replace('yt-', '') : '';
+    const videoObj = {
+      id: `yt-${ytId}`,
+      youtube_id: ytId,
+      title: video.title,
+      thumbnail_url: video.thumbnail || video.thumbnail_url,
+      video_url: `https://www.youtube.com/embed/${ytId}`,
+      source: 'youtube',
+      category: 'YouTube',
+    };
+    // Instant zero-delay navigation!
+    navigate(`/watch/yt-${ytId}`, { state: { video: videoObj } });
   };
 
   const handleSearch = async (e) => {
     e?.preventDefault();
-    if (!user) {
-      setAuthModalOpen(true);
-      return;
-    }
     if (!query.trim()) return;
 
     setLoading(true);
     setError(null);
     setWarning(null);
-    setResults([]);
-
-    const localCacheKey = `yt_cache_${query.toLowerCase()}`;
-    const localCached = localStorage.getItem(localCacheKey);
-    
-    if (localCached) {
-      const { data, timestamp } = JSON.parse(localCached);
-      if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
-        setResults(data);
-        setLoading(false);
-        return;
-      }
-    }
 
     try {
-      const { response, data } = await fetchJson(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`, {}, { timeoutMs: 10000, retryTimeoutMs: 5000, retries: 1 });
-
-      if (!response.ok) throw new Error(data.error || 'Something went wrong');
-
-      const nextResults = data?.results || [];
-      setResults(nextResults);
-      if (data?.warning) setWarning(data.warning);
-
-      if (nextResults.length === 0) {
-        setWarning('No results found. Try a different search.');
-      }
-
-      localStorage.setItem(localCacheKey, JSON.stringify({
-        data: nextResults,
-        timestamp: Date.now()
+      const { data } = await fetchJson(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`);
+      const rawList = data?.results || [];
+      const nextResults = rawList.map((item) => ({
+        id: item.id || `yt-${item.ytId}`,
+        youtubeId: item.ytId || item.id,
+        title: item.title,
+        thumbnail: item.thumbnail || item.thumbnail_url,
       }));
-
+      setResults(nextResults);
+      if (nextResults.length === 0) {
+        setWarning('No matches found. Try a different query.');
+      }
     } catch (err) {
-      setError(err?.name === 'AbortError' ? 'Search timed out. Please retry.' : err.message);
+      setError('Search could not connect to index. Please retry.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 md:p-8 min-h-screen text-white">
-      <div className="mb-12 text-center">
-        <h1 className="text-4xl md:text-5xl font-black mb-6 italic uppercase tracking-tighter bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
-          Global Search Engine
-        </h1>
-        
-        <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto group">
+    <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 py-4 text-white min-h-screen pb-32">
+      {/* --- Digen Header Section --- */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-6">
+        <div>
+          <div className="flex items-center gap-2.5 mb-1">
+            <h1 className="digen-section-title text-xl sm:text-2xl md:text-3xl font-black">
+              AI NEURAL SEARCH
+            </h1>
+            <span className="digen-badge-teal text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
+              Global Index
+            </span>
+          </div>
+          <p className="text-gray-400 text-xs sm:text-sm font-normal max-w-2xl">
+            Prompt or search anything across millions of titles, creators, and official music tracks.
+          </p>
+        </div>
+      </div>
+
+      {/* --- Search Capsule --- */}
+      <form onSubmit={handleSearch} className="digen-floating-prompt p-2 sm:p-2.5 rounded-2xl max-w-3xl mx-auto mb-8 shadow-2xl">
+        <div className="flex items-center gap-3 px-2">
+          <Sparkles className="w-5 h-5 text-[#f5b700] shrink-0" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search and Auto-Sync to Site..."
-            className="w-full bg-[#111] border-2 border-white/10 rounded-2xl py-4 px-6 pl-14 text-lg focus:outline-none focus:border-purple-600 transition-all group-hover:border-white/20 shadow-2xl"
+            placeholder="Describe your video, or type @ to search..."
+            className="w-full bg-transparent text-white placeholder-gray-400 text-sm focus:outline-none py-2 font-medium"
           />
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors" />
-          <button 
+          <button
             type="submit"
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-xl transition-colors"
+            className="px-5 py-2 rounded-xl bg-white text-black hover:bg-gray-200 font-bold text-xs shrink-0 transition active:scale-95"
           >
-            Find
+            Search
           </button>
-        </form>
+        </div>
+      </form>
 
-        {warning && (
-          <div className="mt-4 flex items-center justify-center gap-2 text-yellow-500 text-sm font-bold">
-            <AlertTriangle className="w-4 h-4" /> {warning}
-          </div>
-        )}
-      </div>
-
-      {error && (
-        <div className="bg-red-900/20 border border-red-500/50 p-4 rounded-xl text-red-500 mb-8 flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5" />
-          <p className="font-bold uppercase text-xs tracking-widest">{error}</p>
+      {warning && (
+        <div className="text-center text-xs text-amber-400 font-semibold mb-6 flex items-center justify-center gap-1.5">
+          <AlertTriangle className="w-4 h-4" /> {warning}
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {error && (
+        <div className="text-center text-xs text-red-400 font-semibold mb-6">
+          {error}
+        </div>
+      )}
+
+      {/* --- Results Grid --- */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
         {loading ? (
-          Array(8).fill(0).map((_, i) => (
+          Array(6).fill(0).map((_, i) => (
             <div key={i} className="aspect-video bg-white/5 rounded-2xl animate-pulse" />
           ))
         ) : (
           results.map((video) => (
-            <div 
+            <div
               key={video.id}
               onClick={() => handleVideoSelect(video)}
-              className="group cursor-pointer bg-[#0f0f1a] border border-white/5 rounded-2xl overflow-hidden hover:border-purple-600/50 transition-all hover:-translate-y-1 shadow-lg"
+              className="digen-card group cursor-pointer flex flex-col p-2 select-none"
             >
-              <div className="relative aspect-video">
-                <img 
-                  src={video.thumbnail || video.thumbnail_url || 'https://via.placeholder.com/640x360?text=No+Thumbnail'} 
-                  alt={video.title || 'Video'} 
-                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+              <div className="relative aspect-video rounded-xl overflow-hidden bg-black mb-2">
+                <img
+                  src={video.thumbnail || 'https://via.placeholder.com/640x360'}
+                  alt={video.title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="bg-purple-600 p-3 rounded-full shadow-lg">
-                    <Play className="w-6 h-6 fill-white" />
+                  <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg">
+                    <Play className="w-4 h-4 fill-black text-black ml-0.5" />
                   </div>
                 </div>
-                {saveStatus[video.id] === 'saved' && (
-                  <div className="absolute top-2 right-2 bg-green-500 text-white p-1 rounded-full shadow-lg">
-                    <Database className="w-3 h-3" />
-                  </div>
-                )}
               </div>
-              <div className="p-4">
-                <h3 className="text-sm font-bold line-clamp-2 leading-snug text-gray-200 group-hover:text-white mb-2">
-                  {video?.title || 'Untitled Video'}
-                </h3>
-                {saveStatus[video.id] === 'saving' && <span className="text-[10px] text-purple-400 animate-pulse uppercase font-black">Syncing to Site...</span>}
-                {saveStatus[video.id] === 'saved' && <span className="text-[10px] text-green-400 uppercase font-black">Added to Library ✓</span>}
-              </div>
+
+              <h3 className="text-white font-semibold text-xs line-clamp-1 group-hover:text-[#f5b700] transition-colors">
+                {video.title}
+              </h3>
+              <p className="text-[11px] text-gray-400 truncate mt-0.5">
+                @youtube
+              </p>
             </div>
           ))
         )}
       </div>
-
-      {selectedVideo && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 md:p-8">
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setSelectedVideo(null)} />
-          <div className="relative w-full max-w-5xl aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10">
-            <button 
-              onClick={() => setSelectedVideo(null)}
-              className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <iframe
-              width="100%"
-              height="100%"
-              src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}?autoplay=1`}
-              title="YouTube video player"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full"
-            ></iframe>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

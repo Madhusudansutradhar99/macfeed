@@ -37,8 +37,6 @@
     "@capgo/capacitor-updater": "^8.45.10"
   },
   "devDependencies": {
-    "sharp": "^0.34.5",
-    "@types/react": "^19.2.14",
     "sharp": "^0.33.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",

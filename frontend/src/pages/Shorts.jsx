@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FALLBACK_VIDEOS } from '../data/fallbackVideos';
+import { getCategorizedVideos } from '../utils/categoryDetector';
 
 function formatViews(n) {
   if (!n) return '0';
@@ -363,9 +365,19 @@ function ShortPlayer({ video, isActive, onLike }) {
   );
 }
 
+const DEFAULT_SHORTS = FALLBACK_VIDEOS.filter((v) => v.category === 'Shorts');
+
+function getMergedShorts(dbList = []) {
+  const searched = getCategorizedVideos('Shorts');
+  const existingIds = new Set(searched.map(m => m.id));
+  const base = dbList.length > 0 ? dbList : DEFAULT_SHORTS;
+  const unrepeated = base.filter(m => !existingIds.has(m.id));
+  return [...searched, ...unrepeated];
+}
+
 export default function Shorts() {
-  const [shorts, setShorts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [shorts, setShorts] = useState(() => getMergedShorts());
+  const [loading, setLoading] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
@@ -377,25 +389,33 @@ export default function Shorts() {
 
   useEffect(() => {
     async function getShorts() {
-      const start = Date.now();
-      const { data } = await supabase
-        .from('videos')
-        .select('*')
-        .eq('category', 'Shorts')
-        .order('created_at', { ascending: false });
-      setShorts(data || []);
+      try {
+        const { data, error } = await supabase
+          .from('videos')
+          .select('*')
+          .eq('category', 'Shorts')
+          .order('created_at', { ascending: false });
 
-      if (data && playId) {
-        const idx = data.findIndex((s) => s.id === playId);
-        if (idx !== -1) setCurrentIdx(idx);
+        if (!error && data && data.length > 0) {
+          setShorts(getMergedShorts(data));
+          if (playId) {
+            const idx = data.findIndex((s) => s.id === playId);
+            if (idx !== -1) setCurrentIdx(idx);
+          }
+        }
+      } catch (e) {
+        // use fallback
+      } finally {
+        setLoading(false);
       }
-
-      const end = Date.now();
-      const diff = end - start;
-      setLoading(false);
-      
     }
     getShorts();
+
+    const handleUpdate = () => {
+      setShorts(prev => getMergedShorts(prev));
+    };
+    window.addEventListener('categorized-videos-updated', handleUpdate);
+    return () => window.removeEventListener('categorized-videos-updated', handleUpdate);
   }, [playId]);
 
   const goNext = useCallback(
@@ -562,87 +582,73 @@ export default function Shorts() {
 
   // ── GRID GALLERY VIEW ──
   return (
-    <div className="min-h-screen bg-primary text-primary p-6 md:p-12 pb-40 overflow-x-hidden relative transition-colors duration-500">
-      <div className="fixed inset-0 pointer-events-none opacity-5 z-0">
-        <h1 className="text-[25vw] font-black italic uppercase -rotate-12 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          SHORTS
-        </h1>
-      </div>
-
-      <header className="relative z-40 mb-20 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <button
-            onClick={() => navigate('/')}
-            className="bg-secondary p-4 rounded-full border border-primary hover:bg-primary/10 transition-all shadow-xl active:scale-95 text-primary"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <div>
-            <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter uppercase drop-shadow-2xl">
-              Shorts
+    <div className="min-h-screen bg-[#0b0c10] text-white pt-2 sm:pt-4 px-3 sm:px-6 max-w-7xl mx-auto pb-32">
+      {/* ─── Digen Header Section ─── */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-6">
+        <div>
+          <div className="flex items-center gap-2.5 mb-1">
+            <h1 className="digen-section-title text-xl sm:text-2xl md:text-3xl font-black">
+              VIRAL SHORTS
             </h1>
-            <div className="h-1 w-20 bg-accent rounded-full mt-1" style={{ backgroundColor: 'var(--accent-color)' }} />
+            <span className="digen-badge-amber text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
+              ⚡ Instant Loop
+            </span>
           </div>
-        </div>
-        <div className="text-right hidden sm:block">
-          <p className="text-secondary font-bold uppercase tracking-[0.2em] text-sm">
-            {shorts.length} TOTAL SHORTS
+          <p className="text-gray-400 text-xs sm:text-sm font-normal max-w-2xl">
+            Stream high-speed vertical clips and trending creator micro-stories with zero loading latency.
           </p>
         </div>
-      </header>
 
-      <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-6 gap-y-16 md:gap-x-10 md:gap-y-24">
+        <div className="text-xs text-gray-400 font-semibold">
+          {shorts.length} CLIPS AVAILABLE
+        </div>
+      </div>
+
+      {/* ─── Digen Vertical Cards Grid ─── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
         {shorts.map((short, i) => (
           <motion.div
             key={short.id}
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: (i % 20) * 0.03 }}
-            whileHover={{
-              scale: 1.1,
-              rotate: 0,
-              zIndex: 50,
-              transition: { duration: 0.2 },
-            }}
-            className="group cursor-pointer"
+            transition={{ delay: (i % 20) * 0.02 }}
+            className="group cursor-pointer flex flex-col"
             onClick={() => navigate(`/shorts?play=${short.id}`)}
           >
-            <div className="relative transform -rotate-6 group-hover:rotate-0 transition-transform duration-500 ease-out">
-              {/* Outer Theme-Aware Frame (Yellow in blue mode) */}
-              <div 
-                className="absolute inset-[-8px] md:inset-[-14px] rounded-2xl md:rounded-[32px] shadow-[0_15px_40px_rgba(0,0,0,0.5)] border border-primary transition-colors duration-500" 
-                style={{ backgroundColor: 'var(--border-color)', opacity: 0.8 }}
+            <div className="relative aspect-[9/15] rounded-2xl overflow-hidden bg-[#12141a] border border-white/5 group-hover:border-white/20 transition-all duration-300 shadow-lg">
+              <img
+                src={short.thumbnail_url}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                alt={short.title}
+                loading="lazy"
+                onError={(e) => {
+                  e.target.src = 'https://placehold.co/400x711/0b0c10/ffffff?text=Short';
+                }}
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-70 group-hover:opacity-40 transition-opacity" />
+              
+              <div className="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] font-bold text-white border border-white/10">
+                Short
+              </div>
 
-              <div className="relative aspect-[9/16] rounded-2xl md:rounded-[32px] overflow-hidden border-2 border-primary bg-black">
-                <img
-                  src={short.thumbnail_url}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 brightness-90 group-hover:brightness-110"
-                  alt={short.title}
-                  loading="lazy"
-                  onError={(e) => {
-                    e.target.src = 'https://placehold.co/400x711/001b2e/ffffff?text=Short';
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-90" />
-                <div className="absolute bottom-4 left-5 right-5">
-                  <h3 className="text-white font-black italic text-xs md:text-base uppercase tracking-tighter line-clamp-2 leading-tight drop-shadow-md">
-                    {short.title}
-                  </h3>
-                  <div className="flex items-center gap-1.5 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--accent-color)' }} />
-                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">
-                      Play Short
-                    </span>
-                  </div>
+              <div className="absolute bottom-2.5 left-2.5 right-2.5">
+                <div className="text-[10px] font-bold text-gray-300">
+                  {formatViews(short.views || 1200)} views
                 </div>
               </div>
+            </div>
+
+            <div className="pt-2 px-0.5">
+              <h3 className="text-white font-semibold text-xs line-clamp-1 group-hover:text-[#f5b700] transition-colors">
+                {short.title}
+              </h3>
+              <p className="text-[11px] text-gray-400 truncate mt-0.5">
+                @official
+              </p>
             </div>
           </motion.div>
         ))}
       </div>
-
-      <div className="fixed bottom-0 left-0 w-full h-32 bg-gradient-to-t from-primary to-transparent z-0 pointer-events-none" />
     </div>
   );
 }

@@ -25,7 +25,7 @@ const navItems = [
 const DynamicNavItem = ({ item, active, onClick, forceExpand }) => {
   const [hover, setHover] = useState(false);
   const navigate = useNavigate();
-  const iconColor = active ? '#ffffff' : 'var(--text-primary)';
+  const iconColor = active ? '#000000' : 'var(--text-primary)';
   const isExpanded = forceExpand || hover;
 
   return (
@@ -41,9 +41,8 @@ const DynamicNavItem = ({ item, active, onClick, forceExpand }) => {
         }
       }}
       className={`absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-2xl cursor-pointer z-[2000] shadow-xl will-change-transform border border-white/5
-        ${active ? 'text-white' : 'hover:bg-white/10 glass'}
+        ${active ? 'bg-gradient-to-r from-[#f5b700] to-amber-500 text-black font-black shadow-[0_0_20px_rgba(245,183,0,0.45)]' : 'hover:bg-white/10 bg-[#161822] text-gray-300'}
       `}
-      style={active ? { background: 'linear-gradient(135deg, rgba(var(--accent-rgb), 0.9), rgba(var(--accent-rgb), 0.6))', boxShadow: '0 8px 20px -5px rgba(var(--accent-rgb),0.5)' } : {}}
       animate={{ width: isExpanded ? 200 : 44 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
     >
@@ -54,7 +53,7 @@ const DynamicNavItem = ({ item, active, onClick, forceExpand }) => {
         initial={false}
         animate={{ opacity: isExpanded ? 1 : 0 }}
         transition={{ duration: 0.12 }}
-        className={`whitespace-nowrap font-bold pr-6 text-[11px] uppercase tracking-widest ml-1 ${active ? 'text-white' : 'text-primary'}`}
+        className={`whitespace-nowrap font-black pr-6 text-[11px] uppercase tracking-widest ml-1 ${active ? 'text-black' : 'text-gray-200'}`}
       >
         {item.label}
       </motion.span>

@@ -7,7 +7,8 @@ import {
     Sliders, PictureInPicture, VolumeX, SkipBack, SkipForward,
     Repeat, Check, X, ChevronRight, Minimize2, MoreHorizontal, MoreVertical,
     Layout, RefreshCcw, ZoomIn, Type, Palette, Shield, Zap,
-    Keyboard, FileText, Download, List, Settings2, Mic, Globe
+    Keyboard, FileText, Download, List, Settings2, Mic, Globe,
+    Film, FolderOpen, Clock, Maximize2
 } from 'lucide-react';
 import { useMusicPlayer } from '../context/MusicContext';
 import { Filesystem } from '@capacitor/filesystem';
@@ -76,11 +77,11 @@ const SCREENSHOT_FORMATS = ['PNG', 'JPG'];
 
 function LocalPlayerOverlay() {
     const {
-        isLocalPlayerOpen, setIsLocalPlayerOpen, activeLocalSong: currentSong,
+        isLocalPlayerOpen, setIsLocalPlayerOpen, activeLocalSong: currentSong, setActiveLocalSong,
         playingLocal: playing, setPlayingLocal: setPlaying,
         volumeLocal: volume, setVolumeLocal: setVolume,
         mutedLocal: isMuted, setMutedLocal: setIsMuted,
-        next, prev
+        next, prev, playLocalFile, playLocalSong
     } = useMusicPlayer();
 
     const videoRef = useRef(null);
@@ -277,18 +278,23 @@ function LocalPlayerOverlay() {
         const checkOrientation = () => {
             const orient = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
             setPhysOrientation(orient);
-            if (orient === 'portrait') {
-                setShowExtraPanel(false);
-            }
         };
-        // Aggressive polling for orientation changes on mobile
-        const interval = setInterval(checkOrientation, 500);
+        checkOrientation();
+        const interval = setInterval(checkOrientation, 1000);
         window.addEventListener('resize', checkOrientation);
         window.addEventListener('orientationchange', checkOrientation);
+
+        const handleOpenJog = () => {
+            setIsLocalPlayerOpen(true);
+            setShowExtraPanel(true);
+        };
+        window.addEventListener('open-jog-wheel', handleOpenJog);
+
         return () => {
             clearInterval(interval);
             window.removeEventListener('resize', checkOrientation);
             window.removeEventListener('orientationchange', checkOrientation);
+            window.removeEventListener('open-jog-wheel', handleOpenJog);
         };
     }, []);
 
@@ -412,6 +418,17 @@ function LocalPlayerOverlay() {
         };
     }, [isLocalPlayerOpen, currentSong]);
 
+    // ── SYNC PLAYING STATE TO NATIVE VIDEO ELEMENT ──
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+        if (playing) {
+            video.play().catch(() => {});
+        } else {
+            video.pause();
+        }
+    }, [playing]);
+
     useEffect(() => {
         if (isLocalPlayerOpen && currentSong && videoRef.current) {
             try {
@@ -505,6 +522,49 @@ function LocalPlayerOverlay() {
         setShowResumeDialog(false);
         setPlaying(true);
     };
+
+    const handleTogglePlay = useCallback((e) => {
+        if (e) e.stopPropagation();
+        const video = videoRef.current;
+        if (!video) return;
+        if (video.paused) {
+            video.play().then(() => setPlaying(true)).catch(() => {});
+        } else {
+            video.pause();
+            setPlaying(false);
+        }
+    }, [setPlaying]);
+
+    const handleSkipRelative = useCallback((seconds, e) => {
+        if (e) e.stopPropagation();
+        const video = videoRef.current;
+        if (!video) return;
+        const target = Math.max(0, Math.min(video.duration || 0, (video.currentTime || 0) + seconds));
+        video.currentTime = target;
+        if (currentTimeRef.current) currentTimeRef.current.innerText = formatTime(target);
+        if (progressBarRef.current && video.duration) {
+            progressBarRef.current.style.width = `${(target / video.duration) * 100}%`;
+        }
+    }, []);
+
+    const handleClosePlayer = useCallback((e) => {
+        if (e) e.stopPropagation();
+        try {
+            if (videoRef.current) {
+                videoRef.current.pause();
+                videoRef.current.currentTime = 0;
+            }
+        } catch (err) {}
+        setPlaying(false);
+        if (setActiveLocalSong) setActiveLocalSong(null);
+        setIsLocalPlayerOpen(false);
+        try {
+            window.screen?.orientation?.unlock();
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
+        } catch (err) {}
+    }, [setPlaying, setActiveLocalSong, setIsLocalPlayerOpen]);
 
     const handleSeekMouseDown = useCallback((e) => {
         e.stopPropagation();
@@ -1027,8 +1087,177 @@ function LocalPlayerOverlay() {
         };
     }, []);
 
-    // ONLY RENDER IF PLAYER IS OPEN AND SONG EXISTS
-    if (!isLocalPlayerOpen || !currentSong) return null;
+    // ONLY RENDER IF PLAYER IS OPEN
+    if (!isLocalPlayerOpen) return null;
+
+    // GLASSMORHPIC 16K STUDIO LAUNCHPAD WHEN NO LOCAL MEDIA LOADED YET
+    if (!currentSong) {
+        return (
+            <AnimatePresence>
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[9999] bg-[#07090e]/85 backdrop-blur-3xl flex items-center justify-center p-4 sm:p-6 font-sans select-none"
+                    onClick={() => setIsLocalPlayerOpen(false)}
+                >
+                    {/* Fixed Glass Orbs behind launchpad */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+                        <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-cyan-500/15 blur-[120px]" />
+                        <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] rounded-full bg-[#f5b700]/15 blur-[130px]" />
+                    </div>
+
+                    <motion.div
+                        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="relative w-full max-w-2xl bg-[#0d101a]/85 backdrop-blur-2xl border border-white/15 rounded-3xl p-6 sm:p-8 shadow-[0_30px_90px_rgba(0,0,0,0.85),0_0_40px_rgba(245,183,0,0.15)] overflow-hidden"
+                    >
+                        {/* Top Bar inside modal */}
+                        <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#f5b700] to-amber-600 flex items-center justify-center text-black font-black shadow-[0_0_20px_rgba(245,183,0,0.4)]">
+                                    <Film size={20} />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h2 className="text-white text-base sm:text-lg font-black uppercase tracking-tight">
+                                            16K Studio Local Player
+                                        </h2>
+                                        <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[#f5b700]/20 text-[#f5b700] border border-[#f5b700]/30">
+                                            PRO JOG DIAL
+                                        </span>
+                                    </div>
+                                    <p className="text-gray-400 text-xs">
+                                        Hardware GPU accelerated zero-latency playback
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsLocalPlayerOpen(false)}
+                                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition active:scale-95"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Drag and Drop Zone */}
+                        <div
+                            onDragOver={(e) => { e.preventDefault(); }}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                const file = e.dataTransfer?.files?.[0];
+                                if (file && playLocalFile) {
+                                    playLocalFile(file);
+                                    setShowExtraPanel(true);
+                                }
+                            }}
+                            onClick={() => {
+                                document.getElementById('macfeed-launchpad-file-input')?.click();
+                            }}
+                            className="group relative border-2 border-dashed border-white/20 hover:border-[#f5b700] rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 bg-white/[0.02] hover:bg-white/[0.05]"
+                        >
+                            <input
+                                id="macfeed-launchpad-file-input"
+                                type="file"
+                                accept="video/*,audio/*,.mkv,.mp4,.webm,.mov,.avi,.mp3"
+                                className="hidden"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file && playLocalFile) {
+                                        playLocalFile(file);
+                                        setShowExtraPanel(true);
+                                    }
+                                }}
+                            />
+                            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 group-hover:border-[#f5b700]/50 group-hover:scale-110 group-hover:bg-[#f5b700]/10 flex items-center justify-center text-[#f5b700] mb-3 transition-all duration-300 shadow-lg">
+                                <FolderOpen size={28} />
+                            </div>
+                            <h3 className="text-white text-sm sm:text-base font-bold mb-1">
+                                Click to Browse or Drop Video File Here
+                            </h3>
+                            <p className="text-gray-400 text-xs max-w-sm mb-4">
+                                Supports 4K/8K/16K MP4, MKV, WebM, MOV, AVI with frame-accurate Jog Wheel scrubbing
+                            </p>
+                            <div className="flex flex-wrap items-center justify-center gap-2">
+                                <span className="px-3 py-1 rounded-full text-[10px] font-semibold bg-white/5 border border-white/10 text-gray-300">.MP4</span>
+                                <span className="px-3 py-1 rounded-full text-[10px] font-semibold bg-white/5 border border-white/10 text-gray-300">.MKV</span>
+                                <span className="px-3 py-1 rounded-full text-[10px] font-semibold bg-white/5 border border-white/10 text-gray-300">.WEBM</span>
+                                <span className="px-3 py-1 rounded-full text-[10px] font-semibold bg-white/5 border border-white/10 text-gray-300">.MOV</span>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons Row */}
+                        <div className="mt-5 flex flex-col sm:flex-row items-center gap-3">
+                            <button
+                                onClick={() => {
+                                    document.getElementById('macfeed-launchpad-file-input')?.click();
+                                }}
+                                className="w-full sm:flex-1 py-3 px-5 rounded-2xl bg-white text-black font-bold text-xs flex items-center justify-center gap-2 hover:bg-gray-200 transition shadow-[0_0_20px_rgba(255,255,255,0.25)] active:scale-98"
+                            >
+                                <FolderOpen size={16} />
+                                <span>Open Video from Computer</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (playLocalSong) {
+                                        playLocalSong({
+                                            id: 'demo-16k',
+                                            title: '4K Cinema Test - Tears of Steel (16K Pro Demo)',
+                                            video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+                                            thumbnail_url: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800',
+                                            source: 'local',
+                                            category: 'Local'
+                                        });
+                                        setShowExtraPanel(true);
+                                    }
+                                }}
+                                className="w-full sm:flex-1 py-3 px-5 rounded-2xl bg-[#f5b700] hover:bg-amber-400 text-black font-bold text-xs flex items-center justify-center gap-2 border border-[#f5b700] shadow-[0_0_20px_rgba(245,183,0,0.4)] transition active:scale-98"
+                            >
+                                <Maximize2 size={16} />
+                                <span>Try Jog Wheel with Demo Video 🎛️</span>
+                            </button>
+                        </div>
+
+                        {/* Recent Local Files list */}
+                        {(() => {
+                            try {
+                                const recent = JSON.parse(localStorage.getItem('macfeed_recent_local') || '[]');
+                                if (recent && recent.length > 0) {
+                                    return (
+                                        <div className="mt-5 pt-4 border-t border-white/10">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                                                    <Clock size={12} className="text-[#f5b700]" />
+                                                    Recent Local Videos
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-1">
+                                                {recent.slice(0, 4).map((f) => (
+                                                    <div
+                                                        key={f.id}
+                                                        onClick={() => {
+                                                            document.getElementById('macfeed-launchpad-file-input')?.click();
+                                                        }}
+                                                        className="flex items-center justify-between p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] cursor-pointer transition text-xs"
+                                                    >
+                                                        <span className="text-white truncate font-medium max-w-[320px]">{f.name}</span>
+                                                        <span className="text-gray-400 font-mono text-[10px]">{f.size}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                            } catch (e) { }
+                            return null;
+                        })()}
+                    </motion.div>
+                </motion.div>
+            </AnimatePresence>
+        );
+    }
 
     return (
         <AnimatePresence>
@@ -1130,7 +1359,7 @@ function LocalPlayerOverlay() {
                             onClick={e => { e.stopPropagation(); resetControlsTimeout(); }}
                         >
                             <div className="flex items-center gap-6">
-                                <button onClick={() => { window.screen?.orientation?.unlock(); setIsLocalPlayerOpen(false); }} className="text-white p-2">
+                                <button onClick={handleClosePlayer} className="text-white p-2 hover:text-[#f5b700] transition active:scale-95" title="Close Video">
                                     <ArrowLeft size={24} />
                                 </button>
                                 <h2 className="text-white text-sm font-bold truncate max-w-[150px] sm:max-w-[300px]">{currentSong.name || currentSong.title}</h2>
@@ -1282,10 +1511,11 @@ function LocalPlayerOverlay() {
                             className={`absolute bottom-0 left-0 right-0 z-[600] p-6 flex flex-col gap-6 bg-gradient-to-t from-black to-transparent ${showExtraPanel ? 'pointer-events-none opacity-30' : 'pointer-events-auto'}`}
                             onClick={e => { e.stopPropagation(); if(!showExtraPanel) resetControlsTimeout(); }}
                         >
-                            <div className="flex items-center justify-between gap-6">
+                            <div className="flex flex-col gap-3">
+                                {/* Seek Bar Row */}
                                 <div
                                     ref={seekBarRef}
-                                    className="flex-1 flex items-center gap-4 py-4 cursor-pointer select-none"
+                                    className="w-full flex items-center gap-3 sm:gap-4 py-2 cursor-pointer select-none"
                                     style={{
                                         transform: 'translateZ(0)',
                                         backfaceVisibility: 'hidden',
@@ -1316,7 +1546,7 @@ function LocalPlayerOverlay() {
                                         <div ref={bufferBarRef} className="absolute top-0 left-0 h-full bg-white/5 rounded-full" style={{ width: '0%' }} />
                                         <div
                                             ref={progressBarRef}
-                                            className="absolute top-0 left-0 h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                                            className="absolute top-0 left-0 h-full bg-[#f5b700] rounded-full shadow-[0_0_12px_rgba(245,183,0,0.6)]"
                                             style={{
                                                 width: '0%',
                                                 transform: 'translateZ(0)',
@@ -1325,21 +1555,72 @@ function LocalPlayerOverlay() {
                                                 willChange: 'width, transform',
                                             }}
                                         >
-                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-xl scale-110" />
+                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-xl scale-110" />
                                         </div>
                                     </div>
                                     <span ref={durationRef} className="text-white text-[10px] font-black min-w-[45px]">00:00</span>
                                 </div>
 
-                                {/* Desktop Site Mode: More Button to open Wheel (Landscape Only) */}
-                                {physOrientation === 'landscape' && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setShowExtraPanel(!showExtraPanel); }}
-                                        className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-90 border border-white/5"
-                                    >
-                                        <Settings2 size={24} className={showExtraPanel ? "text-accent animate-spin-slow" : ""} />
-                                    </button>
-                                )}
+                                {/* Controls Row: Transport & Jog Wheel */}
+                                <div className="flex items-center justify-between gap-4">
+                                    {/* Left Hint */}
+                                    <div className="w-24 hidden sm:block text-[11px] text-gray-400 font-mono tracking-wider">
+                                        {aspectRatio}
+                                    </div>
+
+                                    {/* Center: Physical Transport Controls */}
+                                    <div className="flex items-center justify-center gap-4 mx-auto">
+                                        {/* Rewind 10s */}
+                                        <button
+                                            type="button"
+                                            onClick={(e) => handleSkipRelative(-10, e)}
+                                            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-white/90 border border-white/15 backdrop-blur-md transition-all shadow-md"
+                                            title="Rewind 10s"
+                                        >
+                                            <RotateCcw size={17} />
+                                        </button>
+
+                                        {/* Big Gold Glass Play/Pause Button */}
+                                        <button
+                                            type="button"
+                                            onClick={handleTogglePlay}
+                                            className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#f5b700] via-amber-400 to-[#f5b700] text-black active:scale-95 flex items-center justify-center shadow-[0_0_30px_rgba(245,183,0,0.6)] hover:shadow-[0_0_45px_rgba(245,183,0,0.85)] border border-[#f5b700]/80 transition-all duration-200"
+                                            title={playing ? 'Pause' : 'Play'}
+                                        >
+                                            {playing ? (
+                                                <Pause size={22} className="fill-black text-black" />
+                                            ) : (
+                                                <Play size={22} className="fill-black text-black ml-0.5" />
+                                            )}
+                                        </button>
+
+                                        {/* Forward 10s */}
+                                        <button
+                                            type="button"
+                                            onClick={(e) => handleSkipRelative(10, e)}
+                                            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-white/90 border border-white/15 backdrop-blur-md transition-all shadow-md"
+                                            title="Forward 10s"
+                                        >
+                                            <RotateCw size={17} />
+                                        </button>
+                                    </div>
+
+                                    {/* Right: Jog Wheel Toggle */}
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setShowExtraPanel(!showExtraPanel); }}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl transition-all duration-300 active:scale-95 border backdrop-blur-xl ${
+                                                showExtraPanel
+                                                    ? 'bg-[#f5b700] text-black border-[#f5b700] shadow-[0_0_20px_rgba(245,183,0,0.5)] font-black'
+                                                    : 'bg-white/10 hover:bg-white/20 text-white border-white/15 shadow-lg'
+                                            }`}
+                                            title="Toggle Precision Jog Wheel"
+                                        >
+                                            <Settings2 size={16} className={showExtraPanel ? "animate-spin-slow text-black" : "text-[#f5b700]"} />
+                                            <span className="text-[10px] font-bold tracking-wider uppercase">Jog Wheel</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     )}
@@ -1372,9 +1653,23 @@ function LocalPlayerOverlay() {
                             initial={{ opacity: 0, x: -50 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -50 }}
-                            className="absolute inset-0 z-[800] flex items-center justify-start overflow-hidden pointer-events-auto bg-blue-600/[0.08] backdrop-blur-2xl border-r border-white/10 shadow-[50px_0_150px_rgba(0,0,0,0.5)]"
+                            className="absolute inset-0 z-[800] flex items-center justify-start overflow-hidden pointer-events-auto bg-[#05070e]/80 backdrop-blur-3xl border-r border-white/10 shadow-[60px_0_160px_rgba(0,0,0,0.85)]"
                             onClick={() => setShowExtraPanel(false)}
                         >
+                            {/* Top Glassmorphic Dismiss Button */}
+                            <div className="absolute top-4 left-4 z-[950] flex items-center gap-3">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setShowExtraPanel(false); }}
+                                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl shadow-lg transition active:scale-95 text-xs font-bold"
+                                >
+                                    <X size={14} className="text-[#f5b700]" />
+                                    <span>Close Wheel</span>
+                                </button>
+                                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 text-[10px] font-mono uppercase tracking-widest backdrop-blur-md">
+                                    <span>PRECISION JOG DIAL • 16K</span>
+                                </div>
+                            </div>
+
                             {/* 
                         EXPANDED INTERACTIVE AREA (LEFT SIDE):
                         Now covers a larger width to ensure scrolling anywhere on the left
@@ -1406,41 +1701,76 @@ function LocalPlayerOverlay() {
                                         touchAction: 'none'
                                     }}
                                 />
-                                {/* COMPACT & TIGHT MOBILE WHEEL (Smaller radius and size) */}
-                                <div className="absolute left-[-130px] md:left-[-280px] w-[200px] md:w-[400px] h-[200px] md:h-[400px] flex items-center justify-center pointer-events-none scale-[0.5] md:scale-100 origin-left">
+                                {/* ULTRA-PREMIUM GLASSMORHPIC PRECISION WHEEL */}
+                                <div className="absolute left-[-130px] md:left-[-280px] w-[220px] md:w-[440px] h-[220px] md:h-[440px] flex items-center justify-center pointer-events-none scale-[0.55] md:scale-100 origin-left">
 
-                                    {/* 1. OUTER GOLD RING (STABLE ARROW) */}
+                                    {/* 1. OUTER PRECISION GLASS BEZEL (PHYSICALLY ROTATES WITH USER DRAG) */}
                                     <motion.div
-                                        animate={showExtraPanel ? { rotate: 360 } : {}}
-                                        transition={{ repeat: Infinity, duration: 60, ease: 'linear' }}
-                                        className="absolute w-[260px] md:w-[420px] h-[260px] md:h-[420px] rounded-full border-[3px] border-dashed border-yellow-400/60 shadow-[0_0_20px_rgba(250,204,21,0.3)]"
-                                    />
+                                        style={{ rotate: wheelRotationMV }}
+                                        className="absolute w-[280px] md:w-[460px] h-[280px] md:h-[460px] rounded-full bg-gradient-to-br from-white/[0.08] via-white/[0.02] to-transparent backdrop-blur-3xl border border-white/20 shadow-[0_0_60px_rgba(0,0,0,0.9),inset_0_1px_2px_rgba(255,255,255,0.35),0_0_30px_rgba(245,183,0,0.2)]"
+                                    >
+                                        {/* 72 Micro-etched Radial Tick Marks */}
+                                        {[...Array(72)].map((_, i) => {
+                                            const isMajor = i % 6 === 0;
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className={`absolute ${isMajor ? 'w-1 h-3.5 bg-[#f5b700] shadow-[0_0_8px_#f5b700]' : 'w-0.5 h-2 bg-white/30'}`}
+                                                    style={{
+                                                        left: '50%',
+                                                        top: 2,
+                                                        transformOrigin: '50% 228px',
+                                                        transform: `translateX(-50%) rotate(${i * 5}deg)`,
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </motion.div>
 
-                                    {/* STABLE SYSTEM ARROW (FIXED AT RIGHT) */}
-                                    <div className="absolute right-[15px] top-[50%] translate-y-[-50%] rotate-[-90deg] z-50">
-                                        <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[14px] border-t-yellow-300 shadow-[0_0_30px_rgba(253,224,71,0.8)]" />
+                                    {/* STABLE PRECISION POINTER (ILLUMINATED AT 3 O'CLOCK / 90 DEG) */}
+                                    <div className="absolute right-[12px] top-[50%] -translate-y-1/2 z-50 flex items-center">
+                                        <div className="w-8 h-[2px] bg-gradient-to-l from-[#f5b700] to-transparent" />
+                                        <div className="w-0 h-0 border-l-[10px] border-l-[#f5b700] border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent drop-shadow-[0_0_15px_#f5b700]" />
                                     </div>
 
-                                    {/* 2. INNER CYAN SYSTEM RING (THICK BORDER) */}
+                                    {/* 2. INNER CYAN CHROME SYSTEM RING (COUNTER-ROTATING TICK RING) */}
                                     <motion.div
                                         animate={showExtraPanel ? { rotate: -360 } : {}}
-                                        transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
-                                        className="absolute w-[180px] md:w-[340px] h-[180px] md:h-[340px] rounded-full border-[4px] border-cyan-300/70 shadow-[0_0_35px_rgba(34,211,238,0.5)]"
+                                        transition={{ repeat: Infinity, duration: 40, ease: 'linear' }}
+                                        className="absolute w-[200px] md:w-[360px] h-[200px] md:h-[360px] rounded-full border-2 border-cyan-400/40 shadow-[0_0_40px_rgba(34,211,238,0.35),inset_0_0_30px_rgba(34,211,238,0.15)] bg-cyan-950/[0.15] backdrop-blur-xl"
                                     >
-                                        {[...Array(36)].map((_, i) => (
-                                            <div key={i} className="absolute w-1 h-3 bg-cyan-400/40" style={{ left: '50%', top: -2, transform: `rotate(${i * 10}deg)` }} />
+                                        {/* Degree Markers */}
+                                        {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+                                            <div
+                                                key={deg}
+                                                className="absolute text-[8px] font-mono font-bold text-cyan-300/70"
+                                                style={{
+                                                    left: '50%',
+                                                    top: 10,
+                                                    transformOrigin: '50% 170px',
+                                                    transform: `translateX(-50%) rotate(${deg}deg)`,
+                                                }}
+                                            >
+                                                {deg}°
+                                            </div>
                                         ))}
                                     </motion.div>
 
-                                    {/* 3. CORE HUB (CLEAN & MINIMAL) */}
-                                    <div className="absolute w-[140px] md:w-[280px] h-[140px] md:h-[280px] rounded-full flex flex-col items-center justify-center border-[2px] border-white/5 bg-radial-gradient from-cyan-400/[0.08] to-transparent">
+                                    {/* 3. CORE MACHINED GLASS HUB */}
+                                    <div className="absolute w-[140px] md:w-[260px] h-[140px] md:h-[260px] rounded-full flex flex-col items-center justify-center border-2 border-white/20 bg-gradient-to-br from-[#121624] via-[#090b12] to-[#040508] shadow-[0_15px_35px_rgba(0,0,0,0.9),inset_0_2px_8px_rgba(255,255,255,0.25)] backdrop-blur-2xl">
                                         <motion.div
-                                            animate={{ opacity: [0.3, 0.6, 0.3] }}
-                                            transition={{ repeat: Infinity, duration: 2 }}
-                                            className="text-[8px] font-mono text-cyan-400/40 font-black tracking-[0.6em]"
+                                            animate={{ scale: [1, 1.05, 1], opacity: [0.7, 1, 0.7] }}
+                                            transition={{ repeat: Infinity, duration: 2.5 }}
+                                            className="w-12 h-12 md:w-16 md:h-16 rounded-full border border-cyan-400/50 flex items-center justify-center bg-cyan-500/10 shadow-[0_0_25px_rgba(34,211,238,0.4)] mb-1"
                                         >
-                                            CORE_STABLE
+                                            <div className="w-4 h-4 rounded-full bg-[#f5b700] shadow-[0_0_15px_#f5b700]" />
                                         </motion.div>
+                                        <span className="text-[9px] md:text-[11px] font-mono font-black text-[#f5b700] tracking-[0.3em] uppercase">
+                                            16K PRO
+                                        </span>
+                                        <span className="text-[7px] md:text-[8px] font-mono text-cyan-300/60 font-semibold tracking-widest mt-0.5">
+                                            PRECISION JOG
+                                        </span>
                                     </div>
                                 </div>
                                 <div className={`absolute ${isMobileView ? 'left-[-130px] w-[200px]' : 'left-[-280px] w-[400px]'} h-full flex items-center justify-center pointer-events-none`}>
@@ -2057,26 +2387,47 @@ const JogPanel = memo(({ action, index, wheelRotationMV, isMobileView }) => {
                 </svg>
             </div>
 
-            {/* Panel Body - Transparent Background as requested */}
+            {/* Panel Body - Ultra-Luxury Glassmorphic Action Card */}
             <div
-                className={`relative ${isMobileView ? 'w-20 h-7' : 'w-36 h-14'} bg-transparent backdrop-blur-[2px] border-l-[4px] sm:border-l-[8px] border-r-[1px] sm:border-r-[2px] border-y-[1px] sm:border-y-[2px] transition-all duration-300 flex items-center justify-between px-1.5 sm:px-4`}
+                className={`relative ${isMobileView ? 'w-24 h-9 px-2' : 'w-40 h-14 px-3.5'} rounded-2xl transition-all duration-300 flex items-center justify-between backdrop-blur-2xl`}
                 style={{
-                    clipPath: 'polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%)',
-                    borderLeftColor: isFocused ? action.color : 'rgba(255,255,255,0.1)',
-                    borderRightColor: 'rgba(255,255,255,0.05)',
-                    borderTopColor: 'rgba(255,255,255,0.05)',
-                    borderBottomColor: 'rgba(255,255,255,0.05)',
-                    boxShadow: isFocused ? `0 0 35px ${action.color}44` : 'none',
-                    opacity: isFocused ? '1' : '0.7'
+                    backgroundColor: isFocused ? 'rgba(15, 20, 32, 0.88)' : 'rgba(10, 13, 20, 0.65)',
+                    borderWidth: '1px',
+                    borderColor: isFocused ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)',
+                    borderLeftWidth: isMobileView ? '4px' : '6px',
+                    borderLeftColor: isFocused ? action.color : 'rgba(255, 255, 255, 0.2)',
+                    boxShadow: isFocused
+                        ? `0 10px 30px rgba(0,0,0,0.8), 0 0 35px ${action.color}55, inset 0 1px 1px rgba(255,255,255,0.3)`
+                        : '0 4px 16px rgba(0,0,0,0.5)',
+                    opacity: isFocused ? '1' : '0.75'
                 }}
             >
-                <div className="transition-all duration-300" style={{ color: isFocused ? action.color : 'rgba(255,255,255,0.4)', transform: isFocused ? 'scale(1.3)' : 'scale(1)' }}>
+                <div
+                    className="transition-all duration-300 flex items-center justify-center"
+                    style={{
+                        color: isFocused ? action.color : 'rgba(255,255,255,0.5)',
+                        transform: isFocused ? 'scale(1.25)' : 'scale(1)',
+                        filter: isFocused ? `drop-shadow(0 0 10px ${action.color})` : 'none'
+                    }}
+                >
                     {action.icon}
                 </div>
                 <div className="flex flex-col items-end">
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em]">{action.label}</span>
+                    <span
+                        className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${
+                            isFocused ? 'text-white' : 'text-gray-300'
+                        }`}
+                    >
+                        {action.label}
+                    </span>
                     {action.inlineMenu && (
-                        <div className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${showInlineMenu ? 'bg-red-500 shadow-[0_0_10px_red]' : 'bg-white/20'}`} />
+                        <div
+                            className={`w-1.5 h-1.5 rounded-full mt-1 transition-all ${
+                                showInlineMenu
+                                    ? 'bg-[#f5b700] shadow-[0_0_10px_#f5b700]'
+                                    : 'bg-white/30'
+                            }`}
+                        />
                     )}
                 </div>
             </div>

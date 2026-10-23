@@ -98,8 +98,12 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const [availableQualities, setAvailableQualities] = useState([]);
   const [currentQuality, setCurrentQuality] = useState('auto');
   const [forceLandscape, setForceLandscape] = useState(false);
-  // Keep these for native video & seek compatibility
-  const isYouTube = video?.source === 'youtube';
+  // Robust YouTube detection
+  const isYouTube = video?.source === 'youtube' || 
+    Boolean(video?.youtube_id) || 
+    Boolean(video?.ytId) || 
+    Boolean(typeof video?.id === 'string' && video.id.startsWith('yt-')) ||
+    Boolean(video?.video_url?.includes('youtu'));
 
   const showControlsTemporarily = useCallback(() => {
     setShowControls(true);
@@ -376,7 +380,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
       const match = video?.video_url?.match(
         /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/
       );
-      const youtubeId = match ? match[1] : '';
+      const youtubeId = video?.youtube_id || video?.ytId || (match ? match[1] : (typeof video?.id === 'string' && video.id.startsWith('yt-') ? video.id.replace('yt-', '') : ''));
 
       if (ytDomContainer.current) {
         ytDomContainer.current.innerHTML = '';
@@ -384,20 +388,13 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
       const host = document.createElement('div');
       ytDomContainer.current?.appendChild(host);
 
-      // Check network speed
-      let connectionSpeed = 'fast';
-      if (navigator.connection && navigator.connection.effectiveType) {
-        const type = navigator.connection.effectiveType;
-        if (type === '2g' || type === '3g') connectionSpeed = 'slow';
-      }
-
-      console.log('[YT-Player] Creating with origin:', window.location.origin);
+      console.log('[YT-Player] Initializing instant playback for ID:', youtubeId);
       ytPlayerRef.current = new window.YT.Player(host, {
         videoId: youtubeId,
         width: '100%',
         height: '100%',
         playerVars: {
-          autoplay: connectionSpeed === 'slow' ? 0 : 1,
+          autoplay: 1,
           controls: 1,
           rel: 0,
           modestbranding: 1,
@@ -407,7 +404,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
           enablejsapi: 1,
           playsinline: 1,
           fs: 1,
-          disablekb: 1,
           origin: window.location.origin,
           widget_referrer: window.location.origin,
         },
@@ -418,6 +414,18 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             durationStateRef.current = initDur;
             setDuration(initDur);
             setVolume((event.target.getVolume?.() || 100) / 100);
+
+            // INSTANT 0MS AUTOPLAY TRIGGER
+            try {
+              event.target.playVideo();
+              setPlaying(true);
+            } catch (err) {
+              try {
+                event.target.mute();
+                event.target.playVideo();
+                setPlaying(true);
+              } catch (_) {}
+            }
 
             const syncProgress = () => {
               if (ytPlayerRef.current && ytPlayerRef.current.getCurrentTime) {
@@ -679,11 +687,13 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
             <div ref={ytDomContainer} className="absolute inset-0 h-full w-full z-[10]" />
             
-            {/* Transparent overlay captures all taps and swipes. */}
-            <div 
-              className={`absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent transition-opacity duration-300 ${isFullscreen || viewMode === 'mini' ? 'pointer-events-none opacity-0' : 'opacity-100'}`} 
-              onClick={() => viewMode === 'mini' ? maximize() : toggleControls()}
-            />
+            {/* Transparent overlay for mini mode maximize only */}
+            {viewMode === 'mini' && (
+              <div 
+                className="absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent" 
+                onClick={() => maximize?.()}
+              />
+            )}
           </div>
         ) : (
           <><video

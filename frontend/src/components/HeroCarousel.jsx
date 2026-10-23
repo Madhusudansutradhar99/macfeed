@@ -1,40 +1,33 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Plus, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, Info } from 'lucide-react';
 
 export default function HeroCarousel({ slides = [] }) {
   const navigate = useNavigate();
 
-  // Pad slides to at least 7 for the 3D effect
   const heroSlides = useMemo(() => {
     if (!slides || slides.length === 0) {
       return [{
         id: 'raya',
         title: 'Raya and the Last Dragon',
-        category: 'Adventure, Fantasy, Action',
+        category: 'Adventure • 4K HDR',
         duration: '1h 47m',
         thumbnail_url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025',
-        description: 'Long ago, in the fantasy world of Kumandra, humans and dragons lived together in harmony.'
+        description: 'Curated high-resolution cinema with instant buffer-free streaming.'
       }];
     }
-    
-    // De-duplicate slides
+
     const uniqueList = [];
     const seen = new Set();
-    slides.forEach(v => {
+    slides.forEach((v) => {
       if (!seen.has(v.id)) {
         seen.add(v.id);
         uniqueList.push(v);
       }
     });
 
-    const list = uniqueList.slice(0, 7);
-    const padded = [...list];
-    while (padded.length > 0 && padded.length < 7) {
-      padded.push(...list);
-    }
-    return padded.slice(0, 7);
+    return uniqueList.slice(0, 6);
   }, [slides]);
 
   const [heroIdx, setHeroIdx] = useState(0);
@@ -42,8 +35,8 @@ export default function HeroCarousel({ slides = [] }) {
   useEffect(() => {
     if (heroSlides.length <= 1) return;
     const timer = setInterval(() => {
-      setHeroIdx(prev => (prev + 1) % heroSlides.length);
-    }, 5500); // 5.5 seconds autoplay rotation
+      setHeroIdx((prev) => (prev + 1) % heroSlides.length);
+    }, 6000);
     return () => clearInterval(timer);
   }, [heroSlides]);
 
@@ -51,138 +44,102 @@ export default function HeroCarousel({ slides = [] }) {
     return heroSlides[heroIdx] || heroSlides[0];
   }, [heroSlides, heroIdx]);
 
-  
+  const handlePlay = (e) => {
+    e.stopPropagation();
+    navigate(`/watch/${activeHero.id}`, { state: { video: activeHero } });
+  };
+
   return (
-    <section 
-
-      className={`relative w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)] md:w-[calc(100%-5rem)] mx-auto mt-2 md:mt-4 aspect-[16/10] sm:aspect-[16/11] md:aspect-[21/9.5] min-h-[220px] sm:min-h-[360px] md:min-h-[480px] rounded-[1.2rem] md:rounded-[2rem] overflow-hidden select-none shadow-2xl border border-white/5 bg-black cursor-grab active:cursor-grabbing`}
-    >
-      {/* Green diagonal glowing stripe */}
-      <div className="absolute left-[-10%] top-[-30%] w-[6%] h-[180%] bg-gradient-to-b from-[#10b981]/50 via-[#10b981]/15 to-transparent blur-[35px] transform rotate-[32deg] pointer-events-none z-10" />
-
-      {/* Sliding Container */}
-      <div className="absolute inset-0 w-full h-full overflow-hidden rounded-[1.2rem] md:rounded-[2rem]">
-        <AnimatePresence mode="popLayout" initial={false}>
+    <section className="relative w-full max-w-7xl mx-auto px-3 sm:px-6 mt-2 mb-6">
+      <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] min-h-[240px] sm:min-h-[340px] md:min-h-[420px] rounded-2xl md:rounded-3xl overflow-hidden select-none bg-[#11131a] border border-white/10 shadow-2xl">
+        
+        {/* Background Slide Image */}
+        <AnimatePresence mode="wait">
           <motion.div
             key={activeHero.id}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
-            onDragEnd={(e, { offset, velocity }) => {
-              const swipe = offset.x;
-              if (swipe < -50) {
-                setHeroIdx(prev => (prev + 1) % heroSlides.length);
-              } else if (swipe > 50) {
-                setHeroIdx(prev => (prev - 1 + heroSlides.length) % heroSlides.length);
-              }
-            }}
-            initial={{ x: '100%', opacity: 0.8 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: '-100%', opacity: 0.8 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute inset-0 w-full h-full bg-[#020205] rounded-[1.2rem] md:rounded-[2rem] overflow-hidden pointer-events-none"
+            initial={{ opacity: 0, scale: 1.02 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
+            className="absolute inset-0 w-full h-full"
           >
-            {/* Crisp Full Background version of the thumbnail with maxresdefault fallback */}
             <img
-              src={activeHero.thumbnail_url?.replace('mqdefault.jpg', 'maxresdefault.jpg') || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025'}
-              onError={(e) => { e.target.onerror = null; e.target.src = activeHero.thumbnail_url?.replace('mqdefault.jpg', 'hqdefault.jpg'); }}
-              className="absolute inset-0 w-full h-full object-cover rounded-[1.2rem] md:rounded-[2rem]"
-              alt=""
+              src={activeHero.thumbnail_url?.replace('mqdefault.jpg', 'maxresdefault.jpg') || activeHero.thumbnail_url}
+              alt={activeHero.title}
+              className="w-full h-full object-cover"
             />
 
-            {/* Dark Gradients to ensure readability of buttons and text */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#020205]/90 via-[#020205]/30 to-transparent z-10 rounded-[1.2rem] md:rounded-[2rem]" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#020205]/95 via-transparent to-transparent z-10 rounded-[1.2rem] md:rounded-[2rem]" />
-
-            {/* Interactive Controls Overlay on the Left (Buttons at top, title below in small size) */}
-            <div className="absolute inset-x-0 bottom-20 sm:bottom-32 md:bottom-40 flex flex-col items-start px-4 sm:px-8 md:px-12 gap-2 z-40 pointer-events-auto">
-              {/* Play & Add & Review buttons */}
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => navigate('/watch/' + activeHero.id)}
-                  className="flex items-center gap-1 bg-[#00f2fe] hover:bg-cyan-400 text-black font-black uppercase text-[7px] sm:text-[8px] md:text-[9px] tracking-widest px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 rounded-lg shadow-[0_0_15px_rgba(0,242,254,0.3)] hover:shadow-[0_0_25px_rgba(0,242,254,0.6)] transition-all hover:scale-105 active:scale-95 border border-[#00f2fe]/20"
-                >
-                  <Play className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 fill-black text-black" /> Play
-                </button>
-                <button
-                  onClick={() => navigate('/movies')}
-                  className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg border border-white/20 hover:border-white/50 bg-black/40 backdrop-blur-md flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95"
-                >
-                  <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 h-4" />
-                </button>
-                <button className="h-10 px-5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] group hover:scale-105 active:scale-95"
-                  onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('open-info-modal', { detail: { title: activeHero.title, content: activeHero.description || 'MacFeed Exclusive Content.' } })); }}>
-                  <Info className="w-3.5 h-3.5 mr-2" />
-                  Info
-                </button>
-              </div>
-
-              {/* Small title text below the play button */}
-              <p className="text-[9px] sm:text-[11px] md:text-xs font-black uppercase tracking-wider text-white/95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] max-w-[85%] text-left font-sans">
-                {activeHero.title}
-              </p>
-            </div>
+            {/* Digen Deep Scrim */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0b0c10] via-[#0b0c10]/60 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0b0c10] via-transparent to-transparent" />
           </motion.div>
         </AnimatePresence>
-      </div>
 
-      {/* Overlapping Cyberpunk Slide Previews Carousel (Symmetrical 7-card layout centered on active) */}
-      <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center justify-center -space-x-4 sm:-space-x-8 md:-space-x-12 z-30 w-full overflow-x-auto no-scrollbar py-4 px-6 hidden sm:flex pointer-events-none">
-        {[-3, -2, -1, 0, 1, 2, 3].map((offset) => {
-          const L = heroSlides.length;
-          const slideIdx = (heroIdx + offset + L) % L;
-          const slide = heroSlides[slideIdx];
-          const isActive = offset === 0;
+        {/* Content Overlay */}
+        <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-8 md:p-12 z-20">
+          {/* Badge */}
+          <div className="flex items-center gap-2 mb-2">
+            <span className="digen-badge-amber text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">
+              Featured Premiere
+            </span>
+            <span className="text-xs text-gray-400 font-medium hidden sm:inline">
+              {activeHero.category || 'Curated Stream'}
+            </span>
+          </div>
 
-          let cardStyle = "";
-          if (offset === 0) {
-            cardStyle = "w-[65px] sm:w-[115px] md:w-[145px] z-30 scale-105 sm:scale-110 border-[#ff007f] shadow-[0_0_15px_rgba(255,0,127,0.4)] sm:shadow-[0_0_25px_rgba(255,0,127,0.6)]";
-          } else if (offset === -1 || offset === 1) {
-            cardStyle = "w-[55px] sm:w-[100px] md:w-[125px] z-20 scale-95 opacity-80 border-[#ff007f]/40";
-          } else if (offset === -2 || offset === 2) {
-            cardStyle = "w-[45px] sm:w-[85px] md:w-[105px] z-10 scale-85 opacity-55 border-[#ff007f]/20";
-          } else {
-            cardStyle = "w-[35px] sm:w-[70px] md:w-[85px] z-0 scale-75 opacity-35 border-transparent hidden sm:flex";
-          }
+          {/* Title */}
+          <h1 className="text-xl sm:text-2xl md:text-4xl font-extrabold text-white leading-tight max-w-2xl mb-2">
+            {activeHero.title}
+          </h1>
 
-          return (
-            <div
-              key={slide.id + '-' + offset}
-              onClick={() => {
-                {
-                  setHeroIdx(slideIdx);
-                }
-              }}
-              className={`aspect-[3/4.2] rounded-xl sm:rounded-2xl overflow-visible border cursor-pointer transition-all duration-500 shrink-0 relative flex flex-col justify-end p-2 sm:p-3 shadow-2xl bg-black pointer-events-auto ${cardStyle}`}
+          {/* Description */}
+          {activeHero.description && (
+            <p className="text-gray-300 text-xs sm:text-sm line-clamp-2 max-w-xl mb-4 font-normal">
+              {activeHero.description}
+            </p>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2.5 mt-1">
+            <button
+              onClick={handlePlay}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black hover:bg-gray-200 font-bold text-xs shadow-lg transition active:scale-95"
             >
-              {isActive && (
-                <div 
-                  style={{ animation: 'spin 15s linear infinite' }}
-                  className="absolute inset-[-12px] sm:inset-[-18px] rounded-full border border-dashed border-[#ff007f] opacity-50 blur-[1px] z-[-1] pointer-events-none" 
-                />
-              )}
+              <Play className="w-4 h-4 fill-black text-black" />
+              <span>Watch Now</span>
+            </button>
 
-              <div className="absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl overflow-hidden pointer-events-none">
-                <img src={slide.thumbnail_url?.replace('mqdefault', 'hqdefault')} className="w-full h-full object-cover" draggable="false" alt="" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-              </div>
-              
-              <div className="relative z-10 w-full flex flex-col gap-0.5 sm:gap-1 pointer-events-none">
-                {isActive && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate('/watch/' + slide.id);
-                    }}
-                    className="bg-[#00f2fe] hover:bg-cyan-400 text-black text-[7px] sm:text-[8px] font-black uppercase tracking-wider py-1.5 rounded-lg w-full text-center shadow-[0_0_12px_rgba(0,242,254,0.5)] border border-cyan-300/20 transition-all select-none pointer-events-auto hover:scale-105 active:scale-95 animate-pulse"
-                  >
-                    Play Now
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+            <button
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent('open-info-modal', {
+                    detail: {
+                      title: activeHero.title,
+                      content: activeHero.description || 'Exclusive MacFeed High-Definition feature.',
+                    },
+                  })
+                );
+              }}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-semibold backdrop-blur-md transition active:scale-95"
+            >
+              <Info className="w-4 h-4 text-gray-300" />
+              <span>Details</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Slide Indicators on Bottom Right */}
+        <div className="absolute bottom-4 right-5 z-20 flex items-center gap-1.5">
+          {heroSlides.map((s, idx) => (
+            <button
+              key={s.id || idx}
+              onClick={() => setHeroIdx(idx)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                idx === heroIdx ? 'w-6 bg-white' : 'w-2 bg-white/30 hover:bg-white/50'
+              }`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );

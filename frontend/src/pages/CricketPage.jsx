@@ -247,15 +247,15 @@ export default function CricketPage() {
   if (loading) return <PremiumLoader />;
 
   return (
-    <div className="min-h-screen bg-primary text-primary font-sans overflow-x-hidden pb-10 transition-colors duration-500">
+    <div className="min-h-screen bg-[#0b0c10] text-white font-sans overflow-x-hidden pb-20">
       {/* ── DYNAMIC NAV ── */}
-      <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-4 md:px-6 py-4 bg-primary/95 backdrop-blur-md border-b border-primary">
+      <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-4 md:px-6 py-3.5 bg-[#0b0c10]/95 backdrop-blur-xl border-b border-white/10">
         <div className="flex items-center gap-2 md:gap-4">
-          <button onClick={() => navigate('/sports')} className="p-2 rounded-xl bg-secondary border border-primary hover:bg-primary/10 transition-all text-primary">
+          <button onClick={() => navigate('/sports')} className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-white">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex flex-col">
-            <span className="font-black text-sm md:text-xl tracking-tighter uppercase leading-none">MACFEED <span className="text-yellow-400">CRICKET</span></span>
+            <span className="font-black text-sm md:text-xl tracking-tighter uppercase leading-none">MACFEED <span className="text-[#f5b700]">CRICKET</span></span>
           </div>
         </div>
         <div className="flex items-center gap-3 md:gap-6">

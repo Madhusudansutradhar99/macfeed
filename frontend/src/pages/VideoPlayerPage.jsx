@@ -1,60 +1,51 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import VideoPlayer from '../components/VideoPlayer';
 import VideoCard from '../components/VideoCard';
 import Loader from '../components/Loader';
-import YouTubeRelatedVideos from '../components/YouTubeRelatedVideos';
 import {
-  ThumbsUp, Share2, ArrowLeft,
+  ThumbsUp,
+  Share2,
+  ArrowLeft,
+  Zap,
+  Check,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
 import { fetchJson } from '../utils/request';
 import { useVideoMiniPlayer } from '../context/VideoPlayerContext';
 import { useMusicPlayer } from '../context/MusicContext';
+import { FALLBACK_VIDEOS } from '../data/fallbackVideos';
+import { getAllCategorizedVideos } from '../utils/categoryDetector';
 
 export default function VideoPlayerPage() {
-  const { playVideo, viewMode } = useVideoMiniPlayer();
+  const { playVideo } = useVideoMiniPlayer();
   const { deviceSongs } = useMusicPlayer();
-  const { user, setAuthModalOpen } = useAuth();
   const { id } = useParams();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const [video, setVideo] = useState(null);
+
+  // --- INSTANT 0MS INITIALIZATION ---
+  const [video, setVideo] = useState(() => location.state?.video || null);
+  const [loading, setLoading] = useState(() => !location.state?.video);
   const [related, setRelated] = useState([]);
-  const [youtubeRelated, setYoutubeRelated] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [playerError, setPlayerError] = useState('');
   const [isLiked, setIsLiked] = useState(false);
+  const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
-  
-  const handleNextVideo = () => {
-    if (video?.source === 'youtube') {
-      if (youtubeRelated && youtubeRelated.length > 0) {
-        navigate(`/watch/${youtubeRelated[0].id || 'yt-' + youtubeRelated[0].ytId}`);
-      }
-    } else {
-      if (related && related.length > 0) {
-        navigate(`/watch/${related[0].id}`);
-      }
-    }
-  };
 
   useEffect(() => {
-    if (!loading && !user) {
-      setAuthModalOpen(true);
-      navigate('/');
-    }
-  }, [user, loading, navigate, setAuthModalOpen]);
+    let isCancelled = false;
 
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      setPlayerError('');
+    async function loadData() {
+      // 0. If video was already supplied via router state, immediately play it
+      if (location.state?.video) {
+        setVideo(location.state.video);
+        playVideo(location.state.video);
+        setLoading(false);
+      }
 
-      // 0. Handle Device Music (IndexedDB)
+      // 1. Device Song
       if (id?.toString().startsWith('device-')) {
-        const deviceSong = deviceSongs.find(s => s.id === id);
+        const deviceSong = deviceSongs.find((s) => s.id === id);
         if (deviceSong) {
           setVideo(deviceSong);
           playVideo(deviceSong);
@@ -63,215 +54,271 @@ export default function VideoPlayerPage() {
         }
       }
 
-      // 1. Handle Dynamic YouTube ID
+      // 2. YouTube ID
       if (id?.toString().startsWith('yt-')) {
         const ytId = id.replace('yt-', '');
-        let title = searchParams.get('title');
-        let thumb = `https://i.ytimg.com/vi/${ytId}/maxresdefault.jpg`;
-
-        if (!title || title === 'YouTube Video') {
-          try {
-            const { data: d } = await fetchJson(`/api/search?q=${ytId}`, {}, { timeoutMs: 10000, retryTimeoutMs: 5000, retries: 1 });
-            if (d?.results?.[0]) {
-              title = d.results[0].title || title;
-              thumb = d.results[0].thumbnail || thumb;
-            } else {
-              try {
-                const { data: ytInfoData } = await fetchJson(`/api/video-info?id=${ytId}`, {}, { timeoutMs: 10000, retryTimeoutMs: 5000, retries: 1 });
-                if (ytInfoData?.video) {
-                  title = ytInfoData.video.title || title;
-                  thumb = ytInfoData.video.thumbnail || thumb;
-                }
-              } catch (e) { }
-            }
-          } catch (e) { }
-        }
-
-        const ytVideo = {
+        const baseVideo = location.state?.video || {
           id: id,
           youtube_id: ytId,
-          title: title || 'YouTube Video',
-          thumbnail_url: thumb,
+          title: searchParams.get('title') || 'YouTube Video',
+          thumbnail_url: `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`,
           video_url: `https://www.youtube.com/embed/${ytId}`,
           source: 'youtube',
-          category: 'YouTube'
+          category: 'YouTube',
         };
-        setVideo(ytVideo);
-        playVideo(ytVideo);
+
+        if (!video) {
+          setVideo(baseVideo);
+          playVideo(baseVideo);
+          setLoading(false);
+        }
+
+        // Fetch related or metadata in background without blocking player
+        try {
+          const { data: d } = await fetchJson(`/api/search?q=${encodeURIComponent(baseVideo.title || 'trending')}`, {}, { timeoutMs: 5000 });
+          if (!isCancelled && d?.results) {
+            setRelated(d.results.slice(0, 12).map((r) => ({
+              id: `yt-${r.ytId || r.id}`,
+              title: r.title,
+              thumbnail_url: r.thumbnail || r.thumbnail_url,
+              category: 'Related',
+            })));
+          }
+        } catch (e) {
+          // Non-blocking
+        }
+        return;
+      }
+
+      // 3. Check searched/categorized videos & Fallback for instant 0ms playback
+      const categorizedMatch = getAllCategorizedVideos().find((v) => v.id === id);
+      const fallbackMatch = categorizedMatch || FALLBACK_VIDEOS.find((v) => v.id === id);
+      if (fallbackMatch && !video) {
+        setVideo(fallbackMatch);
+        playVideo(fallbackMatch);
+        setRelated(FALLBACK_VIDEOS.filter((v) => v.id !== id).slice(0, 10));
         setLoading(false);
         return;
       }
 
-      // 2. Database fetch
-      const { data, error } = await supabase.from('videos').select('*').eq('id', id).single();
-      if (!error && data) {
-        setVideo(data);
-        playVideo(data);
-        const { data: rel } = await supabase.from('videos').select('*').eq('category', data?.category).neq('id', id).limit(10);
-        setRelated(rel || []);
-        
-        const likedObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
-        if (likedObj[data.id]) setIsLiked(true);
+      // 4. Database fetch if not already in state
+      if (!video) {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('videos')
+            .select('*')
+            .eq('id', id)
+            .single();
 
-        playVideo(data);
+          if (!isCancelled && !error && data) {
+            setVideo(data);
+            playVideo(data);
+            setLoading(false);
+
+            // Fetch related videos
+            const { data: rel } = await supabase
+              .from('videos')
+              .select('*')
+              .eq('category', data.category)
+              .neq('id', id)
+              .limit(12);
+            if (!isCancelled) setRelated(rel || []);
+          } else {
+            const fb = FALLBACK_VIDEOS[0];
+            setVideo(fb);
+            playVideo(fb);
+            setRelated(FALLBACK_VIDEOS.slice(1, 11));
+            if (!isCancelled) setLoading(false);
+          }
+        } catch (e) {
+          const fb = FALLBACK_VIDEOS[0];
+          setVideo(fb);
+          playVideo(fb);
+          setRelated(FALLBACK_VIDEOS.slice(1, 11));
+          if (!isCancelled) setLoading(false);
+        }
+      } else {
+        // Fetch related in background
+        supabase
+          .from('videos')
+          .select('*')
+          .eq('category', video.category || 'Movie')
+          .neq('id', id)
+          .limit(12)
+          .then(({ data: rel }) => {
+            if (!isCancelled && rel) setRelated(rel);
+          });
       }
-      setLoading(false);
     }
-    fetchData();
-  }, [id, searchParams, playVideo, deviceSongs]);
 
-  useEffect(() => {
-    const retryOnReconnect = () => {
-      if (!loading && !video) {
-        window.location.reload();
-      }
+    loadData();
+
+    // Check likes
+    try {
+      const likedObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
+      if (likedObj[id]) setIsLiked(true);
+    } catch (e) {}
+
+    return () => {
+      isCancelled = true;
     };
-    window.addEventListener('online', retryOnReconnect);
-    return () => window.removeEventListener('online', retryOnReconnect);
-  }, [loading, video]);
+  }, [id, location.state]);
 
+  // Record history
   useEffect(() => {
-    if (video && !loading) {
-      const history = JSON.parse(localStorage.getItem('macfeed_history') || '[]');
-      const filtered = history.filter((item) => item.id !== video.id);
-      const newHistory = [
-        {
-          id: video.id,
-          title: video.title,
-          thumbnail_url: video.thumbnail_url,
-          category: video.category,
-          duration: video.duration,
-          watched_at: new Date().toISOString(),
-        },
-        ...filtered,
-      ].slice(0, 50);
-
-      localStorage.setItem('macfeed_history', JSON.stringify(newHistory));
+    if (video) {
+      try {
+        const history = JSON.parse(localStorage.getItem('macfeed_history') || '[]');
+        const filtered = history.filter((item) => item.id !== video.id);
+        const newHistory = [
+          {
+            id: video.id,
+            title: video.title,
+            thumbnail_url: video.thumbnail_url,
+            category: video.category,
+            duration: video.duration,
+            watched_at: new Date().toISOString(),
+          },
+          ...filtered,
+        ].slice(0, 50);
+        localStorage.setItem('macfeed_history', JSON.stringify(newHistory));
+      } catch (e) {}
     }
-  }, [video, loading]);
+  }, [video]);
 
-  if (loading) return <Loader />;
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: video?.title || 'MacFeed Video',
+        url: window.location.href,
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleLike = () => {
+    if (!video) return;
+    try {
+      const likedObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
+      if (isLiked) {
+        delete likedObj[video.id];
+        setIsLiked(false);
+      } else {
+        likedObj[video.id] = video;
+        setIsLiked(true);
+      }
+      localStorage.setItem('macfeed_likes', JSON.stringify(likedObj));
+    } catch (e) {}
+  };
+
+  if (loading && !video) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
+        <Loader />
+      </div>
+    );
+  }
+
   if (!video) {
     return (
-      <div className="p-20 text-center min-h-screen" style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-primary)' }}>
-        Video Not Found
+      <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-transparent text-center">
+        <h2 className="text-lg font-bold text-white mb-2">Video not found</h2>
+        <button
+          onClick={() => navigate('/')}
+          className="px-5 py-2 rounded-full bg-white text-black font-semibold text-xs"
+        >
+          Back to Explore
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen transition-colors duration-500" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-      <div className="flex flex-col w-full p-0 sm:p-6 max-w-[1400px] mx-auto">
-        <div className="px-4 pt-4 sm:px-0 sm:pt-0">
+    <div className="min-h-screen bg-transparent text-white">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4">
+        {/* Back Link */}
+        <div className="mb-3">
           <button
-            onClick={() => navigate('/')}
-            className="mb-4 flex items-center gap-2 px-4 py-2 rounded-full border w-fit"
-            style={{
-              color: 'var(--text-primary)',
-              borderColor: 'var(--border-color)',
-              backgroundColor: 'var(--bg-secondary)'
-            }}
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition"
           >
-            <ArrowLeft size={16} />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Back to Home</span>
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back</span>
           </button>
         </div>
 
-        <div className="w-full mb-4">
-          <VideoPlayer 
-            video={video} 
-            onClose={() => navigate(-1)}
-          />
+        {/* Video Player Box */}
+        <div className="w-full rounded-2xl overflow-hidden bg-black shadow-2xl border border-white/10 mb-4">
+          <VideoPlayer video={video} onClose={() => navigate(-1)} />
         </div>
 
-        <div className="px-4 py-6 md:px-0">
-          <div className="flex flex-col gap-4">
-            <h1 className="text-xl md:text-2xl font-bold leading-tight">{video.title}</h1>
-            
-            <div className="flex items-center justify-between border-b pb-6" style={{ borderColor: 'var(--bg-secondary)' }}>
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => {
-                    const likedObj = JSON.parse(localStorage.getItem('macfeed_likes') || '{}');
-                    if (isLiked) delete likedObj[video.id];
-                    else likedObj[video.id] = video;
-                    localStorage.setItem('macfeed_likes', JSON.stringify(likedObj));
-                    setIsLiked(!isLiked);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full transition-all"
-                  style={{
-                    backgroundColor: isLiked ? 'var(--accent-color)' : 'var(--bg-secondary)',
-                    color: isLiked ? 'var(--text-on-accent)' : 'var(--text-primary)',
-                    opacity: isLiked ? 1 : 0.85
-                  }}
-                >
-                  <ThumbsUp size={18} className={isLiked ? 'fill-white' : ''} />
-                  <span className="text-sm font-bold">{isLiked ? 'Liked' : 'Like'}</span>
-                </button>
-                
-                <button 
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: video.title,
-                        url: window.location.href,
-                      });
-                    }
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full transition-all"
-                  style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', opacity: 0.85 }}
-                >
-                  <Share2 size={18} />
-                  <span className="text-sm font-bold">Share</span>
-                </button>
+        {/* Video Meta Info */}
+        <div className="digen-card p-4 sm:p-5 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="digen-badge-teal text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                  {video.category || 'Stream'}
+                </span>
+                <span className="flex items-center gap-1 text-[11px] font-semibold text-[#f5b700] bg-[#f5b700]/10 border border-[#f5b700]/20 px-2 py-0.5 rounded-full">
+                  <Zap className="w-3 h-3" />
+                  Instant Stream
+                </span>
               </div>
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white leading-tight">
+                {video.title}
+              </h1>
             </div>
 
-            <div className="mt-8">
-              {video.source === 'youtube' ? (
-                <YouTubeRelatedVideos 
-                  currentVideoId={video.youtube_id} 
-                  currentVideoTitle={video.title} 
-                  parentCategory={video.category} 
-                />
-              ) : (
-                <>
-                  <h2 className="text-lg font-bold mb-6 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                    <Sparkles size={20} className="" style={{ color: 'var(--accent-color)' }} />
-                    Recommended For You
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {related.map((v) => (
-                      <VideoCard key={v.id} video={v} onClick={() => navigate(`/watch/${v.id}`)} />
-                    ))}
-                  </div>
-                </>
-              )}
+            {/* Actions */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={handleLike}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold border transition ${
+                  isLiked
+                    ? 'bg-[#f5b700] text-black border-[#f5b700]'
+                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-gray-300 hover:text-white'
+                }`}
+              >
+                <ThumbsUp className={`w-3.5 h-3.5 ${isLiked ? 'fill-black' : ''}`} />
+                <span>{isLiked ? 'Liked' : 'Like'}</span>
+              </button>
+
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 transition"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Share2 className="w-3.5 h-3.5" />}
+                <span>{copied ? 'Copied' : 'Share'}</span>
+              </button>
             </div>
           </div>
         </div>
+
+        {/* --- Digen Related Videos Section --- */}
+        {related.length > 0 && (
+          <section className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <h2 className="digen-section-title text-lg sm:text-xl font-black">More Like This</h2>
+                <span className="digen-badge-teal text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                  AI Recommended
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+              {related.map((relItem) => (
+                <VideoCard key={relItem.id} video={relItem} variant="vertical" />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
-  );
-}
-
-function Sparkles({ size, className, style }) {
-  return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width={size} 
-      height={size} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className}
-      style={style}
-    >
-      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
-      <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
-    </svg>
   );
 }

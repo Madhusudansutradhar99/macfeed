@@ -20,14 +20,131 @@
 }
 
 body {
-  background-color: #020205 !important;
-  color: var(--text-primary, #ffffff) !important;
+  background-color: #08182b !important;
+  background-image: radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.18) 0px, transparent 50%),
+                    radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.20) 0px, transparent 50%),
+                    radial-gradient(at 50% 50%, rgba(30, 58, 138, 0.25) 0px, transparent 50%),
+                    radial-gradient(at 0% 100%, rgba(2, 132, 199, 0.22) 0px, transparent 50%),
+                    linear-gradient(135deg, #08182b 0%, #0d2847 40%, #091c33 100%) !important;
+  background-attachment: fixed !important;
+  color: #ffffff !important;
   font-family: 'Outfit', 'Inter', sans-serif;
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-font-smoothing: antialiased;
   -webkit-user-select: none;
   user-select: none;
+}
+
+/* Glassmorphism & Digen AI Design System Utilities */
+.digen-bg {
+  background-color: transparent;
+}
+
+.digen-card {
+  background: rgba(14, 34, 62, 0.58);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid rgba(125, 211, 252, 0.16);
+  border-radius: 1.25rem;
+  box-shadow: 0 10px 30px -10px rgba(4, 12, 24, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.digen-card:hover {
+  border-color: rgba(186, 230, 253, 0.45);
+  background: rgba(20, 48, 86, 0.72);
+  transform: translateY(-3px);
+  box-shadow: 0 20px 45px -10px rgba(4, 12, 24, 0.85), 0 0 30px rgba(56, 189, 248, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+.digen-pill-nav {
+  background: rgba(14, 32, 58, 0.72);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  box-shadow: 0 12px 40px rgba(4, 12, 24, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.digen-pill-active {
+  background: rgba(255, 255, 255, 0.95);
+  color: #08090d !important;
+  font-weight: 700;
+  box-shadow: 0 4px 18px rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(12px);
+}
+
+.digen-pill-inactive {
+  color: #a0aec0;
+  transition: all 0.25s ease;
+}
+
+.digen-pill-inactive:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.digen-badge-teal {
+  background: rgba(13, 34, 38, 0.7);
+  backdrop-filter: blur(16px);
+  color: #2dd4bf;
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  box-shadow: 0 0 15px rgba(45, 212, 191, 0.15);
+}
+
+.digen-badge-amber {
+  background: rgba(42, 31, 10, 0.75);
+  backdrop-filter: blur(16px);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  box-shadow: 0 0 15px rgba(245, 183, 0, 0.15);
+}
+
+.digen-section-title {
+  color: #f5b700;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  font-size: 1.25rem;
+  text-shadow: 0 2px 10px rgba(245, 183, 0, 0.2);
+}
+
+.digen-floating-prompt {
+  background: rgba(14, 17, 26, 0.78);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Glassmorphic Utilities */
+.glass-header {
+  background: rgba(8, 10, 16, 0.65) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+.glass-panel {
+  background: rgba(15, 18, 28, 0.65);
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.2s ease;
+}
+
+.glass-pill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 html,
@@ -103,25 +220,24 @@ body {
 
 /* Theme variable defaults */
 :root {
-  --bg-primary: #0a0a0c;
-  --bg-secondary: rgba(255, 255, 255, 0.04);
+  --bg-primary: #08182b;
+  --bg-secondary: rgba(56, 189, 248, 0.08);
   --text-primary: #ffffff;
-  --accent-color: #8B5CF6;
-  --text-on-accent: #ffffff;
-  --accent-rgb: 139, 92, 246;
-  --border-color: rgba(255, 255, 255, 0.1);
+  --accent-color: #f5b700;
+  --text-on-accent: #000000;
+  --accent-rgb: 245, 183, 0;
+  --border-color: rgba(125, 211, 252, 0.18);
 }
 
 /* Theme modes applied to document.documentElement by ThemeContext */
 .dark {
-  --bg-primary: #08080a;
-  --bg-secondary: rgba(255, 255, 255, 0.03);
+  --bg-primary: #08182b;
+  --bg-secondary: rgba(56, 189, 248, 0.08);
   --text-primary: #ffffff;
-  --accent-color: #6366f1;
-  /* Deep Indigo */
-  --text-on-accent: #ffffff;
-  --accent-rgb: 99, 102, 241;
-  --border-color: rgba(255, 255, 255, 0.08);
+  --accent-color: #f5b700;
+  --text-on-accent: #000000;
+  --accent-rgb: 245, 183, 0;
+  --border-color: rgba(125, 211, 252, 0.18);
 }
 
 .light {
