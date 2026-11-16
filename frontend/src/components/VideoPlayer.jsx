@@ -15,7 +15,7 @@ import { ScreenOrientation } from '@capacitor/screen-orientation';
 import { useVideoMiniPlayer } from '../context/VideoPlayerContext';
 
 const formatTime = (seconds) => {
-  if (!seconds || Number.isNaN(seconds)) return '0:00';
+  if (!Number.isFinite(seconds) || seconds <= 0) return '0:00';
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
@@ -85,11 +85,27 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const bufferBarRef = useRef(null);
   const currentTimeRef = useRef(null);
   const durationRef = useRef(null);
+  const scrubberRef = useRef(null);
   const playBtnRef = useRef(null);
   const durationStateRef = useRef(0);
   const playingRef = useRef(playing);
+  const isSeekingRef = useRef(false);
   useEffect(() => { playingRef.current = playing; }, [playing]);
   const inputRangeRef = useRef(null);
+  const syncProgressUI = useCallback((time, total, bufferedPercent = 0) => {
+    const safeDuration = Number.isFinite(total) && total > 0 ? total : 0;
+    const safeTime = Number.isFinite(time) && time > 0 ? Math.min(time, safeDuration || time) : 0;
+    const percent = safeDuration ? Math.min(100, (safeTime / safeDuration) * 100) : 0;
+
+    if (progressBarRef.current) progressBarRef.current.style.width = `${percent}%`;
+    if (bufferBarRef.current) bufferBarRef.current.style.width = `${Math.max(percent, Math.min(100, bufferedPercent))}%`;
+    if (inputRangeRef.current && !isSeekingRef.current && document.activeElement !== inputRangeRef.current) {
+      inputRangeRef.current.value = String(percent);
+    }
+    if (scrubberRef.current) scrubberRef.current.style.left = `${percent}%`;
+    if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(safeTime);
+    if (durationRef.current) durationRef.current.textContent = formatTime(safeDuration);
+  }, []);
 
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -155,14 +171,18 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     
     if (isYouTube && ytPlayerRef.current?.seekTo) {
       const videoDuration = ytPlayerRef.current.getDuration?.() || duration || 0;
-      ytPlayerRef.current.seekTo(percentage * videoDuration, true);
-      setCurrentTime(percentage * videoDuration);
+      const target = percentage * videoDuration;
+      ytPlayerRef.current.seekTo(target, true);
+      setCurrentTime(target);
+      syncProgressUI(target, videoDuration);
     } else if (nativeVideoRef.current) {
       const videoDuration = nativeVideoRef.current.duration || duration || 0;
-      nativeVideoRef.current.currentTime = percentage * videoDuration;
-      setCurrentTime(percentage * videoDuration);
+      const target = percentage * videoDuration;
+      nativeVideoRef.current.currentTime = target;
+      setCurrentTime(target);
+      syncProgressUI(target, videoDuration);
     }
-  }, [duration, isYouTube]);
+  }, [duration, isYouTube, setCurrentTime, syncProgressUI, ytPlayerRef]);
 
   const toggleFullscreen = useCallback(async () => {
     const host = containerRef.current;
@@ -204,6 +224,10 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
 
   const handleTouchStart = useCallback((event) => {
+    if (event.target?.closest?.('input[type="range"], button')) {
+      touchStartRef.current = { x: 0, y: 0, time: 0, isTap: false };
+      return;
+    }
     const touch = event.touches[0];
     touchStartRef.current = { 
       x: touch.clientX, 
@@ -215,6 +239,8 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   }, []);
 
   const handleTouchMove = useCallback((event) => {
+    // Let the seek range input receive touch movement instead of treating it as a player swipe.
+    if (event.target?.closest?.('input[type="range"], button')) return;
     // Block page scroll when touching the video area
     if (event.cancelable) event.preventDefault();
     event.stopPropagation();
@@ -236,6 +262,11 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const handleTouchEnd = useCallback(
     (event) => {
       const start = touchStartRef.current;
+      if (event.target?.closest?.('input[type="range"], button')) {
+        touchStartRef.current = { x: 0, y: 0, time: 0, isTap: true };
+        isSwipingRef.current = false;
+        return;
+      }
       if (!start.time) return;
 
       const touch = event.changedTouches[0];
@@ -437,12 +468,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
                 if (dur > 0) {
                   durationStateRef.current = dur;
-                  const pct = (cur / dur) * 100;
-                  if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
-                  if (bufferBarRef.current) bufferBarRef.current.style.width = `${bufferPct}%`;
-                  if (inputRangeRef.current) inputRangeRef.current.value = pct;
-                  if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(cur);
-                  if (durationRef.current) durationRef.current.textContent = formatTime(dur);
+                  syncProgressUI(cur, dur, bufferPct);
                 }
               }
               ytTimerRef.current = requestAnimationFrame(syncProgress);
@@ -504,13 +530,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         // Real-time UI Updates
         if (dur > 0) {
           durationStateRef.current = dur;
-          const pct = (cur / dur) * 100;
-          if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
-          if (inputRangeRef.current && document.activeElement !== inputRangeRef.current) {
-             inputRangeRef.current.value = pct;
-          }
-          if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(cur);
-          if (durationRef.current) durationRef.current.textContent = formatTime(dur);
+          syncProgressUI(cur, dur, ytPlayerRef.current.getVideoLoadedFraction?.() * 100 || 0);
         }
       }
       ytTimerRef.current = requestAnimationFrame(syncProgress);
@@ -538,7 +558,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         ytPlayerRef.current = null;
       }
     };
-  }, [isYouTube, video?.video_url]);
+  }, [isYouTube, video?.video_url, syncProgressUI]);
 
   useEffect(() => {
     if (!isYouTube) return;
@@ -682,7 +702,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             {/* Transparent overlay captures all taps and swipes. */}
             <div 
               className={`absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent transition-opacity duration-300 ${isFullscreen || viewMode === 'mini' ? 'pointer-events-none opacity-0' : 'opacity-100'}`} 
-              onClick={() => viewMode === 'mini' ? maximize() : toggleControls()}
+              onClick={toggleControls}
             />
           </div>
         ) : (
@@ -693,9 +713,25 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             poster={video.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')}
             className="block h-full w-full bg-black object-contain"
             playsInline
+            preload="metadata"
             autoPlay={!(navigator.connection && (navigator.connection.effectiveType === '2g' || navigator.connection.effectiveType === '3g'))}
-            onTimeUpdate={(event) => setCurrentTime(event.target.currentTime)}
-            onLoadedMetadata={(event) => setDuration(event.target.duration)}
+            onTimeUpdate={(event) => {
+              const media = event.target;
+              if (Math.floor(media.currentTime) !== Math.floor(currentTime)) {
+                setCurrentTime(media.currentTime);
+              }
+              const bufferedEnd = media.buffered.length ? media.buffered.end(media.buffered.length - 1) : 0;
+              syncProgressUI(media.currentTime, media.duration, media.duration ? (bufferedEnd / media.duration) * 100 : 0);
+            }}
+            onProgress={(event) => {
+              const media = event.target;
+              const bufferedEnd = media.buffered.length ? media.buffered.end(media.buffered.length - 1) : 0;
+              syncProgressUI(media.currentTime, media.duration, media.duration ? (bufferedEnd / media.duration) * 100 : 0);
+            }}
+            onLoadedMetadata={(event) => {
+              setDuration(event.target.duration);
+              syncProgressUI(event.target.currentTime, event.target.duration);
+            }}
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
             onEnded={() => { setPlaying(false); onNext?.(); }}
@@ -807,19 +843,29 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             onClick={(e) => e.stopPropagation()}
           >
               {/* YouTube Style Progress Bar */}
-              <div className="mb-0.5 w-full group relative flex items-center h-2.5">
+              <div className="mb-0.5 w-full group relative flex items-center h-7">
                 <input
                   ref={inputRangeRef}
                   type="range"
                   min="0"
                   max="100"
-                  step="0.1"
+                  step="0.05"
+                  aria-label="Seek video"
+                  aria-valuetext={`${formatTime(currentTime)} of ${formatTime(duration)}`}
                   onChange={handleSeek}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  className="absolute w-full h-1.5 opacity-0 cursor-pointer z-20"
+                  onMouseDown={(e) => { isSeekingRef.current = true; e.stopPropagation(); }}
+                  onMouseUp={() => { isSeekingRef.current = false; }}
+                  onTouchStart={(e) => { isSeekingRef.current = true; e.stopPropagation(); }}
+                  onTouchMove={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => { isSeekingRef.current = false; e.stopPropagation(); }}
+                  onPointerDown={(e) => { isSeekingRef.current = true; e.stopPropagation(); }}
+                  onPointerUp={() => { isSeekingRef.current = false; }}
+                  onPointerCancel={() => { isSeekingRef.current = false; }}
+                  onBlur={() => { isSeekingRef.current = false; }}
+                  className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0"
+                  style={{ touchAction: 'none' }}
                 />
-                <div className="w-full h-1 bg-white/20 rounded-full relative overflow-hidden pointer-events-none">
+                <div className="pointer-events-none relative h-1 w-full overflow-hidden rounded-full bg-white/20 transition-[height] group-hover:h-1.5">
                   {/* Buffer Bar */}
                   <div ref={bufferBarRef} className="absolute inset-y-0 left-0 bg-white/30 transition-all duration-300" style={{ width: '0%' }} />
                   {/* Progress Bar (Red) */}
@@ -827,8 +873,9 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                 </div>
                 {/* Scrubber Knob */}
                 <div 
-                  className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-[#FF0000] rounded-full scale-0 group-hover:scale-100 transition-transform pointer-events-none z-10 shadow-lg"
-                  style={{ left: inputRangeRef.current?.value ? `${inputRangeRef.current.value}%` : '0%', transform: 'translate(-50%, -50%)' }}
+                  ref={scrubberRef}
+                  className="absolute top-1/2 z-10 h-3 w-3 -translate-y-1/2 rounded-full bg-[#FF0000] scale-100 shadow-lg pointer-events-none sm:scale-0 sm:group-hover:scale-100 transition-transform"
+                  style={{ left: '0%', transform: 'translate(-50%, -50%)' }}
                 />
               </div>
 

@@ -1,6 +1,6 @@
 {
   "appId": "com.macfeed.macfeed",
-  "appName": "macfeed",
+  "appName": "MacFeed",
   "webDir": "dist",
   "plugins": {
     "CapacitorUpdater": {

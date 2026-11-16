@@ -4,7 +4,7 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { fetchJson } from '../utils/request';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = '/api';
 
 const SmartYoutubeSearch = () => {
   const { user, setAuthModalOpen } = useAuth();

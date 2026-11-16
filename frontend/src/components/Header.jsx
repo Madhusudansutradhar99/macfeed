@@ -53,36 +53,14 @@ export default function Header() {
           const mapped = backData.results.slice(0, 10).map(v => ({
             id: `yt-${v.ytId}`, ytId: v.ytId, title: v.title, thumbnail_url: v.thumbnail || v.thumbnail_url,
             video_url: `https://www.youtube.com/embed/${v.ytId}`, source: 'youtube',
-              type: 'global',
-              published_at: item.snippet.publishedAt
+            type: 'global',
+            published_at: v.publishedAt || v.published_at || null
           }));
           setCachedSearch(q, mapped);
           return mapped;
         }
       }
 
-      // Fallback: Direct YouTube API call if backend fails or is unavailable
-      const key = import.meta.env.VITE_YOUTUBE_API_KEY;
-      if (key) {
-        const ytQuery = encodeURIComponent(q + ' -shorts');
-          const ytUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${ytQuery}&type=video&videoDuration=medium&order=date&maxResults=50&key=${key}`;
-        const ytRes = await fetch(ytUrl);
-        const ytData = await ytRes.json();
-        if (ytData.items) {
-          const mapped = ytData.items.map(item => ({
-            id: `yt-${item.id.videoId}`, 
-            ytId: item.id.videoId, 
-            title: item.snippet.title, 
-            thumbnail_url: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
-            video_url: `https://www.youtube.com/embed/${item.id.videoId}`, 
-            source: 'youtube',
-              type: 'global',
-              published_at: item.snippet.publishedAt
-          })).filter(v => v.ytId);
-          setCachedSearch(q, mapped);
-          return mapped;
-        }
-      }
     } catch(e) {
       console.error('Search fallback failed:', e);
     }
@@ -179,7 +157,7 @@ export default function Header() {
       initial={{ y: -100 }}
       animate={{ y: isHeaderVisible ? 0 : -80 }}
       transition={{ duration: 0.28, ease: 'easeOut' }}
-      className="fixed top-0 left-0 right-0 h-[70px] z-[5000] flex items-center px-4 md:px-10 glass-header"
+      className="fixed top-[env(safe-area-inset-top)] left-0 right-0 h-[70px] z-[5000] flex items-center px-4 md:px-10 glass-header"
     >
       <div className="flex items-center gap-3 shrink-0">
         {!isSearchPage && (

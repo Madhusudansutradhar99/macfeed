@@ -26,7 +26,10 @@ const MainLayout = () => {
   // Music page is immersive
   if (location.pathname === '/music') {
     return (
-      <div className="fixed inset-0 bg-[#020205] text-primary overflow-hidden">
+      <div
+        className="fixed inset-0 bg-[#020205] text-primary overflow-hidden"
+        style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         {/* Global Shifting RGB glows behind music content */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
           <div className="global-glow-1" />

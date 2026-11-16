@@ -8,7 +8,11 @@ const generateToken = (id) => {
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, password, phone } = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
+    if (!name?.trim() || !email || typeof password !== 'string' || password.length < 8) {
+      return res.status(400).json({ success: false, message: 'Name, a valid email, and a password of at least 8 characters are required' });
+    }
     
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -23,7 +27,8 @@ exports.register = async (req, res) => {
       email,
       password: hashedPassword,
       phone,
-      role: email === process.env.ADMIN_EMAIL ? 'admin' : 'user'
+      role: (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || '')
+        .split(',').map(value => value.trim().toLowerCase()).includes(email) ? 'admin' : 'user'
     });
 
     res.status(201).json({
@@ -43,7 +48,8 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const { password } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) {

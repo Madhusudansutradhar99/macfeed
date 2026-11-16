@@ -2,10 +2,22 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Lock, Loader2, AlertCircle, Sparkles, User, LogOut, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useGoogleLogin } from '@react-oauth/google';
+import api from '../utils/api';
+import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 
 export default function AuthModal() {
-  const { user, login, logout, isAuthModalOpen, setAuthModalOpen } = useAuth();
+  const { isAuthModalOpen } = useAuth();
+  if (!isAuthModalOpen) return null;
+
+  return (
+    <GoogleOAuthProvider clientId="688376851277-pjbf3re9lmphnoov37pmmdpo5bq6ee36.apps.googleusercontent.com">
+      <AuthModalContent />
+    </GoogleOAuthProvider>
+  );
+}
+
+function AuthModalContent() {
+  const { user, login, logout, setAuthModalOpen } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -20,19 +32,9 @@ export default function AuthModal() {
       setLoading(true);
       setError(null);
       try {
-        const userInfo = await fetch(
-          'https://www.googleapis.com/oauth2/v3/userinfo',
-          { headers: { Authorization: `Bearer ${tokenResponse.access_token}` }}
-        ).then(res => res.json());
-        
-        const userData = {
-          id: userInfo.sub,
-          name: userInfo.name,
-          email: userInfo.email,
-          picture: userInfo.picture
-        };
-
-        login(userData);
+        const { data } = await api.post('/auth/google', { token: tokenResponse.access_token });
+        if (!data?.success || !data?.user) throw new Error('Google sign-in could not be verified.');
+        login(data.user);
         
         // Auto-request notification for background audio right after login
         if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
@@ -56,8 +58,6 @@ export default function AuthModal() {
       setError('Google Login Failed. Please try again.');
     }
   });
-
-  if (!isAuthModalOpen) return null;
 
   const onClose = () => {
     setAuthModalOpen(false);

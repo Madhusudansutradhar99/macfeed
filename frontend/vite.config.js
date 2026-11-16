@@ -3,8 +3,6 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
-process.env.CI = '';
-
 export default defineConfig({
   plugins: [
     react(),
@@ -118,7 +116,6 @@ export default defineConfig({
             if (id.includes('swiper')) {
               return 'vendor-player';
             }
-            return 'vendor';
           }
         },
         // Optimize chunk sizes

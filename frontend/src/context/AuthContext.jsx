@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../utils/api';
 
 const AuthContext = createContext({});
 
@@ -12,21 +13,36 @@ export function AuthProvider({ children }) {
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
-    // Authentication is bypassed for now as requested
-    const dummyUser = { id: 'admin-123', name: 'Admin', email: 'admin@macfeed.local', picture: '' };
-    setUser(dummyUser);
-    setLoading(false);
+    let active = true;
+
+    api.get('/auth/me')
+      .then(({ data }) => {
+        if (active) setUser(data?.user || null);
+      })
+      .catch(() => {
+        if (active) setUser(null);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => { active = false; };
   }, []);
 
   const login = (userData) => {
     setUser(userData);
-    localStorage.setItem('macfeed_user', JSON.stringify(userData));
     setAuthModalOpen(false);
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('macfeed_user');
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      // Clear the local view even if the session endpoint is temporarily unavailable.
+    } finally {
+      setUser(null);
+      setAuthModalOpen(false);
+    }
   };
 
   // Legacy support for methods that might be called elsewhere

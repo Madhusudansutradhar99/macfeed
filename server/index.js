@@ -1,7 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-const { OAuth2Client } = require('google-auth-library');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
@@ -12,6 +14,8 @@ const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
+const User = require('./models/User');
+const { getAdminEmails } = require('./middleware/auth');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
@@ -22,9 +26,17 @@ const chatRoutes = require('./routes/chat');
 const chatSocket = require('./socket/chatSocket');
 const app = express();
 const server = http.createServer(app);
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost',
+  'capacitor://localhost',
+  ...(process.env.CLIENT_URLS || process.env.CLIENT_URL || '').split(',')
+].map(origin => origin.trim()).filter(Boolean);
+
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:3000', process.env.CLIENT_URL],
+    origin: allowedOrigins,
     credentials: true
   }
 });
@@ -36,9 +48,6 @@ connectDB();
 
 const PORT = process.env.PORT || 5000;
 const YT_API_KEY = process.env.YOUTUBE_API_KEY;
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-
-const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 // ── DISK-PERSISTENT CACHE (survives server restarts) ──
@@ -74,7 +83,10 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Origin is not allowed by CORS'));
+  },
   credentials: true
 }));
 
@@ -90,32 +102,67 @@ const authLimiter = rateLimit({
 
 // ── AUTH HELPERS ──
 const setSessionCookie = (res, userData) => {
-  res.cookie('macfeed_session', JSON.stringify(userData), {
+  const token = jwt.sign({
+    id: userData.userId,
+    email: userData.email,
+    name: userData.name,
+    picture: userData.picture,
+    role: userData.role || (getAdminEmails().includes(String(userData.email || '').toLowerCase()) ? 'admin' : 'user'),
+  }, process.env.JWT_SECRET, { expiresIn: '30d' });
+  const production = process.env.NODE_ENV === 'production';
+  res.cookie('macfeed_session', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 30 * 24 * 60 * 60 * 1000
+    secure: production,
+    sameSite: process.env.COOKIE_SAME_SITE || (production ? 'none' : 'lax'),
+    path: '/',
+    maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 };
 
 // ── AUTH ROUTES ──
 
 // Google OAuth
-app.post('/auth/google', authLimiter, async (req, res) => {
+app.post(['/auth/google', '/api/auth/google'], authLimiter, async (req, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).json({ error: 'Token is required' });
 
   try {
-    const ticket = await client.verifyIdToken({ idToken: token, audience: GOOGLE_CLIENT_ID });
-    const payload = ticket.getPayload();
-    const { sub, email, name, picture } = payload;
+    const response = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 5000,
+    });
+    const { sub, email, name, picture, email_verified: emailVerified } = response.data || {};
+    if (!sub || !email || emailVerified !== true) {
+      return res.status(401).json({ error: 'Google account email could not be verified' });
+    }
 
-    const userData = { userId: sub, email, name, picture };
+    const normalizedEmail = email.trim().toLowerCase();
+    let user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      user = await User.create({
+        name: name || normalizedEmail.split('@')[0],
+        email: normalizedEmail,
+        password: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
+        role: getAdminEmails().includes(normalizedEmail) ? 'admin' : 'user',
+      });
+    } else if (getAdminEmails().includes(normalizedEmail) && user.role !== 'admin') {
+      user.role = 'admin';
+      await user.save();
+    }
+
+    const userData = {
+      userId: String(user._id),
+      id: String(user._id),
+      email: normalizedEmail,
+      name: user.name || name,
+      picture: picture || '',
+      role: user.role,
+    };
     setSessionCookie(res, userData);
     res.json({ success: true, user: userData });
   } catch (error) {
-    console.error('Google Verification Error:', error);
-    res.status(401).json({ error: 'Invalid authentication token: ' + error.message });
+    console.error('Google Verification Error:', error.message);
+    res.status(401).json({ error: 'Google sign-in could not be verified' });
   }
 });
 
@@ -166,18 +213,19 @@ app.post('/auth/signin', authLimiter, async (req, res) => {
   }
 });
 
-app.get('/auth/me', (req, res) => {
+app.get(['/auth/me', '/api/auth/me'], (req, res) => {
   const session = req.cookies.macfeed_session;
   if (!session) return res.status(401).json({ error: 'Not authenticated' });
   try {
-    res.json({ user: JSON.parse(session) });
+    const decoded = jwt.verify(session, process.env.JWT_SECRET);
+    res.json({ user: { id: decoded.id, email: decoded.email, name: decoded.name, picture: decoded.picture, role: decoded.role || 'user' } });
   } catch (e) {
     res.status(401).json({ error: 'Invalid session' });
   }
 });
 
-app.post('/auth/logout', (req, res) => {
-  res.clearCookie('macfeed_session');
+app.post(['/auth/logout', '/api/auth/logout'], (req, res) => {
+  res.clearCookie('macfeed_session', { path: '/' });
   res.json({ success: true });
 });
 
@@ -186,8 +234,9 @@ app.post('/auth/delete-account', authLimiter, async (req, res) => {
   if (!session) return res.status(401).json({ error: 'Not authenticated' });
 
   try {
-    const user = JSON.parse(session);
-    const userId = user.userId || 'google_' + user.email.replace(/[^a-zA-Z0-9]/g, '');
+    const user = jwt.verify(session, process.env.JWT_SECRET);
+    const dbUser = user.email ? await User.findOne({ email: user.email }) : null;
+    const userId = dbUser?._id ? String(dbUser._id) : user.id;
     
     // 1. Delete from Mock database if file exists
     const fs = require('fs');
@@ -204,13 +253,12 @@ app.post('/auth/delete-account', authLimiter, async (req, res) => {
     }
     
     // 2. Delete from MongoDB if connection is active
-    const User = require('./models/User');
     const mongoose = require('mongoose');
     if (mongoose.connection.readyState === 1) {
-      await User.findByIdAndDelete(userId);
+      if (dbUser?._id) await User.findByIdAndDelete(dbUser._id);
     }
     
-    res.clearCookie('macfeed_session');
+    res.clearCookie('macfeed_session', { path: '/' });
     res.json({ success: true, message: 'Account identity successfully removed.' });
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete account' });

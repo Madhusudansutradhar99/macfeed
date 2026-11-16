@@ -1,10 +1,25 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import * as musicMetadata from 'music-metadata-browser';
 import { getHandle, setHandle, saveTrack, getAllTracks, deleteTrack } from '../utils/db';
-import { Buffer } from 'buffer';
 
-if (typeof window !== 'undefined') window.Buffer = window.Buffer || Buffer;
+let musicMetadataPromise;
+const parseMusicMetadata = async (file) => {
+  if (!musicMetadataPromise) {
+    musicMetadataPromise = Promise.all([
+      import('music-metadata-browser'),
+      import('buffer'),
+    ]).then(([musicMetadata, bufferModule]) => {
+      if (typeof window !== 'undefined') window.Buffer = window.Buffer || bufferModule.Buffer;
+      return musicMetadata;
+    }).catch((error) => {
+      musicMetadataPromise = null;
+      throw error;
+    });
+  }
+
+  const musicMetadata = await musicMetadataPromise;
+  return musicMetadata.parseBlob(file);
+};
 
 const MusicContext = createContext(null);
 
@@ -162,8 +177,9 @@ export function MusicProvider({ children }) {
   const loadStoredDeviceMusic = async () => {
     try {
       const storedTracks = await getAllTracks();
+      let reconstructedSongs = [];
       if (storedTracks && storedTracks.length > 0) {
-        const reconstructedSongs = storedTracks.map(track => {
+        reconstructedSongs = storedTracks.map(track => {
           const blob = new Blob([track.audioData], { type: track.type || 'audio/mpeg' });
           const url = URL.createObjectURL(blob);
 
@@ -267,7 +283,7 @@ export function MusicProvider({ children }) {
           if (isSupported) {
             const file = await entry.getFile();
             try {
-              const metadata = await musicMetadata.parseBlob(file);
+              const metadata = await parseMusicMetadata(file);
               let artworkUrl = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800';
               let thumbnailData = null;
               if (metadata.common.picture && metadata.common.picture[0]) {
@@ -330,7 +346,7 @@ export function MusicProvider({ children }) {
           if (existingIds.has(trackId)) continue; // Skip if already in DB
 
           const arrayBuffer = await file.arrayBuffer();
-          const metadata = await musicMetadata.parseBlob(file);
+          const metadata = await parseMusicMetadata(file);
           let artworkUrl = 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800';
           let thumbnailData = null;
 
