@@ -3,10 +3,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Lock, Loader2, AlertCircle, Sparkles, User, LogOut, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useGoogleLogin } from '@react-oauth/google';
+import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 import { supabase } from '../supabaseClient';
 
 export default function AuthModal() {
+  const { isAuthModalOpen } = useAuth();
+  if (!isAuthModalOpen) return null;
+
+  return (
+    <GoogleOAuthProvider clientId="688376851277-pjbf3re9lmphnoov37pmmdpo5bq6ee36.apps.googleusercontent.com">
+      <AuthModalContent />
+    </GoogleOAuthProvider>
+  );
+}
+
+function AuthModalContent() {
   const { user, login, guestLogin, logout, isAuthModalOpen, setAuthModalOpen } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
