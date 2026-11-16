@@ -1,119 +1,123 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
-import { useNavigate } from 'react-router-dom';
 import Loader from '../components/Loader';
-import { motion } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
+import VideoCard from '../components/VideoCard';
+import { FALLBACK_VIDEOS } from '../data/fallbackVideos';
+import { getCategorizedVideos } from '../utils/categoryDetector';
+
+const DEFAULT_MOVIES = FALLBACK_VIDEOS.filter(
+  (v) => v.category === 'Movies' || v.category === 'Sci-Fi' || v.category === 'Action' || v.category === 'Animation'
+);
+
+function getMergedMovies(dbList = []) {
+  const searched = getCategorizedVideos('Movies');
+  const existingIds = new Set(searched.map(m => m.id));
+  const base = dbList.length > 0 ? dbList : DEFAULT_MOVIES;
+  const unrepeated = base.filter(m => !existingIds.has(m.id));
+  return [...searched, ...unrepeated];
+}
 
 export default function Movies() {
-  const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [movies, setMovies] = useState(() => getMergedMovies());
+  const [loading, setLoading] = useState(false);
+  const [selectedTag, setSelectedTag] = useState('ALL');
+
+  const tags = ['ALL', 'Action', 'Sci-Fi', 'Drama', 'Comedy', 'Horror', 'Animation', 'Thriller'];
 
   useEffect(() => {
     async function getMovies() {
-      const { data } = await supabase
-        .from('videos')
-        .select('*')
-        .eq('category', 'Movies')
-        .order('created_at', { ascending: false });
-      setMovies(data || []);
-      setLoading(false);
+      try {
+        const { data, error } = await supabase
+          .from('videos')
+          .select('*')
+          .or('category.eq.Movies,category.eq.Drama,category.eq.Action,category.eq.Comedy')
+          .order('created_at', { ascending: false });
+        if (!error && data && data.length > 0) {
+          setMovies(getMergedMovies(data));
+        }
+      } catch (e) {
+        // use fallback
+      } finally {
+        setLoading(false);
+      }
     }
     getMovies();
+
+    // Listen for real-time updates when user searches movies
+    const handleUpdate = () => {
+      setMovies(prev => getMergedMovies(prev));
+    };
+    window.addEventListener('categorized-videos-updated', handleUpdate);
+    return () => window.removeEventListener('categorized-videos-updated', handleUpdate);
   }, []);
 
-  if (loading)
-    return <Loader />;
+  const filteredMovies = useMemo(() => {
+    if (selectedTag === 'ALL') return movies;
+    return movies.filter((m) =>
+      m.title?.toLowerCase().includes(selectedTag.toLowerCase()) ||
+      m.category?.toLowerCase().includes(selectedTag.toLowerCase())
+    );
+  }, [movies, selectedTag]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen text-primary pt-24 px-6 md:px-12 pb-40 overflow-x-hidden relative transition-colors duration-500" style={{ backgroundColor: 'var(--bg-primary)' }}>
-      {/* Background Decor */}
-      <div className="fixed inset-0 pointer-events-none opacity-5 z-0">
-        <h1 className="text-[25vw] font-black italic uppercase -rotate-12 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          CINEMA
-        </h1>
-      </div>
-
-      <header className="relative z-40 mb-20 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <button
-            onClick={() => navigate('/')}
-            className="bg-secondary p-4 rounded-full border border-primary hover:bg-primary/10 transition-all shadow-xl active:scale-95 text-primary"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <div>
-            <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter uppercase drop-shadow-2xl">
-              Movies
+    <div className="min-h-screen bg-transparent text-white pt-2 sm:pt-4 px-3 sm:px-6 max-w-7xl mx-auto pb-32">
+      {/* --- Digen Header Section --- */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-6">
+        <div>
+          <div className="flex items-center gap-2.5 mb-1">
+            <h1 className="digen-section-title text-xl sm:text-2xl md:text-3xl font-black">
+              PREMIER MOVIES
             </h1>
-            <div className="h-1 w-20 bg-accent rounded-full mt-1" style={{ backgroundColor: 'var(--accent-color)' }} />
+            <span className="digen-badge-teal text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
+              4K Ultra HD
+            </span>
           </div>
-        </div>
-        <div className="text-right hidden sm:block">
-          <p className="text-secondary font-bold uppercase tracking-[0.2em] text-sm">
-            {movies.length} TOTAL TITLES
+          <p className="text-gray-400 text-xs sm:text-sm font-normal max-w-2xl">
+            Stream blockbusters, indie cinema, and critically acclaimed films with zero playback latency.
           </p>
         </div>
-      </header>
 
-      <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-6 gap-y-16 md:gap-x-10 md:gap-y-24">
-        {movies.map((movie, i) => (
-          <motion.div
-            key={movie.id}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: (i % 20) * 0.03 }}
-            whileHover={{
-              scale: 1.1,
-              rotate: 0,
-              zIndex: 50,
-              transition: { duration: 0.2 },
-            }}
-            className="group cursor-pointer"
-            onClick={() => navigate(`/watch/${movie.id}`)}
-          >
-            <div className="relative transform -rotate-6 group-hover:rotate-0 transition-transform duration-500 ease-out">
-              {/* Outer Theme-Aware Frame (Yellow in blue mode) */}
-              <div 
-                className="absolute inset-[-8px] md:inset-[-14px] rounded-2xl md:rounded-[32px] shadow-[0_15px_40px_rgba(0,0,0,0.5)] border border-primary transition-colors duration-500" 
-                style={{ backgroundColor: 'var(--border-color)', opacity: 0.8 }}
-              />
-
-              <div className="relative aspect-[3/4.2] rounded-2xl md:rounded-[32px] overflow-hidden border-2 border-primary bg-black">
-                <img
-                  src={movie.thumbnail_url}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 brightness-90 group-hover:brightness-110"
-                  alt={movie.title}
-                  loading="lazy"
-                  onError={(e) => {
-                    e.target.src = 'https://placehold.co/400x600/001b2e/ffffff?text=Movie';
-                  }}
-                />
-
-                {/* Bottom Vignette */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90" />
-
-                {/* Title Label */}
-                <div className="absolute bottom-4 left-5 right-5">
-                  <h3 className="text-white font-black italic text-xs md:text-base uppercase tracking-tighter line-clamp-2 leading-tight drop-shadow-md">
-                    {movie.title}
-                  </h3>
-                  <div className="flex items-center gap-1.5 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--accent-color)' }} />
-                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">
-                      Watch Now
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        ))}
+        <div className="text-xs text-gray-400 font-semibold">
+          {filteredMovies.length} TITLES AVAILABLE
+        </div>
       </div>
 
-      {/* Decorative Elements */}
-      <div className="fixed bottom-0 left-0 w-full h-32 bg-gradient-to-t from-primary to-transparent z-0 pointer-events-none" />
+      {/* --- Filter Pills Bar --- */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 mb-6">
+        {tags.map((tag) => {
+          const isActive = selectedTag === tag;
+          return (
+            <button
+              key={tag}
+              onClick={() => setSelectedTag(tag)}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+                isActive ? 'digen-pill-active' : 'digen-pill-nav'
+              }`}
+            >
+              {tag}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* --- Movies Grid --- */}
+      {filteredMovies.length === 0 ? (
+        <div className="text-center py-20 text-gray-500 text-sm">No movies found in this category.</div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+          {filteredMovies.map((movie) => (
+            <VideoCard key={movie.id} video={movie} variant="standard" />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -73,6 +73,7 @@ export function VideoPlayerProvider({ children }) {
   const value = {
     activeVideo,
     viewMode,
+    setViewMode,
     playing,
     muted,
     volume,

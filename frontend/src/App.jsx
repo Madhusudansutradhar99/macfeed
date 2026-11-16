@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useRef } from 'react';
+import React, { useState, Suspense, lazy, useEffect, useRef } from 'react';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
@@ -13,11 +13,14 @@ import { ThemeProvider } from './context/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import MainLayout from './layout/MainLayout';
 import MusicMiniPlayer from './components/MusicMiniPlayer';
+import VideoMiniPlayer from './components/VideoMiniPlayer';
+import AuthModal from './components/AuthModal';
 import AdBanner from './components/AdBanner';
 import Loader from './components/Loader';
 import LocalPlayerOverlay from './components/LocalPlayerOverlay';
 import InstallPWA from './components/InstallPWA';
 import OfflineStatus from './components/OfflineStatus';
+import StartupAnimation from './components/StartupAnimation';
 import InstantFeedbackProvider from './components/InstantFeedbackProvider';
 
 // Lazy load pages for performance optimization
@@ -42,7 +45,21 @@ const History = lazy(() => import('./pages/History'));
 const Liked = lazy(() => import('./pages/Liked'));
 const SmartSearchPage = lazy(() => import('./pages/SmartSearchPage'));
 const IntroPage = lazy(() => import('./pages/IntroPage'));
-const AuthModal = lazy(() => import('./components/AuthModal'));
+
+// Preload critical components after initial load
+const preloadComponents = () => {
+  const components = [
+    () => import('./pages/Movies'),
+    () => import('./pages/Music'),
+    () => import('./pages/Series'),
+    () => import('./pages/Sports'),
+    () => import('./pages/Shorts'),
+    () => import('./pages/Trending'),
+    () => import('./pages/Playlists'),
+    () => import('./pages/Settings'),
+  ];
+  components.forEach(c => c());
+};
 
 export default function App() {
   return (
@@ -57,25 +74,24 @@ export default function App() {
 }
 
 function AppContent() {
+  const [showSplash, setShowSplash] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, setAuthModalOpen } = useAuth();
   
-  // Redirect to intro if not logged in and trying to access the root
-  // useEffect(() => {
-  //   if (!user && location.pathname === '/') {
-  //     navigate('/intro', { replace: true });
-  //   }
-  // }, [user, location.pathname, navigate]);
-
-  // Strict Auth Guard: If no user and not on intro page, force open auth modal
-  // useEffect(() => {
-  //   const timer = setTimeout(() => {
-  //     if (!user && location.pathname !== '/intro') {
-  //       setAuthModalOpen(true);
-  //     }
-  //   }, 100);
-  //   return () => clearTimeout(timer);
-  // }, [user, setAuthModalOpen, location.pathname]);
+  // Always route unauthenticated visitors to /intro so they can sign in and enter the app
+  useEffect(() => {
+    const hasUser = user || (() => {
+      try {
+        return !!localStorage.getItem('macfeed_user');
+      } catch (e) {
+        return false;
+      }
+    })();
+    if (!hasUser && location.pathname !== '/intro') {
+      navigate('/intro', { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
 
   // Use a ref for location to avoid listener duplication
   const locationRef = useRef(location);
@@ -118,13 +134,17 @@ function AppContent() {
     };
     setupBackListener();
     
+    // Preload chunks after a short delay to not block initial load
+    const timer = setTimeout(preloadComponents, 3000);
     return () => {
+        clearTimeout(timer);
         if (backListener) backListener.remove();
     };
   }, [navigate]); // navigate is stable
 
   return (
     <>
+      {showSplash && <StartupAnimation onComplete={() => setShowSplash(false)} />}
       <MusicProvider>
         <VideoPlayerProvider>
           <InstantFeedbackProvider />
@@ -152,31 +172,20 @@ function AppContent() {
                 <Route path="/admin/ads" element={<ErrorBoundary resetKey="admanager"><AdManager /></ErrorBoundary>} />
                 <Route path="/search" element={<ErrorBoundary resetKey="search"><SearchResults /></ErrorBoundary>} />
                 <Route path="/smart-search" element={<ErrorBoundary resetKey="smartsearch"><SmartSearchPage /></ErrorBoundary>} />
-                <Route path="*" element={<Home />} />
               </Route>
             </Routes>
           </Suspense>
           {/* Global persistent overlays */}
           <MusicMiniPlayer />
+          <VideoMiniPlayer />
           <LocalPlayerOverlay />
-          <AuthModalGate />
+          <AuthModal />
           <InstallPWA />
           <AdBanner position="bottom-right" />
           <OfflineStatus />
         </VideoPlayerProvider>
       </MusicProvider>
     </>
-  );
-}
-
-function AuthModalGate() {
-  const { isAuthModalOpen } = useAuth();
-  if (!isAuthModalOpen) return null;
-
-  return (
-    <Suspense fallback={null}>
-      <AuthModal />
-    </Suspense>
   );
 }
 

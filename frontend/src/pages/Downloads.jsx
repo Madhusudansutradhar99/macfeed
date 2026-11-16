@@ -30,40 +30,35 @@ export default function Downloads() {
   };
 
   return (
-    <div className="min-h-screen text-white flex flex-col font-sans pb-20" style={{ backgroundColor: 'var(--bg-primary)' }}>
-      {/* Premium Header */}
-      <div className="relative h-[250px] flex items-center px-6 md:px-12 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-900/40 to-[#050014] z-0" />
-        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[120%] bg-blue-500/10 blur-[120px] rounded-full" />
-        
-        <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-6">
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shadow-[0_0_50px_rgba(59,130,246,0.3)]">
-              <Download className="w-8 h-8 md:w-10 md:h-10 text-blue-400" />
-            </div>
-            <div>
-              <h1 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
-                Offline Library
-              </h1>
-              <p className="text-blue-200/50 text-xs md:text-sm font-black uppercase tracking-widest mt-1">
-                Your Private Cinematic Vault
-              </p>
-            </div>
+    <div className="min-h-screen bg-[#0b0c10] text-white pt-2 sm:pt-4 px-3 sm:px-6 max-w-7xl mx-auto pb-32">
+      {/* ─── Digen Header Section ─── */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-6">
+        <div>
+          <div className="flex items-center gap-2.5 mb-1">
+            <h1 className="digen-section-title text-xl sm:text-2xl md:text-3xl font-black">
+              OFFLINE & DOWNLOADS
+            </h1>
+            <span className="digen-badge-teal text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
+              Private Vault
+            </span>
           </div>
-
-          {localHistory.length > 0 && (
-            <button 
-              onClick={clearHistory}
-              className="flex items-center gap-2 px-6 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-full text-red-400 text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95"
-            >
-              <Trash2 size={14} /> Clear All History
-            </button>
-          )}
+          <p className="text-gray-400 text-xs sm:text-sm font-normal max-w-2xl">
+            Cached and downloaded media items for instant offline playback.
+          </p>
         </div>
+
+        {localHistory.length > 0 && (
+          <button 
+            onClick={clearHistory}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-full text-red-400 text-xs font-semibold transition"
+          >
+            <Trash2 size={14} /> Clear All History
+          </button>
+        )}
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 px-6 md:px-12 -mt-10">
+      <div className="relative z-10">
         {localHistory.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-xl">
             <FolderOpen className="w-16 h-16 text-white/10 mb-6" />

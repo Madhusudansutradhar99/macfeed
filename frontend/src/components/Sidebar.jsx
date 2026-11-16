@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Home, Film, Tv, Music, Zap, Flame, Folder, ThumbsUp, User, Trophy, ShoppingCart, Download, ShieldCheck, History
+  Home, Film, Tv, Music, Zap, Flame, Folder, ThumbsUp, User, Trophy, ShoppingCart, Download, ShieldCheck, History, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
   { label: 'Home', icon: Home, path: '/' },
+  { label: 'Intro Tour', icon: Sparkles, path: '/intro?tour=true' },
   { label: 'Movies', icon: Film, path: '/movies' },
   { label: 'Series', icon: Tv, path: '/series' },
   { label: 'Music', icon: Music, path: '/music' },
@@ -23,11 +24,16 @@ const navItems = [
 ];
 
 const DynamicNavItem = ({ item, active, onClick, forceExpand }) => {
+  const [hover, setHover] = useState(false);
   const navigate = useNavigate();
-  const iconColor = active ? '#ffffff' : 'var(--text-primary)';
+  const iconColor = active ? '#000000' : 'var(--text-primary)';
+  const isExpanded = forceExpand || hover;
 
   return (
-    <div
+    <motion.div
+      layoutId={`nav-item-${item.label}`}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       onClick={(e) => {
         if (onClick) onClick(e);
         else {
@@ -35,20 +41,24 @@ const DynamicNavItem = ({ item, active, onClick, forceExpand }) => {
           navigate(item.path);
         }
       }}
-      className={`flex items-center h-10 md:h-11 rounded-xl cursor-pointer transition-all duration-200 border border-transparent
-        ${active ? 'text-white' : 'hover:bg-white/10 glass'}
+      className={`absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-2xl cursor-pointer z-[2000] shadow-xl will-change-transform border border-white/5
+        ${active ? 'bg-gradient-to-r from-[#f5b700] to-amber-500 text-black font-black shadow-[0_0_20px_rgba(245,183,0,0.45)]' : 'hover:bg-white/10 bg-[#161822] text-gray-300'}
       `}
-      style={active ? { background: 'linear-gradient(135deg, rgba(var(--accent-rgb), 0.9), rgba(var(--accent-rgb), 0.6))', boxShadow: '0 4px 15px -3px rgba(var(--accent-rgb),0.3)' } : {}}
+      animate={{ width: isExpanded ? 200 : 44 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
     >
       <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0">
         <item.icon className="w-5 h-5" style={{ color: iconColor }} />
       </div>
-      {forceExpand && (
-        <span className={`whitespace-nowrap font-bold pr-4 text-[11px] uppercase tracking-widest ml-1 ${active ? 'text-white' : 'text-primary'}`}>
-          {item.label}
-        </span>
-      )}
-    </div>
+      <motion.span
+        initial={false}
+        animate={{ opacity: isExpanded ? 1 : 0 }}
+        transition={{ duration: 0.12 }}
+        className={`whitespace-nowrap font-black pr-6 text-[11px] uppercase tracking-widest ml-1 ${active ? 'text-black' : 'text-gray-200'}`}
+      >
+        {item.label}
+      </motion.span>
+    </motion.div>
   );
 };
 
@@ -135,19 +145,23 @@ export default function Sidebar() {
                )}
             </div>
             <div className="relative h-10 md:h-11 w-full shrink-0 mt-2">
-               <div
+               <motion.div
+                  onMouseEnter={() => setShowUserMenu(true)} 
+                  onMouseLeave={() => setShowUserMenu(false)}
                   onClick={() => user ? navigate('/settings') : setAuthModalOpen(true)}
-                  className={`flex items-center h-10 md:h-11 rounded-xl cursor-pointer transition-all duration-200 border border-transparent hover:bg-white/10 glass`}
+                  className="absolute left-0 top-0 flex items-center h-10 md:h-11 rounded-2xl cursor-pointer overflow-hidden z-50 shadow-lg will-change-transform glass border border-white/10"
+                  animate={{ width: isSidebarOpen || showUserMenu ? 200 : 44 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                >
-                  <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0">
-                    <User className="w-5 h-5" style={{ color: 'var(--accent-color)' }} />
-                  </div>
-                  {isSidebarOpen && (
-                    <span className="text-[12px] font-bold tracking-wide text-primary pr-4">
-                      {user ? 'Profile' : 'Sign In'}
-                    </span>
-                  )}
-               </div>
+                  <div className="w-11 h-10 md:h-11 flex items-center justify-center shrink-0"><User className="w-5 h-5" style={{ color: 'var(--accent-color)' }} /></div>
+                  <motion.span 
+                    animate={{ opacity: isSidebarOpen || showUserMenu ? 1 : 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="text-[12px] font-bold tracking-wide text-primary pr-4"
+                  >
+                    {user ? 'Profile' : 'Sign In'}
+                  </motion.span>
+               </motion.div>
             </div>
           </div>
         </div>

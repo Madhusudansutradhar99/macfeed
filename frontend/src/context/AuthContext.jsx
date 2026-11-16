@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../utils/api';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext({});
 
@@ -8,42 +7,53 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('macfeed_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(false);
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
-    let active = true;
-
-    api.get('/auth/me')
-      .then(({ data }) => {
-        if (active) setUser(data?.user || null);
-      })
-      .catch(() => {
-        if (active) setUser(null);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => { active = false; };
+    try {
+      const stored = localStorage.getItem('macfeed_user');
+      if (stored) {
+        setUser(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.warn('Could not read user from storage', e);
+    }
   }, []);
 
-  const login = (userData) => {
+  const login = useCallback((userData) => {
     setUser(userData);
-    setAuthModalOpen(false);
-  };
-
-  const logout = async () => {
     try {
-      await api.post('/auth/logout');
-    } catch (error) {
-      // Clear the local view even if the session endpoint is temporarily unavailable.
-    } finally {
-      setUser(null);
-      setAuthModalOpen(false);
-    }
-  };
+      localStorage.setItem('macfeed_user', JSON.stringify(userData));
+    } catch (e) {}
+    setAuthModalOpen(false);
+  }, []);
+
+  const guestLogin = useCallback(() => {
+    const guestUser = {
+      id: `guest_${Date.now()}`,
+      name: 'Guest Explorer',
+      email: 'guest@macfeed.app',
+      picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces',
+      isGuest: true,
+    };
+    login(guestUser);
+  }, [login]);
+
+  const logout = useCallback(() => {
+    setUser(null);
+    try {
+      localStorage.removeItem('macfeed_user');
+    } catch (e) {}
+  }, []);
 
   // Legacy support for methods that might be called elsewhere
   const signOut = logout;
@@ -54,6 +64,7 @@ export function AuthProvider({ children }) {
         user, 
         loading, 
         login,
+        guestLogin,
         logout,
         signOut,
         isAuthModalOpen, 

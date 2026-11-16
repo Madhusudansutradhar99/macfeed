@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play,
@@ -9,13 +10,14 @@ import {
   Minimize,
   SkipBack,
   SkipForward,
+  PictureInPicture2,
   X,
 } from 'lucide-react';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import { useVideoMiniPlayer } from '../context/VideoPlayerContext';
 
 const formatTime = (seconds) => {
-  if (!Number.isFinite(seconds) || seconds <= 0) return '0:00';
+  if (!seconds || Number.isNaN(seconds)) return '0:00';
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
@@ -69,8 +71,11 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     currentTime, setCurrentTime, 
     duration, setDuration, 
     closePlayer, 
+    setViewMode,
     ytPlayerRef 
   } = useVideoMiniPlayer();
+  const navigate = useNavigate();
+  const localYTPlayerRef = useRef(null);
   const containerRef = useRef(null);
   const ytDomContainer = useRef(null);
   const ytTimerRef = useRef(null);
@@ -80,32 +85,23 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const touchStartRef = useRef({ x: 0, y: 0, time: 0, isTap: true });
   const isSwipingRef = useRef(false);
   const fullscreenOverlayRef = useRef(null);
-  // FIX 3/4: DOM refs for zero-re-render realtime updates
+  // FIX: DOM refs for zero-re-render realtime updates
   const progressBarRef = useRef(null);
+  const scrubberKnobRef = useRef(null);
   const bufferBarRef = useRef(null);
   const currentTimeRef = useRef(null);
   const durationRef = useRef(null);
-  const scrubberRef = useRef(null);
   const playBtnRef = useRef(null);
   const durationStateRef = useRef(0);
   const playingRef = useRef(playing);
-  const isSeekingRef = useRef(false);
   useEffect(() => { playingRef.current = playing; }, [playing]);
   const inputRangeRef = useRef(null);
-  const syncProgressUI = useCallback((time, total, bufferedPercent = 0) => {
-    const safeDuration = Number.isFinite(total) && total > 0 ? total : 0;
-    const safeTime = Number.isFinite(time) && time > 0 ? Math.min(time, safeDuration || time) : 0;
-    const percent = safeDuration ? Math.min(100, (safeTime / safeDuration) * 100) : 0;
-
-    if (progressBarRef.current) progressBarRef.current.style.width = `${percent}%`;
-    if (bufferBarRef.current) bufferBarRef.current.style.width = `${Math.max(percent, Math.min(100, bufferedPercent))}%`;
-    if (inputRangeRef.current && !isSeekingRef.current && document.activeElement !== inputRangeRef.current) {
-      inputRangeRef.current.value = String(percent);
-    }
-    if (scrubberRef.current) scrubberRef.current.style.left = `${percent}%`;
-    if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(safeTime);
-    if (durationRef.current) durationRef.current.textContent = formatTime(safeDuration);
-  }, []);
+  const isSeekingRef = useRef(false);
+  const onNextRef = useRef(onNext);
+  useEffect(() => { onNextRef.current = onNext; }, [onNext]);
+  const [playbackTime, setPlaybackTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const lastSecRef = useRef(0);
 
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -114,8 +110,18 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const [availableQualities, setAvailableQualities] = useState([]);
   const [currentQuality, setCurrentQuality] = useState('auto');
   const [forceLandscape, setForceLandscape] = useState(false);
-  // Keep these for native video & seek compatibility
-  const isYouTube = video?.source === 'youtube';
+  // Robust YouTube detection
+  const ytMatch = video?.video_url?.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/
+  );
+  const isYouTube = video?.source === 'youtube' || 
+    Boolean(video?.youtube_id) || 
+    Boolean(video?.ytId) || 
+    Boolean(typeof video?.id === 'string' && video.id.startsWith('yt-')) ||
+    Boolean(video?.video_url?.includes('youtu'));
+  const youtubeVideoId = isYouTube
+    ? (video?.youtube_id || video?.ytId || (typeof video?.id === 'string' && video.id.startsWith('yt-') ? video.id.replace('yt-', '') : '') || ytMatch?.[1] || '')
+    : '';
 
   const showControlsTemporarily = useCallback(() => {
     setShowControls(true);
@@ -145,44 +151,119 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     showControlsTemporarily();
   }, [showControlsTemporarily]);
 
+  const handleToggleMiniPlayer = useCallback(() => {
+    if (viewMode === 'mini') {
+      setViewMode('full');
+      if (video?.id) navigate(`/watch/${video.id}`, { state: { video } });
+    } else {
+      setViewMode('mini');
+      navigate('/');
+    }
+  }, [viewMode, setViewMode, navigate, video]);
+
+  const togglePlayPause = useCallback(() => {
+    const player = localYTPlayerRef.current || ytPlayerRef.current;
+    if (isYouTube && player) {
+      try {
+        const state = player.getPlayerState?.();
+        if (state === 1) {
+          player.pauseVideo?.();
+          setPlaying(false);
+        } else {
+          player.playVideo?.();
+          setPlaying(true);
+        }
+      } catch (err) {
+        if (playing) {
+          player.pauseVideo?.();
+          setPlaying(false);
+        } else {
+          player.playVideo?.();
+          setPlaying(true);
+        }
+      }
+    } else if (nativeVideoRef.current) {
+      if (nativeVideoRef.current.paused) {
+        nativeVideoRef.current.play();
+        setPlaying(true);
+      } else {
+        nativeVideoRef.current.pause();
+        setPlaying(false);
+      }
+    }
+  }, [isYouTube, playing, setPlaying, ytPlayerRef]);
+
   const skip = useCallback(
     (seconds) => {
-      if (isYouTube && ytPlayerRef.current?.seekTo) {
-        const currentTime = ytPlayerRef.current.getCurrentTime?.() || 0;
-        const videoDuration = ytPlayerRef.current.getDuration?.() || duration || 0;
-        const target = Math.max(0, Math.min(videoDuration || currentTime + seconds, currentTime + seconds));
-        ytPlayerRef.current.seekTo(target, true);
-        setCurrentTime(target); // Immediate feedback
-        if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(target);
-        return;
-      }
+      try {
+        const player = localYTPlayerRef.current || ytPlayerRef.current;
+        if (isYouTube && player?.seekTo) {
+          const cur = player.getCurrentTime?.() || playbackTime || 0;
+          const vDur = player.getDuration?.() || durationStateRef.current || duration || 0;
+          const target = Math.max(0, Math.min(vDur > 0 ? vDur : cur + seconds, cur + seconds));
+          player.seekTo(target, true);
+          setPlaybackTime(target);
+          setCurrentTime(target);
+          if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(target);
+          if (vDur > 0) {
+            const pct = Math.min(100, Math.max(0, (target / vDur) * 100));
+            if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
+            if (scrubberKnobRef.current) scrubberKnobRef.current.style.left = `${pct}%`;
+            if (inputRangeRef.current) inputRangeRef.current.value = pct;
+          }
+          return;
+        }
 
-      if (nativeVideoRef.current) {
-        const target = Math.max(0, Math.min(nativeVideoRef.current.duration || duration || 0, nativeVideoRef.current.currentTime + seconds));
-        nativeVideoRef.current.currentTime = target;
-      }
+        if (nativeVideoRef.current) {
+          const cur = nativeVideoRef.current.currentTime || playbackTime || 0;
+          const vDur = nativeVideoRef.current.duration || durationStateRef.current || duration || 0;
+          const target = Math.max(0, Math.min(vDur > 0 ? vDur : cur + seconds, cur + seconds));
+          nativeVideoRef.current.currentTime = target;
+          setPlaybackTime(target);
+          setCurrentTime(target);
+          if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(target);
+          if (vDur > 0) {
+            const pct = Math.min(100, Math.max(0, (target / vDur) * 100));
+            if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
+            if (scrubberKnobRef.current) scrubberKnobRef.current.style.left = `${pct}%`;
+            if (inputRangeRef.current) inputRangeRef.current.value = pct;
+          }
+        }
+      } catch (err) {}
     },
-    [duration, isYouTube]
+    [duration, isYouTube, playbackTime, setCurrentTime, ytPlayerRef]
   );
+
+  const handleSeekStart = useCallback(() => {
+    isSeekingRef.current = true;
+  }, []);
+
+  const handleSeekEnd = useCallback(() => {
+    isSeekingRef.current = false;
+  }, []);
 
   const handleSeek = useCallback((e) => {
     e.stopPropagation();
-    const percentage = parseFloat(e.target.value) / 100;
-    
-    if (isYouTube && ytPlayerRef.current?.seekTo) {
-      const videoDuration = ytPlayerRef.current.getDuration?.() || duration || 0;
-      const target = percentage * videoDuration;
-      ytPlayerRef.current.seekTo(target, true);
-      setCurrentTime(target);
-      syncProgressUI(target, videoDuration);
-    } else if (nativeVideoRef.current) {
-      const videoDuration = nativeVideoRef.current.duration || duration || 0;
-      const target = percentage * videoDuration;
-      nativeVideoRef.current.currentTime = target;
-      setCurrentTime(target);
-      syncProgressUI(target, videoDuration);
-    }
-  }, [duration, isYouTube, setCurrentTime, syncProgressUI, ytPlayerRef]);
+    try {
+      const pct = parseFloat(e.target.value);
+      const effectiveDur = videoDuration || durationStateRef.current || duration || 0;
+      const targetTime = effectiveDur > 0 ? (pct / 100) * effectiveDur : 0;
+
+      if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
+      if (scrubberKnobRef.current) scrubberKnobRef.current.style.left = `${pct}%`;
+      if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(targetTime);
+
+      setPlaybackTime(targetTime);
+      setCurrentTime(targetTime);
+
+      const player = localYTPlayerRef.current || ytPlayerRef.current;
+      if (isYouTube && player?.seekTo) {
+        player.seekTo(targetTime, true);
+      } else if (nativeVideoRef.current) {
+        nativeVideoRef.current.currentTime = targetTime;
+      }
+    } catch (err) {}
+  }, [videoDuration, duration, isYouTube, setCurrentTime, ytPlayerRef]);
 
   const toggleFullscreen = useCallback(async () => {
     const host = containerRef.current;
@@ -224,10 +305,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
 
   const handleTouchStart = useCallback((event) => {
-    if (event.target?.closest?.('input[type="range"], button')) {
-      touchStartRef.current = { x: 0, y: 0, time: 0, isTap: false };
-      return;
-    }
     const touch = event.touches[0];
     touchStartRef.current = { 
       x: touch.clientX, 
@@ -239,8 +316,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   }, []);
 
   const handleTouchMove = useCallback((event) => {
-    // Let the seek range input receive touch movement instead of treating it as a player swipe.
-    if (event.target?.closest?.('input[type="range"], button')) return;
     // Block page scroll when touching the video area
     if (event.cancelable) event.preventDefault();
     event.stopPropagation();
@@ -262,11 +337,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const handleTouchEnd = useCallback(
     (event) => {
       const start = touchStartRef.current;
-      if (event.target?.closest?.('input[type="range"], button')) {
-        touchStartRef.current = { x: 0, y: 0, time: 0, isTap: true };
-        isSwipingRef.current = false;
-        return;
-      }
       if (!start.time) return;
 
       const touch = event.changedTouches[0];
@@ -387,27 +457,37 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   useEffect(() => {
-    if (!isYouTube) {
+    // Reset playback & duration states for new video immediately
+    durationStateRef.current = 0;
+    setPlaybackTime(0);
+    setVideoDuration(0);
+    if (currentTimeRef.current) currentTimeRef.current.textContent = '0:00';
+    if (durationRef.current) durationRef.current.textContent = '0:00';
+    if (progressBarRef.current) progressBarRef.current.style.width = '0%';
+    if (scrubberKnobRef.current) scrubberKnobRef.current.style.left = '0%';
+    if (inputRangeRef.current) inputRangeRef.current.value = 0;
+
+    if (!isYouTube || !youtubeVideoId) {
       if (ytTimerRef.current) clearInterval(ytTimerRef.current);
       if (ytFailSafeRef.current) clearTimeout(ytFailSafeRef.current);
-      if (ytPlayerRef.current) {
+      if (localYTPlayerRef.current) {
         try {
-          ytPlayerRef.current.destroy();
+          localYTPlayerRef.current.destroy();
         } catch (err) {
           // ignore
         }
+        localYTPlayerRef.current = null;
+      }
+      if (ytPlayerRef.current === localYTPlayerRef.current) {
         ytPlayerRef.current = null;
       }
       return;
     }
 
-    const initYouTube = () => {
-      if (!ytDomContainer.current) return;
+    let isDisposed = false;
 
-      const match = video?.video_url?.match(
-        /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/
-      );
-      const youtubeId = match ? match[1] : '';
+    const initYouTube = () => {
+      if (isDisposed || !ytDomContainer.current) return;
 
       if (ytDomContainer.current) {
         ytDomContainer.current.innerHTML = '';
@@ -415,94 +495,95 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
       const host = document.createElement('div');
       ytDomContainer.current?.appendChild(host);
 
-      // Check network speed
-      let connectionSpeed = 'fast';
-      if (navigator.connection && navigator.connection.effectiveType) {
-        const type = navigator.connection.effectiveType;
-        if (type === '2g' || type === '3g') connectionSpeed = 'slow';
+      console.log('[YT-Player] Initializing instant playback for ID:', youtubeVideoId);
+      
+      const playerParams = {
+        autoplay: 1,
+        controls: 0,
+        rel: 0,
+        modestbranding: 1,
+        showinfo: 0,
+        iv_load_policy: 3,
+        autohide: 1,
+        enablejsapi: 1,
+        playsinline: 1,
+        fs: 0,
+      };
+
+      if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+        playerParams.origin = window.location.origin;
       }
 
-      console.log('[YT-Player] Creating with origin:', window.location.origin);
-      ytPlayerRef.current = new window.YT.Player(host, {
-        videoId: youtubeId,
+      const ytInstance = new window.YT.Player(host, {
+        videoId: youtubeVideoId,
         width: '100%',
         height: '100%',
-        playerVars: {
-          autoplay: connectionSpeed === 'slow' ? 0 : 1,
-          controls: 1,
-          rel: 0,
-          modestbranding: 1,
-          showinfo: 0,
-          iv_load_policy: 3,
-          autohide: 1,
-          enablejsapi: 1,
-          playsinline: 1,
-          fs: 1,
-          disablekb: 1,
-          origin: window.location.origin,
-          widget_referrer: window.location.origin,
-        },
+        playerVars: playerParams,
         events: {
           onReady: (event) => {
+            if (isDisposed) return;
+            localYTPlayerRef.current = event.target;
+            ytPlayerRef.current = event.target;
             setLoadFailed(false);
-            const initDur = event.target.getDuration?.() || 0;
-            durationStateRef.current = initDur;
-            setDuration(initDur);
-            setVolume((event.target.getVolume?.() || 100) / 100);
-
-            const syncProgress = () => {
-              if (ytPlayerRef.current && ytPlayerRef.current.getCurrentTime) {
-                const cur = ytPlayerRef.current.getCurrentTime();
-                const dur = ytPlayerRef.current.getDuration() || durationStateRef.current || 0;
-                
-                // Buffer sync
-                let bufferPct = 0;
-                if (ytPlayerRef.current.getVideoLoadedFraction) {
-                  bufferPct = ytPlayerRef.current.getVideoLoadedFraction() * 100;
-                }
-                
-                // Real-time State Sync
-                const ytState = ytPlayerRef.current.getPlayerState?.();
-                if (ytState === 1 && !playingRef.current) setPlaying(true);
-                else if ((ytState === 2 || ytState === 0) && playingRef.current) setPlaying(false);
-
-                if (dur > 0) {
-                  durationStateRef.current = dur;
-                  syncProgressUI(cur, dur, bufferPct);
-                }
+            try {
+              const initDur = event.target.getDuration?.() || 0;
+              if (initDur > 0) {
+                durationStateRef.current = initDur;
+                setVideoDuration(initDur);
+                setDuration(initDur);
+                if (durationRef.current) durationRef.current.textContent = formatTime(initDur);
               }
-              ytTimerRef.current = requestAnimationFrame(syncProgress);
-            };
-            
-            if (ytTimerRef.current) cancelAnimationFrame(ytTimerRef.current);
-            ytTimerRef.current = requestAnimationFrame(syncProgress);
+              setVolume((event.target.getVolume?.() || 100) / 100);
+
+              event.target.playVideo?.();
+              setPlaying(true);
+            } catch (err) {
+              try {
+                event.target.mute?.();
+                event.target.playVideo?.();
+                setPlaying(true);
+              } catch (_) {}
+            }
           },
           onStateChange: (event) => {
+            if (isDisposed) return;
             const state = event.data;
-            const isPlaying = state === window.YT.PlayerState.PLAYING;
-            const isPaused = state === window.YT.PlayerState.PAUSED;
-            
-            // Immediate state update to prevent 'double-click' bug
-            if (isPlaying) setPlaying(true);
-            else if (isPaused || state === 0) setPlaying(false);
-            
-            if (state === window.YT.PlayerState.ENDED) {
-              onNext?.();
+            if (state === window.YT.PlayerState.PLAYING) {
+              setPlaying(true);
+              try {
+                const curDur = event.target.getDuration?.() || 0;
+                if (curDur > 0) {
+                  durationStateRef.current = curDur;
+                  setVideoDuration(curDur);
+                  setDuration(curDur);
+                  if (durationRef.current) durationRef.current.textContent = formatTime(curDur);
+                }
+              } catch (_) {}
+            } else if (state === window.YT.PlayerState.PAUSED) {
+              setPlaying(false);
+            } else if (state === window.YT.PlayerState.ENDED) {
+              setPlaying(false);
+              onNextRef.current?.();
             }
           },
           onError: () => {
+            if (isDisposed) return;
             setLoadFailed(true);
             onError?.('The YouTube player could not load this video.');
           },
         },
       });
+      localYTPlayerRef.current = ytInstance;
+      ytPlayerRef.current = ytInstance;
     };
 
     if (!window.YT || !window.YT.Player) {
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScript = document.getElementsByTagName('script')[0];
-      firstScript.parentNode.insertBefore(tag, firstScript);
+      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const firstScript = document.getElementsByTagName('script')[0];
+        firstScript.parentNode.insertBefore(tag, firstScript);
+      }
 
       const poll = setInterval(() => {
         if (window.YT && window.YT.Player) {
@@ -514,55 +595,92 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
       ytFailSafeRef.current = setTimeout(() => {
         clearInterval(poll);
-        setLoadFailed(true);
-        onError?.('The YouTube player timed out while loading.');
+        if (!window.YT?.Player) {
+          setLoadFailed(true);
+          onError?.('The YouTube player timed out while loading.');
+        }
       }, 10000);
     } else {
       initYouTube();
     }
 
-    // 4. Start sync loop immediately as a fallback if onReady is delayed
+    // Single, resilient 150ms sync interval that never crashes
     const syncProgress = () => {
-      if (ytPlayerRef.current && ytPlayerRef.current.getCurrentTime) {
-        const cur = ytPlayerRef.current.getCurrentTime();
-        const dur = ytPlayerRef.current.getDuration() || durationStateRef.current || 0;
-        
-        // Real-time UI Updates
+      if (isDisposed) return;
+      try {
+        const player = localYTPlayerRef.current || ytPlayerRef.current;
+        if (!player || typeof player.getCurrentTime !== 'function') return;
+
+        const cur = player.getCurrentTime() || 0;
+        const dur = (typeof player.getDuration === 'function' ? player.getDuration() : 0) || durationStateRef.current || duration || 0;
+
+        // Buffer sync
+        let bufferPct = 0;
+        if (typeof player.getVideoLoadedFraction === 'function') {
+          bufferPct = (player.getVideoLoadedFraction() || 0) * 100;
+        }
+
+        // Real-time State Sync
+        if (typeof player.getPlayerState === 'function') {
+          const ytState = player.getPlayerState();
+          if (ytState === 1 && !playingRef.current) setPlaying(true);
+          else if ((ytState === 2 || ytState === 0) && playingRef.current) setPlaying(false);
+        }
+
         if (dur > 0) {
           durationStateRef.current = dur;
-          syncProgressUI(cur, dur, ytPlayerRef.current.getVideoLoadedFraction?.() * 100 || 0);
+          const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
+          if (!isSeekingRef.current) {
+            if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
+            if (scrubberKnobRef.current) scrubberKnobRef.current.style.left = `${pct}%`;
+            if (inputRangeRef.current && document.activeElement !== inputRangeRef.current) {
+              inputRangeRef.current.value = pct;
+            }
+          }
+          if (bufferBarRef.current) bufferBarRef.current.style.width = `${bufferPct}%`;
+          if (currentTimeRef.current && !isSeekingRef.current) currentTimeRef.current.textContent = formatTime(cur);
+          if (durationRef.current) durationRef.current.textContent = formatTime(dur);
+        } else if (cur > 0 && !isSeekingRef.current) {
+          if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(cur);
         }
-      }
-      ytTimerRef.current = requestAnimationFrame(syncProgress);
-    };
-    ytTimerRef.current = requestAnimationFrame(syncProgress);
 
-    const stateSyncInterval = setInterval(() => {
-      if (ytPlayerRef.current?.getPlayerState) {
-        const state = ytPlayerRef.current.getPlayerState();
-        if (state === 1 && !playingRef.current) setPlaying(true);
-        else if ((state === 2 || state === 0) && playingRef.current) setPlaying(false);
+        // Sync React state once per second so React render tree matches DOM
+        if (Math.floor(cur) !== Math.floor(lastSecRef.current)) {
+          lastSecRef.current = cur;
+          setPlaybackTime(cur);
+          if (dur > 0 && dur !== durationStateRef.current) {
+            setVideoDuration(dur);
+            setDuration(dur);
+          }
+        }
+      } catch (err) {
+        // Catch gracefully
       }
-    }, 100);
+    };
+
+    const syncInterval = setInterval(syncProgress, 150);
 
     return () => {
-      clearInterval(stateSyncInterval);
-      if (ytTimerRef.current) cancelAnimationFrame(ytTimerRef.current);
+      isDisposed = true;
+      clearInterval(syncInterval);
       if (ytFailSafeRef.current) clearTimeout(ytFailSafeRef.current);
-      if (ytPlayerRef.current) {
+      if (localYTPlayerRef.current) {
         try {
-          ytPlayerRef.current.destroy();
+          localYTPlayerRef.current.destroy();
         } catch (err) {
           // ignore
         }
+      }
+      if (ytPlayerRef.current === localYTPlayerRef.current) {
         ytPlayerRef.current = null;
       }
+      localYTPlayerRef.current = null;
     };
-  }, [isYouTube, video?.video_url, syncProgressUI]);
+  }, [isYouTube, youtubeVideoId]);
 
   useEffect(() => {
     if (!isYouTube) return;
-    const player = ytPlayerRef.current;
+    const player = localYTPlayerRef.current || ytPlayerRef.current;
     if (!player) return;
 
     if (playing) player.playVideo?.();
@@ -571,7 +689,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
   useEffect(() => {
     if (!isYouTube) return;
-    const player = ytPlayerRef.current;
+    const player = localYTPlayerRef.current || ytPlayerRef.current;
     if (!player) return;
 
     if (muted) player.mute?.();
@@ -616,6 +734,14 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
           event.preventDefault();
           skip(10);
           break;
+        case 'i':
+          event.preventDefault();
+          handleToggleMiniPlayer();
+          break;
+        case 'n':
+          event.preventDefault();
+          onNext?.();
+          break;
         case 't':
           event.preventDefault();
           // Theater mode is intentionally mapped to fullscreen/minimize only for this simplified player.
@@ -646,7 +772,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [skip, toggleFullscreen, setPlaying, setMuted, setVolume]); // Added missing deps
+  }, [skip, toggleFullscreen, setPlaying, setMuted, setVolume, handleToggleMiniPlayer, onNext]);
 
   if (!video) return null;
 
@@ -686,8 +812,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               </div>
             ) : null}
 
-            {/* Fullscreen Swipe Overlay - FIX 1 & 3 */}
-            {/* Left-Side Swipe Zone: Allows 'Swipe Down to Exit' without blocking ANY YouTube controls (since they are in the center/right) */}
+            {/* Fullscreen Swipe Overlay */}
             {isFullscreen && (
               <div 
                 className="absolute top-0 bottom-0 left-0 w-[100px] z-[60] bg-transparent pointer-events-auto"
@@ -697,13 +822,53 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               />
             )}
 
-            <div ref={ytDomContainer} className="absolute inset-0 h-full w-full z-[10]" />
-            
-            {/* Transparent overlay captures all taps and swipes. */}
+            {/* Click overlay for full play/pause and control toggle */}
             <div 
-              className={`absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent transition-opacity duration-300 ${isFullscreen || viewMode === 'mini' ? 'pointer-events-none opacity-0' : 'opacity-100'}`} 
-              onClick={toggleControls}
+              className="absolute inset-0 z-[15] cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePlayPause();
+                toggleControls();
+              }}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                toggleFullscreen();
+              }}
             />
+
+            <div ref={ytDomContainer} className="absolute inset-0 h-full w-full z-[10] pointer-events-none" />
+
+            {/* MacFeed Center Play Button Overlay when paused */}
+            <AnimatePresence>
+              {!playing && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="absolute inset-0 z-[25] flex items-center justify-center pointer-events-none"
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePlayPause();
+                    }}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#f5b700] via-amber-400 to-[#f5b700] text-black flex items-center justify-center shadow-[0_0_40px_rgba(245,183,0,0.65)] pointer-events-auto hover:scale-110 active:scale-95 transition-transform"
+                    title="Play Video"
+                  >
+                    <Play className="w-8 h-8 fill-black ml-1" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            {/* Transparent overlay for mini mode maximize only */}
+            {viewMode === 'mini' && (
+              <div 
+                className="absolute inset-0 z-30 w-full h-full cursor-pointer bg-transparent" 
+                onClick={() => setViewMode('full')}
+              />
+            )}
           </div>
         ) : (
           <><video
@@ -713,28 +878,42 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             poster={video.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')}
             className="block h-full w-full bg-black object-contain"
             playsInline
-            preload="metadata"
             autoPlay={!(navigator.connection && (navigator.connection.effectiveType === '2g' || navigator.connection.effectiveType === '3g'))}
             onTimeUpdate={(event) => {
-              const media = event.target;
-              if (Math.floor(media.currentTime) !== Math.floor(currentTime)) {
-                setCurrentTime(media.currentTime);
+              const cur = event.target.currentTime || 0;
+              const dur = event.target.duration || durationStateRef.current || duration || 0;
+              if (cur > 0 && !isSeekingRef.current) {
+                setPlaybackTime(cur);
+                setCurrentTime(cur);
               }
-              const bufferedEnd = media.buffered.length ? media.buffered.end(media.buffered.length - 1) : 0;
-              syncProgressUI(media.currentTime, media.duration, media.duration ? (bufferedEnd / media.duration) * 100 : 0);
-            }}
-            onProgress={(event) => {
-              const media = event.target;
-              const bufferedEnd = media.buffered.length ? media.buffered.end(media.buffered.length - 1) : 0;
-              syncProgressUI(media.currentTime, media.duration, media.duration ? (bufferedEnd / media.duration) * 100 : 0);
+              if (dur > 0 && dur !== durationStateRef.current) {
+                durationStateRef.current = dur;
+                setVideoDuration(dur);
+                setDuration(dur);
+                if (durationRef.current) durationRef.current.textContent = formatTime(dur);
+              }
+              if (currentTimeRef.current && !isSeekingRef.current) currentTimeRef.current.textContent = formatTime(cur);
+              if (dur > 0 && !isSeekingRef.current) {
+                const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
+                if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
+                if (scrubberKnobRef.current) scrubberKnobRef.current.style.left = `${pct}%`;
+                if (inputRangeRef.current && document.activeElement !== inputRangeRef.current) {
+                  inputRangeRef.current.value = pct;
+                }
+              }
             }}
             onLoadedMetadata={(event) => {
-              setDuration(event.target.duration);
-              syncProgressUI(event.target.currentTime, event.target.duration);
+              const dur = event.target.duration || 0;
+              if (dur > 0) {
+                durationStateRef.current = dur;
+                setVideoDuration(dur);
+                setDuration(dur);
+                if (durationRef.current) durationRef.current.textContent = formatTime(dur);
+              }
             }}
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
-            onEnded={() => { setPlaying(false); onNext?.(); }}
+            onEnded={() => { setPlaying(false); onNextRef.current?.(); }}
             onError={() => onError?.('This video could not be loaded.')}
           />
         
@@ -742,11 +921,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 <img src="/watermark.png" className="absolute top-4 right-4 w-12 h-12 z-[90] opacity-100 pointer-events-none drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]" alt="watermark" />
 </>
 )}
-
-        {/* NATIVE UI SHIELD: Hides YT controls in normal view, disappears in fullscreen */}
-        {!isFullscreen && (
-          <div className="absolute bottom-0 left-0 right-0 h-[45px] bg-black z-[5] pointer-events-auto select-none" />
-        )}
 
         {viewMode === 'full' && (
           <>
@@ -837,126 +1011,139 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               </div>
             ) : null}
 
-          {/* CUSTOM CONTROLS: Hidden in fullscreen to show Native YT Quality Selector */}
-          <div 
-            className={`absolute bottom-0 left-0 right-0 p-1.5 pt-6 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 z-[100] ${isFullscreen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-              {/* YouTube Style Progress Bar */}
-              <div className="mb-0.5 w-full group relative flex items-center h-7">
-                <input
-                  ref={inputRangeRef}
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="0.05"
-                  aria-label="Seek video"
-                  aria-valuetext={`${formatTime(currentTime)} of ${formatTime(duration)}`}
-                  onChange={handleSeek}
-                  onMouseDown={(e) => { isSeekingRef.current = true; e.stopPropagation(); }}
-                  onMouseUp={() => { isSeekingRef.current = false; }}
-                  onTouchStart={(e) => { isSeekingRef.current = true; e.stopPropagation(); }}
-                  onTouchMove={(e) => e.stopPropagation()}
-                  onTouchEnd={(e) => { isSeekingRef.current = false; e.stopPropagation(); }}
-                  onPointerDown={(e) => { isSeekingRef.current = true; e.stopPropagation(); }}
-                  onPointerUp={() => { isSeekingRef.current = false; }}
-                  onPointerCancel={() => { isSeekingRef.current = false; }}
-                  onBlur={() => { isSeekingRef.current = false; }}
-                  className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0"
-                  style={{ touchAction: 'none' }}
-                />
-                <div className="pointer-events-none relative h-1 w-full overflow-hidden rounded-full bg-white/20 transition-[height] group-hover:h-1.5">
-                  {/* Buffer Bar */}
-                  <div ref={bufferBarRef} className="absolute inset-y-0 left-0 bg-white/30 transition-all duration-300" style={{ width: '0%' }} />
-                  {/* Progress Bar (Red) */}
-                  <div ref={progressBarRef} className="absolute inset-y-0 left-0 bg-[#FF0000] shadow-[0_0_10px_rgba(255,0,0,0.5)]" style={{ width: '0%' }} />
-                </div>
-                {/* Scrubber Knob */}
-                <div 
-                  ref={scrubberRef}
-                  className="absolute top-1/2 z-10 h-3 w-3 -translate-y-1/2 rounded-full bg-[#FF0000] scale-100 shadow-lg pointer-events-none sm:scale-0 sm:group-hover:scale-100 transition-transform"
-                  style={{ left: '0%', transform: 'translate(-50%, -50%)' }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between gap-0 text-white">
-                <div className="flex items-center gap-0">
-                  {/* FIX 4: playBtnRef tracks state for icon swap without extra re-render */}
-                  <ControlBtn onClick={(e) => {
-                    e.stopPropagation();
-                    if (isYouTube && ytPlayerRef.current) {
-                      const state = ytPlayerRef.current.getPlayerState?.();
-                      // Force correct command based on ACTUAL player state
-                      if (state === 1) {
-                        ytPlayerRef.current.pauseVideo?.();
-                        setPlaying(false);
-                      } else {
-                        ytPlayerRef.current.playVideo?.();
-                        setPlaying(true);
-                      }
-                    } else if (nativeVideoRef.current) {
-                      if (nativeVideoRef.current.paused) {
-                        nativeVideoRef.current.play();
-                        setPlaying(true);
-                      } else {
-                        nativeVideoRef.current.pause();
-                        setPlaying(false);
-                      }
-                    }
-                  }} title={playing ? 'Pause' : 'Play'}>
-                    <span ref={playBtnRef} data-playing={playing ? '1' : '0'}>
-                      {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 fill-white" />}
-                    </span>
-                  </ControlBtn>
-                  <ControlBtn onClick={() => skip(-10)} title="Back 10s">
-                    <SkipBack className="h-5 w-5" />
-                  </ControlBtn>
-                  <ControlBtn onClick={() => skip(10)} title="Forward 10s">
-                    <SkipForward className="h-5 w-5" />
-                  </ControlBtn>
-                  <div className="flex items-center gap-0.5 px-1 group/vol">
-                    <ControlBtn onClick={() => setMuted((prev) => !prev)} title="Mute" className="p-0.5">
-                      {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                    </ControlBtn>
-                    <input 
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={muted ? 0 : volume}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value);
-                        setVolume(v);
-                        if (v > 0) setMuted(false);
-                      }}
-                      className="w-10 h-0.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-white"
-                    />
+          {/* MACFEED CUSTOM CONTROLS */}
+          {(() => {
+            const displayDuration = videoDuration || durationStateRef.current || duration || 0;
+            const displayTime = playbackTime || currentTime || 0;
+            const progressPercent = displayDuration > 0 ? Math.min(100, Math.max(0, (displayTime / displayDuration) * 100)) : 0;
+            return (
+              <div 
+                className={`absolute bottom-0 left-0 right-0 p-2 sm:p-3 pt-8 bg-gradient-to-t from-black/95 via-black/60 to-transparent transition-opacity duration-300 z-[100] ${showControls ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Luxury Amber Progress Bar */}
+                <div className="mb-1 w-full group relative flex items-center h-4 cursor-pointer select-none">
+                  <input
+                    ref={inputRangeRef}
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={progressPercent}
+                    onMouseDown={handleSeekStart}
+                    onTouchStart={handleSeekStart}
+                    onInput={handleSeek}
+                    onChange={handleSeek}
+                    onMouseUp={handleSeekEnd}
+                    onTouchEnd={handleSeekEnd}
+                    className="absolute w-full h-full opacity-0 cursor-pointer z-30 touch-none"
+                  />
+                  <div className="w-full h-1.5 sm:h-2 bg-white/20 rounded-full relative overflow-hidden pointer-events-none">
+                    {/* Buffer Bar */}
+                    <div ref={bufferBarRef} className="absolute inset-y-0 left-0 bg-white/30 transition-all duration-300" style={{ width: '0%' }} />
+                    {/* Progress Bar (Gold / Amber) */}
+                    <div ref={progressBarRef} className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-400 to-[#f5b700] shadow-[0_0_12px_rgba(245,183,0,0.7)]" style={{ width: `${progressPercent}%` }} />
                   </div>
-                  {/* FIX 3: Time display via DOM refs — zero re-render */}
-                  <span className="ml-0.5 font-mono text-[9px] tabular-nums text-white/60">
-                    <span ref={currentTimeRef}>0:00</span> / <span ref={durationRef}>0:00</span>
-                  </span>
+                  {/* Scrubber Knob */}
+                  <div 
+                    ref={scrubberKnobRef}
+                    className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-[#f5b700] rounded-full pointer-events-none z-20 shadow-[0_0_10px_rgba(245,183,0,0.9)] border-2 border-white scale-100 transition-transform group-hover:scale-125"
+                    style={{ left: `${progressPercent}%`, transform: 'translate(-50%, -50%)' }}
+                  />
                 </div>
 
-                <div className="flex items-center gap-0.5">
-                  <ControlBtn onClick={toggleFullscreen} title="Fullscreen">
-                    {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
-                  </ControlBtn>
-                  <ControlBtn onClick={onNext} title="Next Video">
-                    <SkipForward className="h-5 w-5 fill-white" />
-                  </ControlBtn>
+                <div className="flex items-center justify-between gap-1 text-white">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    {/* MacFeed Gold Transport Play Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        togglePlayPause();
+                      }}
+                      title={playing ? 'Pause (K)' : 'Play (K)'}
+                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 border shadow-lg mr-1 ${
+                        playing
+                          ? 'bg-gradient-to-tr from-[#f5b700] to-amber-400 text-black border-[#f5b700] shadow-[0_0_15px_rgba(245,183,0,0.55)]'
+                          : 'bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-amber-400/50 shadow-[0_4px_12px_rgba(0,0,0,0.4)]'
+                      }`}
+                    >
+                      <span ref={playBtnRef} data-playing={playing ? '1' : '0'}>
+                        {playing ? <Pause className="h-4 w-4 fill-black text-black" /> : <Play className="h-4 w-4 fill-current ml-0.5" />}
+                      </span>
+                    </button>
+                    <ControlBtn onClick={() => skip(-10)} title="Back 10s (J)">
+                      <SkipBack className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </ControlBtn>
+                    <ControlBtn onClick={() => skip(10)} title="Forward 10s (L)">
+                      <SkipForward className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </ControlBtn>
+                    <div className="hidden sm:flex items-center gap-0.5 px-1 group/vol">
+                      <ControlBtn onClick={() => setMuted((prev) => !prev)} title="Mute (M)" className="p-0.5">
+                        {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                      </ControlBtn>
+                      <input 
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={muted ? 0 : volume}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value);
+                          setVolume(v);
+                          if (v > 0) setMuted(false);
+                        }}
+                        className="w-12 h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-[#f5b700]"
+                      />
+                    </div>
+                    <div className="sm:hidden flex items-center">
+                      <ControlBtn onClick={() => setMuted((prev) => !prev)} title="Mute (M)">
+                        {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                      </ControlBtn>
+                    </div>
+                    {/* Time display */}
+                    <span className="ml-1 font-mono text-[10px] sm:text-xs tabular-nums text-white/70">
+                      <span ref={currentTimeRef} className="text-white font-bold">{formatTime(displayTime)}</span> / <span ref={durationRef}>{formatTime(displayDuration)}</span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.dispatchEvent(new CustomEvent('open-jog-wheel'));
+                      }}
+                      title="Open Master Jog Wheel"
+                      className="hidden xs:flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#f5b700]/15 hover:bg-[#f5b700]/30 border border-[#f5b700]/40 text-[#f5b700] text-[11px] font-bold transition active:scale-95 shadow-[0_0_10px_rgba(245,183,0,0.2)]"
+                    >
+                      <span>Jog Wheel 🎛️</span>
+                    </button>
+
+                    <ControlBtn onClick={handleToggleMiniPlayer} title="Miniplayer (I)">
+                      <PictureInPicture2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </ControlBtn>
+
+                    <ControlBtn onClick={toggleFullscreen} title="Fullscreen (F)">
+                      {isFullscreen ? <Minimize className="h-4 w-4 sm:h-5 sm:w-5" /> : <Maximize className="h-4 w-4 sm:h-5 sm:w-5" />}
+                    </ControlBtn>
+                    <ControlBtn onClick={() => onNextRef.current?.()} title="Next Video (N)">
+                      <SkipForward className="h-4 w-4 sm:h-5 sm:w-5 fill-white" />
+                    </ControlBtn>
+                  </div>
+                </div>
+
+                <div className="hidden flex-wrap gap-x-3 gap-y-0.5 pt-1 text-[8px] text-white/30 sm:flex">
+                  <span>K Play</span>
+                  <span>J -10s</span>
+                  <span>L +10s</span>
+                  <span>I Miniplayer</span>
+                  <span>N Next</span>
+                  <span>F Full</span>
+                  <span>M Mute</span>
                 </div>
               </div>
-
-              <div className="hidden flex-wrap gap-x-3 gap-y-0.5 pt-1 text-[8px] text-white/20 sm:flex">
-                <span>K Play</span>
-                <span>J -10s</span>
-                <span>L +10s</span>
-                <span>M Mute</span>
-                <span>F Full</span>
-                <span>←→ 10s</span>
-              </div>
-            </div>
+            );
+          })()}
           </>
         )}
       </div>
