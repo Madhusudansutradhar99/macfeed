@@ -378,9 +378,15 @@ function LocalPlayerOverlay() {
 
     useEffect(() => {
         return () => {
-            if (seekRafRef.current) cancelAnimationFrame(seekRafRef.current);
+            if (seekRafRef.current) {
+                cancelAnimationFrame(seekRafRef.current);
+                seekRafRef.current = null;
+            }
+            // Reset seeking state when video changes
+            isSeekingRef.current = false;
+            seekPendingRef.current = null;
         };
-    }, []);
+    }, [currentSong?.id]);
 
     const resetControlsTimeout = useCallback(() => {
         if (isLocked) {
@@ -450,23 +456,53 @@ function LocalPlayerOverlay() {
             const setupPlayer = async () => {
                 const video = videoRef.current;
                 if (!video) return;
+                
+                // CRITICAL FIX: Reset video state before loading new source
+                try {
+                    video.pause();
+                    video.currentTime = 0;
+                    video.src = '';
+                    video.load();
+                } catch (e) {}
+                
                 setIsLoading(true);
 
                 try {
-                    // ── SOURCE HANDLED BY useVideoPlayer HOOK ──
+                    // Set new source and reset duration/progress
+                    if (currentSong.video_url) {
+                        video.src = currentSong.video_url;
+                    }
+                    
+                    // Reset UI refs
+                    if (currentTimeRef.current) currentTimeRef.current.innerText = '00:00';
+                    if (durationRef.current) durationRef.current.innerText = '00:00';
+                    if (progressBarRef.current) progressBarRef.current.style.width = '0%';
+                    if (thumbRef.current) thumbRef.current.style.left = '0%';
+                    if (bufferBarRef.current) bufferBarRef.current.style.width = '0%';
+                    setDuration(0);
+
+                    // Attempt to resume from saved time or play
                     const key = `mx_resume_${currentSong.name || currentSong.title}`;
                     const resumeTime = localStorage.getItem(key);
                     if (resumeTime) {
                         video.currentTime = parseFloat(resumeTime);
                     }
-                    if (playing) video.play().catch(() => { });
+                    if (playing) {
+                        video.play().catch(() => { 
+                            console.warn('Auto-play blocked');
+                            setIsLoading(false);
+                        });
+                    } else {
+                        setIsLoading(false);
+                    }
                 } catch (e) {
+                    console.error('setupPlayer error:', e);
                     setIsLoading(false);
                 }
             };
             setupPlayer();
         }
-    }, [isLocalPlayerOpen, currentSong]);
+    }, [isLocalPlayerOpen, currentSong, playing]);
 
     useEffect(() => {
         let isMounted = true;
