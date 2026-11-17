@@ -968,32 +968,43 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               console.log('[Player] Loading video:', video.video_url);
             }}
             onTimeUpdate={(event) => {
-              const cur = event.target.currentTime || 0;
-              const dur = event.target.duration || durationStateRef.current || duration || 0;
+              const video = event.target;
+              if (!video) return;
               
-              if (cur > 0 && !isSeekingRef.current) {
-                setPlaybackTime(cur);
-                setCurrentTime(cur);
+              const cur = video.currentTime || 0;
+              const dur = video.duration || 0;
+              
+              // Direct DOM update - NO STATE
+              if (progressBarRef.current && dur > 0) {
+                const pct = (cur / dur) * 100;
+                progressBarRef.current.style.width = `${Math.min(100, pct)}%`;
               }
               
-              if (dur > 0 && dur !== durationStateRef.current) {
-                durationStateRef.current = dur;
-                setVideoDuration(dur);
-                setDuration(dur);
-                if (durationRef.current) durationRef.current.textContent = formatTime(dur);
+              if (scrubberKnobRef.current && dur > 0) {
+                const pct = (cur / dur) * 100;
+                scrubberKnobRef.current.style.left = `calc(${Math.min(100, pct)}% - 10px)`;
               }
               
-              if (currentTimeRef.current && !isSeekingRef.current) {
+              if (currentTimeRef.current) {
                 currentTimeRef.current.textContent = formatTime(cur);
               }
               
-              if (dur > 0 && !isSeekingRef.current) {
-                const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
-                if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
-                if (scrubberKnobRef.current) scrubberKnobRef.current.style.left = `${pct}%`;
-                if (inputRangeRef.current && document.activeElement !== inputRangeRef.current) {
-                  inputRangeRef.current.value = pct;
-                }
+              if (durationRef.current && dur > 0) {
+                durationRef.current.textContent = formatTime(dur);
+              }
+              
+              // Update input range
+              if (inputRangeRef.current && !isSeekingRef.current && dur > 0) {
+                inputRangeRef.current.value = (cur / dur) * 100;
+              }
+              
+              // Update React state (for UI rendering) - once per second
+              if (Math.floor(cur) !== Math.floor(lastSecRef.current)) {
+                lastSecRef.current = cur;
+                setPlaybackTime(cur);
+                setCurrentTime(cur);
+                setVideoDuration(dur);
+                setDuration(dur);
               }
             }}
             onLoadedMetadata={(event) => {
@@ -1006,6 +1017,16 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                 setVideoDuration(dur);
                 setDuration(dur);
                 if (durationRef.current) durationRef.current.textContent = formatTime(dur);
+              }
+            }}
+            onProgress={(event) => {
+              // Update buffer bar
+              const video = event.target;
+              if (bufferBarRef.current && video.buffered && video.buffered.length > 0) {
+                const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+                const duration = video.duration || 1;
+                const bufferPct = (bufferedEnd / duration) * 100;
+                bufferBarRef.current.style.width = `${Math.min(100, bufferPct)}%`;
               }
             }}
             onProgress={(event) => {
