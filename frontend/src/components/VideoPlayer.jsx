@@ -951,30 +951,42 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         ) : (
           <><video
             ref={nativeVideoRef}
-            data-macfeed-player="youtube"
+            data-macfeed-player="native"
             src={video.video_url}
             poster={video.thumbnail_url?.replace('maxresdefault.jpg', 'mqdefault.jpg')}
             className="block h-full w-full bg-black object-contain"
             playsInline
+            controls={false}
+            crossOrigin="anonymous"
             autoPlay={!(navigator.connection && (navigator.connection.effectiveType === '2g' || navigator.connection.effectiveType === '3g'))}
             onCanPlay={() => {
+              console.log('[Player] Video ready to play');
               setLoadFailed(false);
               setLoadError('');
+            }}
+            onLoadStart={() => {
+              console.log('[Player] Loading video:', video.video_url);
             }}
             onTimeUpdate={(event) => {
               const cur = event.target.currentTime || 0;
               const dur = event.target.duration || durationStateRef.current || duration || 0;
+              
               if (cur > 0 && !isSeekingRef.current) {
                 setPlaybackTime(cur);
                 setCurrentTime(cur);
               }
+              
               if (dur > 0 && dur !== durationStateRef.current) {
                 durationStateRef.current = dur;
                 setVideoDuration(dur);
                 setDuration(dur);
                 if (durationRef.current) durationRef.current.textContent = formatTime(dur);
               }
-              if (currentTimeRef.current && !isSeekingRef.current) currentTimeRef.current.textContent = formatTime(cur);
+              
+              if (currentTimeRef.current && !isSeekingRef.current) {
+                currentTimeRef.current.textContent = formatTime(cur);
+              }
+              
               if (dur > 0 && !isSeekingRef.current) {
                 const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
                 if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
@@ -985,6 +997,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               }
             }}
             onLoadedMetadata={(event) => {
+              console.log('[Player] Metadata loaded');
               setLoadFailed(false);
               setLoadError('');
               const dur = event.target.duration || 0;
@@ -995,11 +1008,41 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                 if (durationRef.current) durationRef.current.textContent = formatTime(dur);
               }
             }}
-            onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
-            onEnded={() => { setPlaying(false); onNextRef.current?.(); }}
-            onError={() => {
-              const message = 'This video could not load. Its URL may be unsupported or the source may be offline.';
+            onProgress={(event) => {
+              if (bufferBarRef.current && event.target.buffered.length > 0) {
+                const buffered = event.target.buffered.end(event.target.buffered.length - 1);
+                const duration = event.target.duration || 1;
+                const bufferPct = (buffered / duration) * 100;
+                bufferBarRef.current.style.width = `${Math.min(100, bufferPct)}%`;
+              }
+            }}
+            onPlay={() => {
+              console.log('[Player] Playing');
+              setPlaying(true);
+            }}
+            onPause={() => {
+              console.log('[Player] Paused');
+              setPlaying(false);
+            }}
+            onEnded={() => {
+              console.log('[Player] Video ended');
+              setPlaying(false);
+              onNextRef.current?.();
+            }}
+            onError={(e) => {
+              const errorCode = e.target.error?.code;
+              const errorMsg = e.target.error?.message || 'Unknown error';
+              console.error('[Player] Video error:', errorCode, errorMsg);
+              
+              let message = 'This video could not load.';
+              if (errorCode === 4) {
+                message = 'Video format is not supported by your browser.';
+              } else if (errorCode === 3) {
+                message = 'Video loading was aborted.';
+              } else if (errorCode === 2) {
+                message = 'Network error - video source unreachable.';
+              }
+              
               setLoadFailed(true);
               setLoadError(message);
               setPlaying(false);
@@ -1010,7 +1053,13 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             <div className="absolute inset-0 z-[95] flex items-center justify-center bg-black/85 px-6 text-center">
               <div>
                 <p className="text-sm font-black uppercase tracking-[0.25em] text-red-300">Playback unavailable</p>
-                <p className="mt-2 text-xs text-white/70">{loadError}</p>
+                <p className="mt-2 text-xs text-white/70">{loadError || 'Please try another video or reload the page.'}</p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="mt-4 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-xs font-bold text-white"
+                >
+                  Reload Page
+                </button>
               </div>
             </div>
           )}
