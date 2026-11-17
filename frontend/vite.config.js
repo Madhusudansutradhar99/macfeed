@@ -16,10 +16,10 @@ export default defineConfig({
         name: 'MacFeed',
         short_name: 'MacFeed',
         description: 'Ultimate Digital Entertainment Hub',
-        theme_color: '#020617',
-        background_color: '#020617',
+        theme_color: '#08182b',
+        background_color: '#08182b',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'any',
         start_url: '/',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },

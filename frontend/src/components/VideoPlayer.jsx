@@ -305,6 +305,11 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
 
   const handleTouchStart = useCallback((event) => {
+    if (event.target?.closest?.('input[type="range"], button')) {
+      touchStartRef.current = { x: 0, y: 0, time: 0, isTap: false };
+      isSwipingRef.current = false;
+      return;
+    }
     const touch = event.touches[0];
     touchStartRef.current = { 
       x: touch.clientX, 
@@ -316,6 +321,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   }, []);
 
   const handleTouchMove = useCallback((event) => {
+    if (event.target?.closest?.('input[type="range"], button')) return;
     // Block page scroll when touching the video area
     if (event.cancelable) event.preventDefault();
     event.stopPropagation();
@@ -459,8 +465,12 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   useEffect(() => {
     // Reset playback & duration states for new video immediately
     durationStateRef.current = 0;
+    lastSecRef.current = 0;
+    isSeekingRef.current = false;
     setPlaybackTime(0);
     setVideoDuration(0);
+    setCurrentTime(0);
+    setDuration(0);
     if (currentTimeRef.current) currentTimeRef.current.textContent = '0:00';
     if (durationRef.current) durationRef.current.textContent = '0:00';
     if (progressBarRef.current) progressBarRef.current.style.width = '0%';
@@ -628,7 +638,12 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         }
 
         if (dur > 0) {
+          const durationChanged = Math.abs(dur - durationStateRef.current) > 0.5;
           durationStateRef.current = dur;
+          if (durationChanged) {
+            setVideoDuration(dur);
+            setDuration(dur);
+          }
           const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
           if (!isSeekingRef.current) {
             if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
@@ -648,10 +663,6 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         if (Math.floor(cur) !== Math.floor(lastSecRef.current)) {
           lastSecRef.current = cur;
           setPlaybackTime(cur);
-          if (dur > 0 && dur !== durationStateRef.current) {
-            setVideoDuration(dur);
-            setDuration(dur);
-          }
         }
       } catch (err) {
         // Catch gracefully
@@ -676,7 +687,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
       }
       localYTPlayerRef.current = null;
     };
-  }, [isYouTube, youtubeVideoId]);
+  }, [isYouTube, youtubeVideoId, setCurrentTime, setDuration]);
 
   useEffect(() => {
     if (!isYouTube) return;

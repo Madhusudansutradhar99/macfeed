@@ -42,7 +42,7 @@ const MainLayout = () => {
   return (
     <div className="w-full min-h-screen flex flex-col text-white bg-gradient-to-br from-[#08182b] via-[#0d2847] to-[#091c33] relative overflow-x-hidden">
       {/* ── Fixed Light Blue Glassmorphic Ambient Atmosphere ── */}
-      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+      <div className="ambient-atmosphere fixed inset-0 pointer-events-none -z-10 overflow-hidden">
         {/* Soft Sky Blue Frosted Glass Orb (Top Left) */}
         <div className="absolute -top-[15%] -left-[10%] w-[750px] h-[750px] rounded-full bg-sky-400/[0.22] blur-[160px]" />
         {/* Electric Cyan Ambient Glass Orb (Top Right) */}

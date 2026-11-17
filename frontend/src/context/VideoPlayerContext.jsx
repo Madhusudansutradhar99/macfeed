@@ -38,6 +38,7 @@ export function VideoPlayerProvider({ children }) {
     setViewMode('full');
     setPlaying(true);
     setCurrentTime(0);
+    setDuration(0);
   }, []);
 
   const playNext = useCallback(() => {
@@ -48,6 +49,7 @@ export function VideoPlayerProvider({ children }) {
       setCurrentIndex(nextIndex);
       setPlaying(true);
       setCurrentTime(0);
+      setDuration(0);
     }
   }, [playlist, currentIndex]);
 
@@ -59,6 +61,7 @@ export function VideoPlayerProvider({ children }) {
       setCurrentIndex(prevIndex);
       setPlaying(true);
       setCurrentTime(0);
+      setDuration(0);
     }
   }, [playlist, currentIndex]);
 
@@ -68,6 +71,8 @@ export function VideoPlayerProvider({ children }) {
     setActiveVideo(null);
     setPlaylist([]);
     setCurrentIndex(-1);
+    setCurrentTime(0);
+    setDuration(0);
   }, []);
 
   const value = {
