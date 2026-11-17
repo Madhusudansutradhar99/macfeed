@@ -99,8 +99,7 @@ function LocalPlayerOverlay() {
     const [duration, setDuration] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [brightness, setBrightness] = useState(100);
-
-    // Direct DOM Refs for high-performance updates
+    const [isFloatingPiP, setIsFloatingPiP] = useState(false);    // Direct DOM Refs for high-performance updates
     const currentTimeRef = useRef(null);
     const durationRef = useRef(null);
     const progressBarRef = useRef(null);
@@ -1336,8 +1335,13 @@ function LocalPlayerOverlay() {
         <motion.div
             ref={containerRef}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className={`fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center overflow-hidden font-sans select-none touch-none px-2 sm:px-0 rounded-lg sm:rounded-2xl ${forceLandscape ? 'rotate-90 origin-center' : ''}`}
-            style={forceLandscape ? { width: '100vh', height: '100vw', position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(90deg)', backgroundColor: 'black' } : { backgroundColor: 'black' }}
+            className={`fixed z-[9999] bg-black flex flex-col items-center justify-center overflow-hidden font-sans select-none touch-none ${isFloatingPiP ? 'rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/20' : 'inset-0 px-2 sm:px-0 rounded-lg sm:rounded-2xl'} ${!isFloatingPiP && forceLandscape ? 'rotate-90 origin-center' : ''}`}
+            style={isFloatingPiP 
+                ? { width: 'clamp(320px, 80vw, 450px)', height: 'clamp(200px, 45vw, 250px)', bottom: '2rem', right: '2rem', backgroundColor: 'black', touchAction: 'none' } 
+                : (forceLandscape ? { width: '100vh', height: '100vw', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(90deg)', backgroundColor: 'black' } : { backgroundColor: 'black' })
+            }
+            drag={isFloatingPiP}
+            dragMomentum={false}
             onMouseMove={resetControlsTimeout}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
@@ -1440,6 +1444,13 @@ function LocalPlayerOverlay() {
                             </div>
 
                             <div className="flex items-center gap-4">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setIsFloatingPiP(!isFloatingPiP); }}
+                                    className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white"
+                                    title="Toggle Custom Mini Player"
+                                >
+                                    <PictureInPicture size={18} />
+                                </button>
                                 <button
                                     onClick={toggleROT}
                                     className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white"

@@ -15,7 +15,7 @@ module.exports = {
         secondary: 'var(--bg-secondary)',
       },
       fontFamily: {
-        sans: ['Inter', 'Poppins', 'ui-sans-serif', 'system-ui'],
+        sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
       },
       boxShadow: {
         glass: '0 4px 32px 0 rgba(31, 38, 135, 0.37)',

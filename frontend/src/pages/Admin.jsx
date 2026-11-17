@@ -643,9 +643,7 @@ export default function Admin() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // SECURE: Use Email-based authorization. 
-    const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || 'sutradharmadhusudan676@gmail.com').split(',');
-    if (user && adminEmails.includes(user.email)) {
+    if (user?.role === 'admin') {
       setAuthed(true);
       setPwError(false);
     } else {

@@ -5,7 +5,7 @@ import {
   TrendingUp, PlayCircle, Music, Search, Layers, ChevronRight, Zap, Shield, Smartphone, Globe, Sparkles, ArrowLeft, Mail, Lock, User, LogIn, UserPlus, LogOut, CheckCircle2, AlertCircle, Loader2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useGoogleLogin } from '@react-oauth/google';
+import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 import { supabase } from '../supabaseClient';
 
 const FeatureCard = ({ feature, index }) => (
@@ -34,6 +34,14 @@ const FeatureCard = ({ feature, index }) => (
 );
 
 export default function IntroPage() {
+  return (
+    <GoogleOAuthProvider clientId="688376851277-pjbf3re9lmphnoov37pmmdpo5bq6ee36.apps.googleusercontent.com">
+      <IntroPageContent />
+    </GoogleOAuthProvider>
+  );
+}
+
+function IntroPageContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { 

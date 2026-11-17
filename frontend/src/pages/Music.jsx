@@ -22,7 +22,7 @@ import { getCategorizedVideos } from '../utils/categoryDetector';
 
 if (typeof window !== 'undefined') window.Buffer = window.Buffer || Buffer;
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = '/api';
 
 const themes = [
   { name: 'Cyberpunk', bg1: '#2B9EAD', bg2: '#4C1D95', bg3: '#094F5C', bg4: '#8B5CF6', bg5: '#1A8A95', bg6: '#EC4899', bg7: '#0D6670', blur1: '#F472B6', blur2: '#2DD4BF', border: 'border-pink-500/50', bgBorder: 'bg-pink-500/50' },
@@ -77,8 +77,7 @@ export default function Music() {
   const currentTheme = themes[themeIdx] || themes[0];
   const activeBorder = currentTheme.border;
   const activeBgBorder = currentTheme.bgBorder;
-  const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || 'sutradharmadhusudan676@gmail.com').split(',').map((email) => email.trim().toLowerCase());
-  const isAdmin = !!(user?.email && adminEmails.includes(user.email.toLowerCase()));
+  const isAdmin = user?.role === 'admin';
 
   const showToast = useCallback((message) => {
     setToast({ show: true, message });
@@ -377,37 +376,10 @@ export default function Music() {
       }
     }
 
-    // Fallback: try backend upload if client upload fails
-    try {
-      setUploadStatus('Trying server upload fallback...');
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('userId', user?.id || 'anon');
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const result = await res.json();
-      if (result.success) {
-        setUploadStatus('✅ Upload successful (server)!');
-        setUploadProgress(100);
-        setUploadError('');
-        setPendingUploadFile(null);
-        setTimeout(() => {
-          setUploadStatus('');
-          setUploadProgress(0);
-        }, 2500);
-        // Optionally, refresh song list here
-        return;
-      } else {
-        throw new Error(result.error || 'Server upload failed');
-      }
-    } catch (serverErr) {
-      const message = lastError?.message || serverErr?.message || 'Upload failed. Please try again.';
-      setUploadError(`Could not upload song after 3 attempts. ${message}`);
-      setUploadStatus('Upload failed');
-      setUploadProgress(0);
-    }
+    const message = lastError?.message || 'Upload failed. Please try again.';
+    setUploadError(`Could not upload song after 3 attempts. ${message}`);
+    setUploadStatus('Upload failed');
+    setUploadProgress(0);
   }, [uploadSongOnce]);
 
   const handleFileUpload = async (e) => {

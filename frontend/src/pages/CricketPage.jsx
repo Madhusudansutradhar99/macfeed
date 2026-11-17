@@ -6,8 +6,6 @@ import PremiumLoader from '../components/PremiumLoader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, Calendar, Users, Plus, X, Info, ChevronRight, Award, Zap, Activity } from 'lucide-react';
 
-const RAPIDAPI_KEY = import.meta.env.VITE_RAPIDAPI_KEY;
-
 // API FETCHERS
 async function fetchLiveCricket() {
   try {
@@ -41,8 +39,7 @@ async function fetchLiveCricket() {
 
 async function fetchUpcomingCricket() {
   try {
-    const options = { method: 'GET', headers: { 'x-rapidapi-key': RAPIDAPI_KEY, 'x-rapidapi-host': 'cricbuzz-cricket.p.rapidapi.com' } };
-    const res = await fetch('/api/cricket/matches/v1/upcoming', options);
+    const res = await fetch('/api/cricket/matches/v1/upcoming');
     if (!res.ok) throw new Error(`API Error: ${res.status}`);
     const json = await res.json();
     const upcoming = [];
@@ -157,11 +154,7 @@ export default function CricketPage() {
         setIplLive(live.filter(m => /IPL|Indian Premier League/i.test(m.series || m.title) && m.status === 'LIVE'));
         setIplStandings(standingsRes.table || []);
 
-        const finalMatches = allMatches.length > 0 ? allMatches : [
-          { id: '1', strEvent: `IPL ${currentYear}: Mumbai vs Chennai`, dateEvent: 'Today', strTime: '19:30', strHomeTeam: 'Mumbai Indians', strAwayTeam: 'Chennai Super Kings', status: 'LIVE' },
-          { id: '2', strEvent: `IPL ${currentYear}: India vs Australia`, dateEvent: 'Tomorrow', strTime: '19:00', strHomeTeam: 'India', strAwayTeam: 'Australia', status: 'UPCOMING' },
-          { id: '3', strEvent: `IPL ${currentYear}: RCB vs KKR`, dateEvent: 'May 05', strTime: '19:30', strHomeTeam: 'Royal Challengers', strAwayTeam: 'Kolkata Knight Riders', status: 'UPCOMING' }
-        ];
+        const finalMatches = allMatches;
         
         setMatches(finalMatches);
         const initial = finalMatches[0];
@@ -169,9 +162,8 @@ export default function CricketPage() {
         loadSquad(initial);
       } catch (err) {
         console.error("Main Load Error:", err);
-        setMatches([
-          { id: '1', strEvent: `IPL ${currentYear}: Mumbai vs Chennai`, dateEvent: 'Today', strTime: '19:30', strHomeTeam: 'Mumbai Indians', strAwayTeam: 'Chennai Super Kings', status: 'LIVE' }
-        ]);
+        setMatches([]);
+        setFeaturedMatch(null);
       } finally {
         const end = Date.now();
         const diff = end - start;
@@ -192,9 +184,10 @@ export default function CricketPage() {
   async function loadSquad(match) {
     if (!match) return;
     try {
-      const scorecardRes = match.status === 'LIVE' ? await fetch(`/api/cricket/mcenter/v1/${match.id}/hscard`, { 
-        headers: { 'x-rapidapi-key': RAPIDAPI_KEY, 'x-rapidapi-host': 'cricbuzz-cricket.p.rapidapi.com' } 
-      }).then(r => r.ok ? r.json() : null).catch(() => null) : null;
+      const scorecardRes = match.status === 'LIVE'
+        ? await fetch(`/api/cricket/mcenter/v1/${encodeURIComponent(match.id)}/hscard`)
+          .then(r => r.ok ? r.json() : null).catch(() => null)
+        : null;
 
       if (scorecardRes) setScorecardData(scorecardRes);
 
@@ -210,29 +203,15 @@ export default function CricketPage() {
         });
       }
 
-      // SYNC TEAM 1 (Hardcoded stars with Dynamic Stats & Fuzzy Match)
-      setPlayers(TEAM_1_STARS.map(p => {
-        const fuzzyKey = Object.keys(liveStats).find(k => k.includes(p.name.split(' ').pop()) || p.name.includes(k));
-        return {
-          strPlayer: p.name,
-          strThumb: p.img,
-          strDescription: 'Professional IPL Player',
-          strPosition: p.role,
-          liveStats: liveStats[fuzzyKey] || (match.status === 'LIVE' ? { runs: Math.floor(Math.random()*60 + 20), balls: Math.floor(Math.random()*30 + 15), status: 'BATTING' } : null)
-        };
+      const actualPlayers = Object.entries(liveStats).map(([name, stats]) => ({
+        strPlayer: name,
+        strThumb: '',
+        strDescription: 'Player data from the live scorecard.',
+        strPosition: stats.status === 'BATTING' ? 'Batter' : 'Bowler',
+        liveStats: stats,
       }));
-
-      // SYNC TEAM 2 (Hardcoded stars with Dynamic Stats & Fuzzy Match)
-      setPlayers2(TEAM_2_STARS.map(p => {
-        const fuzzyKey = Object.keys(liveStats).find(k => k.includes(p.name.split(' ').pop()) || p.name.includes(k));
-        return {
-          strPlayer: p.name,
-          strThumb: p.img,
-          strDescription: 'Professional IPL Player',
-          strPosition: p.role,
-          liveStats: liveStats[fuzzyKey] || (match.status === 'LIVE' ? { wickets: Math.floor(Math.random()*3), runs: Math.floor(Math.random()*40), status: 'BOWLING' } : null)
-        };
-      }));
+      setPlayers(actualPlayers);
+      setPlayers2([]);
 
     } catch (err) {
       console.warn("Live Sync Error:", err.message);
@@ -290,8 +269,8 @@ export default function CricketPage() {
               <div className="relative z-10 h-full flex flex-col justify-between">
                 <div>
                   <div className="flex items-center gap-3 mb-8">
-                    <span className="bg-red-600 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.4)] text-white">LIVE NOW</span>
-                    <span className="text-secondary text-[10px] font-black uppercase tracking-[0.3em]">Season {currentYear} • Match 42</span>
+                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest text-white ${iplLive.length ? 'bg-red-600 animate-pulse' : 'bg-secondary'}`}>{iplLive.length ? 'LIVE NOW' : 'NO LIVE MATCH'}</span>
+                    <span className="text-secondary text-[10px] font-black uppercase tracking-[0.3em]">Season {currentYear}</span>
                   </div>
                          {iplLive.length > 0 ? (
                     iplLive.map(m => (
@@ -299,27 +278,27 @@ export default function CricketPage() {
                         <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-10">
                           <div className="flex flex-col items-center gap-4">
                             <div className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-primary/5 border border-primary flex items-center justify-center p-3 md:p-4">
-                              <img src="https://b.fssta.com/statics/html/static/team-logos/cricket/mumbai-indians.png" referrerPolicy="no-referrer" className="w-full h-full object-contain" alt="MI Logo" />
+                              <span className="text-xs font-black">{m.team1?.teamSName || m.team1?.teamName}</span>
                             </div>
-                            <span className="font-black text-lg md:text-xl italic uppercase text-blue-400">MUMBAI</span>
+                            <span className="font-black text-lg md:text-xl italic uppercase text-blue-400">{m.team1?.teamName}</span>
                           </div>
                           <div className="flex flex-col items-center">
                              <div className="text-3xl md:text-5xl font-black italic text-primary/10 mb-2">VS</div>
                              <div className="px-4 md:px-6 py-2 md:py-3 bg-primary/5 rounded-2xl border border-primary backdrop-blur-xl">
                                 <span className="text-3xl md:text-4xl font-black text-yellow-400 leading-none">
-                                  {m.score?.team1Score?.inngs1?.runs || '184'}/{m.score?.team1Score?.inngs1?.wickets || '3'}
+                                  {m.score?.team1Score?.inngs1 ? `${m.score.team1Score.inngs1.runs}/${m.score.team1Score.inngs1.wickets}` : '–'}
                                 </span>
                              </div>
                              <div className="mt-4 flex items-center gap-2">
                                 <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-500 animate-ping" />
-                                <span className="text-[8px] font-black text-green-500 uppercase tracking-widest">Live Syncing...</span>
+                                <span className="text-[8px] font-black text-green-500 uppercase tracking-widest">{m.title}</span>
                              </div>
                           </div>
                           <div className="flex flex-col items-center gap-4">
                              <div className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-primary/5 border border-primary flex items-center justify-center p-3 md:p-4">
-                               <img src="https://b.fssta.com/statics/html/static/team-logos/cricket/chennai-super-kings.png" referrerPolicy="no-referrer" className="w-full h-full object-contain" alt="CSK Logo" />
+                               <span className="text-xs font-black">{m.team2?.teamSName || m.team2?.teamName}</span>
                              </div>
-                             <span className="font-black text-lg md:text-xl italic uppercase text-yellow-400">CHENNAI</span>
+                            <span className="font-black text-lg md:text-xl italic uppercase text-yellow-400">{m.team2?.teamName}</span>
                           </div>
                         </div>
                         
@@ -331,49 +310,11 @@ export default function CricketPage() {
                         </div>
                       </div>
                     ))
-                  ) : (
-                    <div className="flex flex-col gap-6">
-                      <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-10">
-                        <div className="flex flex-col items-center gap-4 group cursor-pointer">
-                          <div className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-primary/20 border border-primary flex items-center justify-center p-4 md:p-6 shadow-[0_0_40px_rgba(37,99,235,0.2)]">
-                            <img src="https://b.fssta.com/statics/html/static/team-logos/cricket/mumbai-indians.png" referrerPolicy="no-referrer" className="w-full h-full object-contain drop-shadow-2xl" alt="MI" />
-                          </div>
-                          <span className="font-black text-xl md:text-2xl italic uppercase tracking-tighter text-primary">MUMBAI</span>
-                        </div>
-                        
-                        <div className="flex flex-col items-center">
-                          <div className="text-3xl md:text-6xl font-black italic text-primary/5 mb-4">VS</div>
-                          <div className="px-6 md:px-10 py-4 md:py-5 bg-primary/40 rounded-[1.5rem] md:rounded-[2rem] border border-primary backdrop-blur-2xl flex flex-col items-center shadow-2xl">
-                            <span className="text-[8px] md:text-[10px] font-black text-secondary uppercase tracking-[0.4em] mb-3">T20 Live Hub</span>
-                            <span className="text-2xl md:text-5xl font-black text-primary/40 tracking-tighter leading-none mb-1 italic text-center">NO MATCH LIVE</span>
-                            <span className="text-[8px] md:text-[9px] font-bold text-yellow-400 uppercase tracking-widest mt-2 animate-pulse">Searching...</span>
-                          </div>
-                        </div>
- 
-                        <div className="flex flex-col items-center gap-4 group cursor-pointer">
-                          <div className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-primary/20 border border-primary flex items-center justify-center p-4 md:p-6 shadow-[0_0_40px_rgba(234,179,8,0.2)]">
-                            <img src="https://b.fssta.com/statics/html/static/team-logos/cricket/chennai-super-kings.png" referrerPolicy="no-referrer" className="w-full h-full object-contain drop-shadow-2xl" alt="CSK" />
-                          </div>
-                          <span className="font-black text-xl md:text-2xl italic uppercase tracking-tighter text-primary">CHENNAI</span>
-                        </div>
-                      </div>
- 
-                      <div className="flex flex-col items-center gap-3">
-                         <div className="px-6 md:px-8 py-2.5 md:py-3 bg-yellow-400 text-black font-black text-[10px] md:text-sm rounded-2xl uppercase tracking-widest animate-pulse shadow-2xl shadow-yellow-400/20 text-center">
-                           Equation: Chennai need 42 runs in 18 balls
-                         </div>
-                         <p className="text-[8px] md:text-[10px] font-black text-secondary uppercase tracking-[0.5em]">Current RR: 9.15 • Req RR: 14.00</p>
-                      </div>
-                    </div>
-                  )}
+                  ) : <p className="py-20 text-center text-secondary font-bold">No IPL live match is available right now.</p>}
                  </div>
  
                      <div className="mt-8 md:mt-12 flex flex-col md:flex-row items-center justify-between border-t border-primary pt-6 md:pt-8 gap-6">
-                    <div className="flex gap-6 md:gap-10">
-                       <div><p className="text-[8px] md:text-[9px] font-black text-secondary uppercase tracking-[0.3em] mb-1">CRR</p><p className="text-lg md:text-xl font-black text-primary/80">9.16</p></div>
-                       <div><p className="text-[8px] md:text-[9px] font-black text-secondary uppercase tracking-[0.3em] mb-1">RRR</p><p className="text-lg md:text-xl font-black text-yellow-500">11.20</p></div>
-                       <div><p className="text-[8px] md:text-[9px] font-black text-secondary uppercase tracking-[0.3em] mb-1">TARGET</p><p className="text-lg md:text-xl font-black text-primary/80">184</p></div>
-                    </div>
+                     <p className="text-xs font-bold text-secondary">Live match data is provided by the scorecard.</p>
                     <button onClick={() => setShowScorecard(true)} className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-[9px] md:text-[10px] tracking-widest px-6 md:px-8 py-3 md:py-4 rounded-2xl transition-all shadow-lg shadow-blue-600/20">DETAILED STATS</button>
                  </div>
               </div>
@@ -484,12 +425,12 @@ export default function CricketPage() {
               <div className="flex flex-col md:flex-row items-center gap-8 md:gap-20 mb-8 md:mb-10">
                 <div className="flex flex-col items-center md:items-start text-center md:text-left">
                   <h2 className="text-5xl md:text-8xl font-black italic uppercase tracking-tighter leading-none mb-3 text-primary">{featuredMatch.team1?.teamName?.split(' ')[0] || featuredMatch.strHomeTeam?.split(' ')[0]}</h2>
-                  {featuredMatch.score && <div className="text-3xl md:text-4xl font-black text-yellow-400">{featuredMatch.score.team1Score?.inngs1?.runs || '168'}/{featuredMatch.score.team1Score?.inngs1?.wickets || '4'} <span className="text-sm opacity-30">({featuredMatch.score.team1Score?.inngs1?.overs || '18.2'})</span></div>}
+                  {featuredMatch.score?.team1Score?.inngs1 && <div className="text-3xl md:text-4xl font-black text-yellow-400">{featuredMatch.score.team1Score.inngs1.runs}/{featuredMatch.score.team1Score.inngs1.wickets} <span className="text-sm opacity-30">({featuredMatch.score.team1Score.inngs1.overs})</span></div>}
                 </div>
                 <div className="text-primary/10 text-3xl md:text-4xl font-black italic">VS</div>
                 <div className="flex flex-col items-center md:items-start text-center md:text-left">
                   <h2 className="text-5xl md:text-8xl font-black italic uppercase tracking-tighter leading-none mb-3 text-primary">{featuredMatch.team2?.teamName?.split(' ')[0] || featuredMatch.strAwayTeam?.split(' ')[0]}</h2>
-                  {featuredMatch.score && <div className="text-3xl md:text-4xl font-black text-yellow-400">{featuredMatch.score.team2Score?.inngs1?.runs || '142'} <span className="text-sm opacity-30">({featuredMatch.score.team2Score?.inngs1?.overs || '15.4'})</span></div>}
+                  {featuredMatch.score?.team2Score?.inngs1 && <div className="text-3xl md:text-4xl font-black text-yellow-400">{featuredMatch.score.team2Score.inngs1.runs}/{featuredMatch.score.team2Score.inngs1.wickets} <span className="text-sm opacity-30">({featuredMatch.score.team2Score.inngs1.overs})</span></div>}
                 </div>
               </div>
 
@@ -635,7 +576,7 @@ export default function CricketPage() {
                   <div className="relative z-10 text-center">
                     <p className="text-[10px] font-black uppercase tracking-[0.5em] text-primary/40 mb-4">Current Match Scorecard</p>
                     <h4 className="text-6xl font-black text-yellow-400 mb-2 tracking-tighter">
-                      {featuredMatch.score?.team1Score?.inngs1?.runs || '168'}/{featuredMatch.score?.team1Score?.inngs1?.wickets || '4'} 
+                      {featuredMatch.score?.team1Score?.inngs1 ? `${featuredMatch.score.team1Score.inngs1.runs}/${featuredMatch.score.team1Score.inngs1.wickets}` : 'Score unavailable'}
                       <span className="text-2xl text-primary/30"> ({featuredMatch.score?.team1Score?.inngs1?.overs || '18.2'})</span>
                     </h4>
                     <div className="flex justify-center items-center gap-6 mt-6">

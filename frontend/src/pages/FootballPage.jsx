@@ -6,28 +6,26 @@ import PremiumLoader from '../components/PremiumLoader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, TrendingUp, Users, X, Plus, ChevronRight, Target, Shield, Zap } from 'lucide-react';
 
-const RAPIDAPI_KEY = import.meta.env.VITE_RAPIDAPI_KEY;
 const ACC = '#d31c23';
 
 // API FETCHERS
 async function fetchLiveFootball() {
   try {
     const res = await fetch('/api/sports/football/live');
+    if (!res.ok) return [];
     const json = await res.json();
-    return (json.matches || []).map(m => ({
-      id: m.id, league: m.league, home_team: m.home_team, away_team: m.away_team, score: m.score, status: 'LIVE', time: m.time
-    }));
+    return json.matches || [];
   } catch { return []; }
 }
 
 async function fetchUpcomingFootball() {
   try {
-    const options = { method: 'GET', headers: { 'x-rapidapi-key': RAPIDAPI_KEY, 'x-rapidapi-host': 'free-api-live-football-data.p.rapidapi.com' } };
-    const res = await fetch('/api/football/football-popular-leagues', options);
+    const now = new Date();
+    const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const res = await fetch(`/api/football/football-get-matches-by-date?date=${date}`);
+    if (!res.ok) return [];
     const json = await res.json();
-    return (json.leagues || []).map(l => ({
-      id: l.id, strEvent: l.name, dateEvent: 'Premier League', strTime: l.country, strHomeTeam: l.name, strAwayTeam: 'International', status: 'UPCOMING'
-    }));
+    return json.matches || [];
   } catch { return []; }
 }
 
@@ -38,15 +36,6 @@ async function getRealFootballPlayer(name) {
     return json.player?.[0] || null;
   } catch { return null; }
 }
-
-const FALLBACK_FOOTBALLERS = [
-  { name: 'Lionel Messi', role: 'Forward', img: 'https://www.thesportsdb.com/images/media/player/thumb/6m8n7p1511162624.jpg' },
-  { name: 'Cristiano Ronaldo', role: 'Forward', img: 'https://www.thesportsdb.com/images/media/player/thumb/5z2v6n1511162744.jpg' },
-  { name: 'Kylian Mbappe', role: 'Forward', img: 'https://www.thesportsdb.com/images/media/player/thumb/xk7u3h1511163486.jpg' },
-  { name: 'Neymar Jr', role: 'Forward', img: 'https://www.thesportsdb.com/images/media/player/thumb/xuywqu1511163152.jpg' },
-  { name: 'Kevin De Bruyne', role: 'Midfielder', img: 'https://www.thesportsdb.com/images/media/player/thumb/7619211522067746.jpg' },
-  { name: 'Erling Haaland', role: 'Forward', img: 'https://www.thesportsdb.com/images/media/player/thumb/6t8o8p1511163012.jpg' }
-];
 
 export default function FootballPage() {
   const [loading, setLoading] = useState(true);
@@ -60,39 +49,24 @@ export default function FootballPage() {
 
   useEffect(() => {
     async function load() {
-      const start = Date.now();
       try {
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Load timeout')), 8000)
-        );
-
-        const dataPromise = Promise.all([
+        const [upcoming, live] = await Promise.all([
           fetchUpcomingFootball().catch(() => []),
           fetchLiveFootball().catch(() => []),
         ]);
-
-        const [upcoming, live] = await Promise.race([dataPromise, timeoutPromise]);
-        
         const all = [...live, ...upcoming];
-        const finalMatches = all.length ? all : [
-          { id: '1', league: 'Champions League', strHomeTeam: 'Man City', strAwayTeam: 'Real Madrid', status: 'LIVE', score: { home: '2', away: '1' }, time: '65' },
-          { id: '2', league: 'Premier League', strHomeTeam: 'Liverpool', strAwayTeam: 'Chelsea', status: 'UPCOMING', dateEvent: 'Today', strTime: '22:00' }
-        ];
-
-        setMatches(finalMatches);
-        const initial = finalMatches[0];
+        setMatches(all);
+        const initial = all[0] || null;
         setFeaturedMatch(initial);
-        loadSquad(initial);
+        if (initial) loadSquad(initial);
+        else setPlayers([]);
       } catch (err) {
         console.error("Football Load Error:", err);
-        setMatches([
-          { id: '1', league: 'Champions League', strHomeTeam: 'Man City', strAwayTeam: 'Real Madrid', status: 'LIVE', score: { home: '2', away: '1' }, time: '65' }
-        ]);
+        setMatches([]);
+        setFeaturedMatch(null);
+        setPlayers([]);
       } finally {
-        const end = Date.now();
-        const diff = end - start;
         setLoading(false);
-        
       }
     }
     load();
@@ -106,13 +80,7 @@ export default function FootballPage() {
       
       let combined = json.player || [];
       if (combined.length < 3) {
-        setPlayers(FALLBACK_FOOTBALLERS.map(p => ({
-          strPlayer: p.name,
-          strThumb: p.img,
-          strDescription: 'Elite Global Footballer',
-          strNationality: 'International',
-          strPosition: p.role
-        })));
+        setPlayers([]);
         return;
       }
 
@@ -125,6 +93,7 @@ export default function FootballPage() {
       })));
     } catch (err) {
       console.error("Squad Load Error:", err);
+      setPlayers([]);
     }
   }
 
@@ -181,12 +150,12 @@ export default function FootballPage() {
               <div className="flex items-center gap-12 md:gap-20 mb-10">
                 <div className="flex flex-col">
                   <h2 className="text-5xl md:text-8xl font-black italic uppercase tracking-tighter leading-none mb-3 text-primary">{featuredMatch.home_team?.name?.split(' ')[0] || featuredMatch.strHomeTeam?.split(' ')[0]}</h2>
-                  {featuredMatch.score && <div className="text-6xl font-black text-primary">{featuredMatch.score.home || '2'}</div>}
+                  {featuredMatch.score && <div className="text-6xl font-black text-primary">{featuredMatch.score.home ?? '–'}</div>}
                 </div>
                 <div className="text-primary/10 text-4xl font-black italic">VS</div>
                 <div className="flex flex-col">
                   <h2 className="text-5xl md:text-8xl font-black italic uppercase tracking-tighter leading-none mb-3 text-primary">{featuredMatch.away_team?.name?.split(' ')[0] || featuredMatch.strAwayTeam?.split(' ')[0]}</h2>
-                  {featuredMatch.score && <div className="text-6xl font-black text-primary">{featuredMatch.score.away || '1'}</div>}
+                  {featuredMatch.score && <div className="text-6xl font-black text-primary">{featuredMatch.score.away ?? '–'}</div>}
                 </div>
               </div>
 
@@ -266,8 +235,12 @@ export default function FootballPage() {
               <div className="flex-1 overflow-y-auto p-10 custom-scrollbar text-primary">
                 <div className="p-8 bg-primary/5 rounded-3xl mb-10 text-center border border-primary">
                   <p className="text-[10px] font-black uppercase tracking-[0.5em] text-secondary mb-4">Current Scoreline</p>
-                  <h4 className="text-6xl font-black text-primary mb-2" style={{ color: ACC }}>2 - 1</h4>
-                  <p className="text-xs font-bold opacity-40 uppercase tracking-[0.2em] text-secondary">65' • Champions League • Second Half</p>
+                  <h4 className="text-6xl font-black text-primary mb-2" style={{ color: ACC }}>
+                    {featuredMatch.score ? `${featuredMatch.score.home ?? '–'} - ${featuredMatch.score.away ?? '–'}` : '– - –'}
+                  </h4>
+                  <p className="text-xs font-bold opacity-40 uppercase tracking-[0.2em] text-secondary">
+                    {[featuredMatch.status, featuredMatch.league].filter(Boolean).join(' • ') || 'Match details unavailable'}
+                  </p>
                 </div>
               </div>
             </motion.div>

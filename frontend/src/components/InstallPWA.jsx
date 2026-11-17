@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
+const isRunningStandalone = () =>
+  window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+const wasRecentlyDismissed = () => {
+  const dismissedAt = Number(localStorage.getItem('pwa_dismissed') || 0);
+  return dismissedAt > 0 && Date.now() - dismissedAt < 24 * 60 * 60 * 1000;
+};
+
 export default function InstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -23,7 +31,7 @@ export default function InstallPWA() {
       e.preventDefault();
       setDeferredPrompt(e);
       // Only show if not already running in standalone display mode and not recently dismissed
-      if (!window.matchMedia('(display-mode: standalone)').matches && !localStorage.getItem('pwa_dismissed')) {
+      if (!isRunningStandalone() && !wasRecentlyDismissed()) {
         setIsVisible(true);
       }
     };
@@ -31,7 +39,7 @@ export default function InstallPWA() {
 
     // Fallback: If after 4 seconds the browser event has not fired, show simulated prompt (if standalone check passes)
     const timer = setTimeout(() => {
-      if (!deferredPrompt && !window.matchMedia('(display-mode: standalone)').matches && !localStorage.getItem('pwa_dismissed')) {
+      if (!deferredPrompt && !isRunningStandalone() && !wasRecentlyDismissed()) {
         setIsVisible(true);
       }
     }, 4000);
