@@ -15,7 +15,7 @@ import { Filesystem } from '@capacitor/filesystem';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import useVideoPlayer from './LocalVideoPlayer/useVideoPlayer';
 
-const VideoRenderer = memo(({ videoRef, aspectRatio, handleVideoMetadata, setIsLoading, setPlaying, activeSubtitle, showControls }) => {
+const VideoRenderer = memo(({ videoRef, aspectRatio, handleVideoMetadata, handleTimeUpdate, handleProgress, setIsLoading, setPlaying, activeSubtitle, showControls }) => {
     return (
         <>
         <video
@@ -36,6 +36,8 @@ const VideoRenderer = memo(({ videoRef, aspectRatio, handleVideoMetadata, setIsL
                 pointerEvents: showControls ? 'auto' : 'none'
             }}
             onLoadedMetadata={handleVideoMetadata}
+            onTimeUpdate={handleTimeUpdate}
+            onProgress={handleProgress}
             onCanPlay={() => setIsLoading(false)}
             onWaiting={() => setIsLoading(true)}
             onPlaying={() => { setIsLoading(false); setPlaying(true); }}
@@ -514,8 +516,37 @@ function LocalPlayerOverlay() {
                 setShowResumeDialog(true);
             }
         }
-
     };
+
+    const handleTimeUpdate = useCallback(() => {
+        if (!videoRef.current) return;
+        const v = videoRef.current;
+        if (isSeekingRef.current) return; // Don't update DOM while seeking
+        
+        const cur = v.currentTime || 0;
+        const dur = v.duration || 0;
+        
+        if (currentTimeRef.current) currentTimeRef.current.innerText = formatTime(cur);
+        if (durationRef.current) durationRef.current.innerText = formatTime(dur);
+        
+        if (dur > 0) {
+            const prog = (cur / dur) * 100;
+            if (progressBarRef.current) progressBarRef.current.style.width = `${prog}%`;
+            if (thumbRef.current) thumbRef.current.style.left = `calc(${prog}% - 10px)`;
+        }
+    }, []);
+
+    const handleProgress = useCallback(() => {
+        if (!videoRef.current || !bufferBarRef.current) return;
+        const v = videoRef.current;
+        const dur = v.duration || 1;
+        
+        if (v.buffered.length > 0) {
+            const bufferedEnd = v.buffered.end(v.buffered.length - 1);
+            const bufferPct = (bufferedEnd / dur) * 100;
+            bufferBarRef.current.style.width = `${Math.min(100, bufferPct)}%`;
+        }
+    }, []);
 
     const handleResume = (confirm) => {
         if (confirm && videoRef.current) videoRef.current.currentTime = savedTime;
@@ -677,37 +708,31 @@ function LocalPlayerOverlay() {
     }, [scheduleWheelRotation, showExtraPanel, isMobileView]);
 
     useEffect(() => {
-        const video = videoRef.current;
-        if (!video || !isLocalPlayerOpen) return;
+        if (!isLocalPlayerOpen || !videoRef.current) return;
 
         const updateUI = () => {
-            if (!video || !isLocalPlayerOpen || isLocked) return;
+            const video = videoRef.current;
+            if (!video || !isLocalPlayerOpen || isLocked || isSeekingRef.current) return;
             
-            const cur = video.currentTime;
+            const cur = video.currentTime || 0;
             const dur = video.duration || 1;
             const prog = (cur / dur) * 100;
             
             // Direct DOM updates for maximum performance
-            if (progressBarRef.current) progressBarRef.current.style.width = `${prog}%`;
-            if (thumbRef.current) thumbRef.current.style.left = `calc(${prog}% - 10px)`;
+            if (progressBarRef.current) progressBarRef.current.style.width = `${Math.min(100, prog)}%`;
+            if (thumbRef.current) thumbRef.current.style.left = `calc(${Math.min(100, prog)}% - 10px)`;
             if (video.buffered.length > 0) {
                 const bEnd = video.buffered.end(video.buffered.length - 1);
-                if (bufferBarRef.current) bufferBarRef.current.style.width = `${(bEnd / dur) * 100}%`;
+                if (bufferBarRef.current) bufferBarRef.current.style.width = `${Math.min(100, (bEnd / dur) * 100)}%`;
             }
             if (currentTimeRef.current) currentTimeRef.current.innerText = formatTime(cur);
-            if (durationRef.current) {
-                const formattedDur = formatTime(dur);
-                if (durationRef.current.innerText !== formattedDur) {
-                    durationRef.current.innerText = formattedDur;
-                }
-            }
+            if (durationRef.current) durationRef.current.innerText = formatTime(dur);
         };
 
-        // Throttled UI loop (250ms) to save CPU/GPU for 8K decoding
-        // Higher resolution video needs more CPU cycles for the decoder, not the UI
-        const intervalId = setInterval(updateUI, 250);
+        // Faster interval (100ms) for smooth progress tracking
+        const intervalId = setInterval(updateUI, 100);
         return () => clearInterval(intervalId);
-    }, [isLocalPlayerOpen, currentSong, isLocked]);
+    }, [isLocalPlayerOpen, isLocked]);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -895,6 +920,53 @@ function LocalPlayerOverlay() {
         link.href = canvas.toDataURL(`image/${ssFormat === 'PNG' ? 'png' : 'jpeg'}`, ssQuality === 'High' ? 1.0 : ssQuality === 'Medium' ? 0.7 : 0.4);
         link.click();
         showMXToast('Screenshot Saved', <Camera size={16} />, '#38BDF8');
+    };
+
+    const handleDownloadVideo = async (e) => {
+        e?.stopPropagation();
+        if (!videoRef.current || !currentSong) return;
+        
+        try {
+            showMXToast('Starting Download...', <Download size={16} />, '#38BDF8');
+            
+            const videoUrl = currentSong.video_url || videoRef.current.src;
+            if (!videoUrl) {
+                showMXToast('No video URL found', <Download size={16} />, '#EF4444');
+                return;
+            }
+
+            // If it's a blob URL (local file), download directly
+            if (videoUrl.startsWith('blob:')) {
+                const response = await fetch(videoUrl);
+                const blob = await response.blob();
+                const link = document.createElement('a');
+                link.href = videoUrl;
+                link.download = `${currentSong.name || currentSong.title || 'video'}.mp4`;
+                link.click();
+                showMXToast('Video Downloaded', <Download size={16} />, '#10B981');
+                return;
+            }
+
+            // For remote URLs, try to fetch and download
+            const response = await fetch(videoUrl, { 
+                headers: { 'Accept': '*/*' },
+                mode: 'cors'
+            });
+            
+            if (!response.ok) throw new Error('Failed to fetch video');
+            
+            const blob = await response.blob();
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${currentSong.name || currentSong.title || 'video'}.mp4`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            
+            showMXToast('Video Downloaded Successfully', <Download size={16} />, '#10B981');
+        } catch (err) {
+            console.error('Download error:', err);
+            showMXToast('Download Failed - Check Console', <Download size={16} />, '#EF4444');
+        }
     };
 
     const toggleROT = async (e) => {
@@ -1294,6 +1366,8 @@ function LocalPlayerOverlay() {
                     videoRef={videoRef}
                     aspectRatio={aspectRatio}
                     handleVideoMetadata={handleVideoMetadata}
+                    handleTimeUpdate={handleTimeUpdate}
+                    handleProgress={handleProgress}
                     setIsLoading={setIsLoading}
                     setPlaying={setPlaying}
                     activeSubtitle={activeSubtitle}
@@ -1409,6 +1483,9 @@ function LocalPlayerOverlay() {
                                 </div>
                                 <button onClick={handleCapture} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white">
                                     <Camera size={18} />
+                                </button>
+                                <button onClick={handleDownloadVideo} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-95">
+                                    <Download size={18} />
                                 </button>
                             </div>
                         </motion.div>

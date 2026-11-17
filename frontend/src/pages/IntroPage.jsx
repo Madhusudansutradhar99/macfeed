@@ -36,7 +36,15 @@ const FeatureCard = ({ feature, index }) => (
 export default function IntroPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, login, guestLogin, logout, setAuthModalOpen } = useAuth();
+  const { 
+    user, 
+    login, 
+    loginWithCredentials, 
+    registerWithCredentials, 
+    googleLoginWithBackend, 
+    guestLogin, 
+    logout 
+  } = useAuth();
 
   const [isLoginTab, setIsLoginTab] = useState(true);
   const [email, setEmail] = useState('');
@@ -65,11 +73,11 @@ export default function IntroPage() {
     navigate('/', { replace: true });
   };
 
-  const handleExploreGuest = () => {
+  const handleExploreGuest = async () => {
     try {
       localStorage.setItem('macfeed_has_seen_intro', 'true');
     } catch (e) {}
-    guestLogin();
+    await guestLogin();
     handlePostAuthRedirect();
   };
 
@@ -91,7 +99,7 @@ export default function IntroPage() {
           picture: userInfo.picture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
         };
 
-        login(userData);
+        await googleLoginWithBackend(tokenResponse.access_token, userData);
         handlePostAuthRedirect();
       } catch (err) {
         console.error('Login Failed:', err);
@@ -119,64 +127,19 @@ export default function IntroPage() {
     setLoading(true);
     setError(null);
 
-    try {
-      if (supabase && supabase.auth) {
-        if (isLoginTab) {
-          const { data, error: supaErr } = await supabase.auth.signInWithPassword({
-            email,
-            password
-          });
-          if (!supaErr && data?.user) {
-            login({
-              id: data.user.id,
-              email: data.user.email,
-              name: data.user.user_metadata?.full_name || email.split('@')[0],
-              picture: data.user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
-            });
-            handlePostAuthRedirect();
-            setLoading(false);
-            return;
-          }
-        } else {
-          const { data, error: supaErr } = await supabase.auth.signUp({
-            email,
-            password,
-            options: { data: { full_name: name || email.split('@')[0] } }
-          });
-          if (!supaErr && data?.user) {
-            login({
-              id: data.user.id,
-              email: data.user.email,
-              name: name || email.split('@')[0],
-              picture: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
-            });
-            handlePostAuthRedirect();
-            setLoading(false);
-            return;
-          }
-        }
-      }
-
-      // Fallback instant login
-      login({
-        id: `usr_${Date.now()}`,
-        email,
-        name: name || email.split('@')[0],
-        picture: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
-      });
-      handlePostAuthRedirect();
-    } catch (err) {
-      console.warn('Auth fallback:', err);
-      login({
-        id: `usr_${Date.now()}`,
-        email,
-        name: name || email.split('@')[0],
-        picture: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
-      });
-      handlePostAuthRedirect();
-    } finally {
-      setLoading(false);
+    let res;
+    if (isLoginTab) {
+      res = await loginWithCredentials(email, password);
+    } else {
+      res = await registerWithCredentials(name, email, password);
     }
+
+    if (res?.success) {
+      handlePostAuthRedirect();
+    } else {
+      setError(res?.message || 'Authentication failed. Please check your credentials.');
+    }
+    setLoading(false);
   };
 
   const features = [

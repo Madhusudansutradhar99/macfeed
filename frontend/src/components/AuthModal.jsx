@@ -7,7 +7,17 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { supabase } from '../supabaseClient';
 
 export default function AuthModal() {
-  const { user, login, guestLogin, logout, isAuthModalOpen, setAuthModalOpen } = useAuth();
+  const { 
+    user, 
+    login, 
+    loginWithCredentials, 
+    registerWithCredentials, 
+    googleLoginWithBackend, 
+    guestLogin, 
+    logout, 
+    isAuthModalOpen, 
+    setAuthModalOpen 
+  } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isLogin, setIsLogin] = useState(true);
@@ -45,7 +55,7 @@ export default function AuthModal() {
           picture: userInfo.picture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
         };
 
-        login(userData);
+        await googleLoginWithBackend(tokenResponse.access_token, userData);
         handlePostAuthRedirect();
       } catch (err) {
         console.error('Login Failed:', err);
@@ -73,65 +83,20 @@ export default function AuthModal() {
     setLoading(true);
     setError(null);
 
-    try {
-      // 1. Try Supabase auth if client is active
-      if (supabase && supabase.auth) {
-        if (isLogin) {
-          const { data, error: supaErr } = await supabase.auth.signInWithPassword({
-            email,
-            password
-          });
-          if (!supaErr && data?.user) {
-            login({
-              id: data.user.id,
-              email: data.user.email,
-              name: data.user.user_metadata?.full_name || email.split('@')[0],
-              picture: data.user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
-            });
-            handlePostAuthRedirect();
-            setLoading(false);
-            return;
-          }
-        } else {
-          const { data, error: supaErr } = await supabase.auth.signUp({
-            email,
-            password,
-            options: { data: { full_name: name || email.split('@')[0] } }
-          });
-          if (!supaErr && data?.user) {
-            login({
-              id: data.user.id,
-              email: data.user.email,
-              name: name || email.split('@')[0],
-              picture: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
-            });
-            handlePostAuthRedirect();
-            setLoading(false);
-            return;
-          }
-        }
-      }
-
-      // 2. Fallback client-side instant profile login
-      login({
-        id: `usr_${Date.now()}`,
-        email,
-        name: name || email.split('@')[0],
-        picture: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
-      });
-      handlePostAuthRedirect();
-    } catch (err) {
-      console.warn('Auth fallback:', err);
-      login({
-        id: `usr_${Date.now()}`,
-        email,
-        name: name || email.split('@')[0],
-        picture: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
-      });
-      handlePostAuthRedirect();
-    } finally {
-      setLoading(false);
+    let res;
+    if (isLogin) {
+      res = await loginWithCredentials(email, password);
+    } else {
+      res = await registerWithCredentials(name, email, password);
     }
+
+    if (res?.success) {
+      handlePostAuthRedirect();
+      setAuthModalOpen(false);
+    } else {
+      setError(res?.message || 'Authentication failed. Please check your credentials.');
+    }
+    setLoading(false);
   };
 
   if (!isAuthModalOpen) return null;

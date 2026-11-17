@@ -21,6 +21,35 @@ const updateSW = registerSW({
 
 const GOOGLE_CLIENT_ID = "688376851277-pjbf3re9lmphnoov37pmmdpo5bq6ee36.apps.googleusercontent.com";
 
+// Lazy load Google Identity script only when needed
+const loadGoogleIdentity = () => {
+  if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) return;
+  const script = document.createElement('script');
+  script.src = 'https://accounts.google.com/gsi/client';
+  script.async = true;
+  script.defer = true;
+  document.head.appendChild(script);
+};
+
+// Lazy load YouTube IFrame API only when needed
+const loadYouTubeAPI = () => {
+  if (window.YT && window.YT.Player) return;
+  if (document.querySelector('script[src*="youtube.com/iframe_api"]')) return;
+  const script = document.createElement('script');
+  script.src = 'https://www.youtube.com/iframe_api';
+  script.async = true;
+  document.head.appendChild(script);
+};
+
+// Load on first interaction or idle time
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    requestIdleCallback(() => { loadGoogleIdentity(); loadYouTubeAPI(); }, { timeout: 2000 });
+  });
+} else {
+  requestIdleCallback(() => { loadGoogleIdentity(); loadYouTubeAPI(); }, { timeout: 2000 });
+}
+
 if (typeof window !== 'undefined' && !window.__macfeedNativeFetch) {
   window.__macfeedNativeFetch = window.fetch.bind(window);
   window.fetch = (input, init) => fetchWithRetry(input, init, { timeoutMs: 10000, retryTimeoutMs: 5000, retries: 1 });

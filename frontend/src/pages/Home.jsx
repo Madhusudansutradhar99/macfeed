@@ -2,7 +2,12 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Loader from '../components/Loader';
-import { ChevronLeft, ChevronRight, ChevronRight as ArrowRight, Sparkles, X } from 'lucide-react';
+import { 
+  ChevronLeft, ChevronRight, ChevronRight as ArrowRight, Sparkles, X, 
+  Mail, Lock, User, LogIn, UserPlus, LogOut, Zap, AlertCircle, Loader2, CheckCircle2 
+} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useGoogleLogin } from '@react-oauth/google';
 import VideoCard from '../components/VideoCard';
 import HeroCarousel from '../components/HeroCarousel';
 import { FALLBACK_VIDEOS } from '../data/fallbackVideos';
@@ -166,6 +171,85 @@ function getMergedHomeVideos(baseList = []) {
 }
 
 export default function Home() {
+  const { 
+    user, 
+    loginWithCredentials, 
+    registerWithCredentials, 
+    googleLoginWithBackend, 
+    guestLogin, 
+    logout 
+  } = useAuth();
+
+  const [homeEmail, setHomeEmail] = useState('');
+  const [homePassword, setHomePassword] = useState('');
+  const [homeName, setHomeName] = useState('');
+  const [isHomeLoginTab, setIsHomeLoginTab] = useState(true);
+  const [homeAuthLoading, setHomeAuthLoading] = useState(false);
+  const [homeAuthError, setHomeAuthError] = useState(null);
+  const [homeAuthSuccess, setHomeAuthSuccess] = useState(null);
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setHomeAuthLoading(true);
+      setHomeAuthError(null);
+      try {
+        const userInfo = await fetch(
+          'https://www.googleapis.com/oauth2/v3/userinfo',
+          { headers: { Authorization: `Bearer ${tokenResponse.access_token}` }}
+        ).then((res) => res.json());
+
+        const userData = {
+          id: userInfo.sub,
+          name: userInfo.name || 'Google User',
+          email: userInfo.email,
+          picture: userInfo.picture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
+        };
+
+        await googleLoginWithBackend(tokenResponse.access_token, userData);
+        setHomeAuthSuccess('Signed in successfully with Google!');
+      } catch (err) {
+        setHomeAuthError('Google sign in failed');
+      } finally {
+        setHomeAuthLoading(false);
+      }
+    },
+    onError: () => {
+      setHomeAuthError('Google login was cancelled');
+    }
+  });
+
+  const handleHomeAuth = async (e) => {
+    e.preventDefault();
+    if (!homeEmail || !homeEmail.includes('@')) {
+      setHomeAuthError('Please enter a valid email address');
+      return;
+    }
+    if (!homePassword || homePassword.length < 4) {
+      setHomeAuthError('Password must be at least 4 characters');
+      return;
+    }
+
+    setHomeAuthLoading(true);
+    setHomeAuthError(null);
+    setHomeAuthSuccess(null);
+
+    let res;
+    if (isHomeLoginTab) {
+      res = await loginWithCredentials(homeEmail, homePassword);
+    } else {
+      res = await registerWithCredentials(homeName, homeEmail, homePassword);
+    }
+
+    if (res?.success) {
+      setHomeAuthSuccess(isHomeLoginTab ? 'Signed in successfully!' : 'Account registered successfully!');
+      setHomeEmail('');
+      setHomePassword('');
+    } else {
+      setHomeAuthError(res?.message || 'Authentication failed. Please check your credentials.');
+    }
+    setHomeAuthLoading(false);
+  };
+
   const [videos, setVideos] = useState(() => {
     try {
       const cached = localStorage.getItem('macfeed_home_cache');

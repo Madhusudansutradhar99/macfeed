@@ -101,10 +101,13 @@ export default defineConfig({
       },
       output: {
         manualChunks(id) {
-          // Vendor chunks
+          // Vendor chunks - more granular splitting to avoid 1MB mega chunk
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+            if (id.includes('react') || id.includes('react-dom')) {
               return 'vendor-react';
+            }
+            if (id.includes('react-router-dom')) {
+              return 'vendor-router';
             }
             if (id.includes('@supabase') || id.includes('supabase')) {
               return 'vendor-supabase';
@@ -118,6 +121,25 @@ export default defineConfig({
             if (id.includes('swiper')) {
               return 'vendor-player';
             }
+            if (id.includes('music-metadata-browser')) {
+              return 'vendor-audio';
+            }
+            if (id.includes('hls.js')) {
+              return 'vendor-hls';
+            }
+            if (id.includes('socket.io')) {
+              return 'vendor-socket';
+            }
+            if (id.includes('axios') || id.includes('tus-js-client')) {
+              return 'vendor-http';
+            }
+            if (id.includes('@react-oauth')) {
+              return 'vendor-oauth';
+            }
+            if (id.includes('fuse.js')) {
+              return 'vendor-search';
+            }
+            // Everything else in a general vendor chunk
             return 'vendor';
           }
         },

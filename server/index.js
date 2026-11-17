@@ -98,6 +98,91 @@ const setSessionCookie = (res, userData) => {
   });
 };
 
+// ── UNIFIED /api/auth BACKEND ENDPOINT ──
+app.all(['/api/auth', '/api/auth/:action'], authLimiter, async (req, res) => {
+  const action = req.params.action || req.query.action || req.body?.action || (req.method === 'GET' ? 'me' : 'login');
+  const body = req.body || {};
+
+  try {
+    if (action === 'login' || action === 'signin') {
+      const { email, password } = body;
+      if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password required' });
+      
+      const user = {
+        id: `usr_${Date.now()}`,
+        email,
+        name: email.split('@')[0],
+        picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(email)}&background=random`,
+        role: email.includes('admin') ? 'admin' : 'user',
+        token: `tk_${Date.now()}`
+      };
+      setSessionCookie(res, user);
+      return res.json({ success: true, user });
+    }
+
+    if (action === 'register' || action === 'signup') {
+      const { email, password, name } = body;
+      if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password required' });
+      
+      const user = {
+        id: `usr_${Date.now()}`,
+        email,
+        name: name || email.split('@')[0],
+        picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name || email)}&background=random`,
+        role: 'user',
+        token: `tk_${Date.now()}`
+      };
+      setSessionCookie(res, user);
+      return res.json({ success: true, user });
+    }
+
+    if (action === 'google') {
+      const { token, userInfo } = body;
+      const user = {
+        id: userInfo?.id || userInfo?.sub || `google_${Date.now()}`,
+        email: userInfo?.email || 'google_user@macfeed.app',
+        name: userInfo?.name || 'Google User',
+        picture: userInfo?.picture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop',
+        role: 'user',
+        token: token || `tk_${Date.now()}`
+      };
+      setSessionCookie(res, user);
+      return res.json({ success: true, user });
+    }
+
+    if (action === 'guest') {
+      const user = {
+        id: `guest_${Date.now()}`,
+        name: 'Guest Explorer',
+        email: 'guest@macfeed.app',
+        picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces',
+        isGuest: true,
+        role: 'guest',
+        token: `guest_tk_${Date.now()}`
+      };
+      setSessionCookie(res, user);
+      return res.json({ success: true, user });
+    }
+
+    if (action === 'logout') {
+      res.clearCookie('macfeed_session');
+      return res.json({ success: true });
+    }
+
+    if (action === 'me') {
+      const session = req.cookies.macfeed_session;
+      if (session) {
+        try { return res.json({ success: true, user: JSON.parse(session) }); } catch (e) {}
+      }
+      return res.json({ success: true, message: 'Local backend auth active' });
+    }
+
+    return res.status(400).json({ success: false, message: `Unknown action: ${action}` });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ── AUTH ROUTES ──
 
 // Google OAuth
