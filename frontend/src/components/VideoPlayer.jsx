@@ -1041,13 +1041,12 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
                     max="100"
                     step="0.1"
                     value={progressPercent}
-                    onMouseDown={handleSeekStart}
-                    onTouchStart={handleSeekStart}
+                    onPointerDown={handleSeekStart}
+                    onPointerUp={handleSeekEnd}
+                    onPointerCancel={handleSeekEnd}
                     onInput={handleSeek}
                     onChange={handleSeek}
-                    onMouseUp={handleSeekEnd}
-                    onTouchEnd={handleSeekEnd}
-                    className="absolute w-full h-full opacity-0 cursor-pointer z-30 touch-none"
+                    className="absolute w-full h-full opacity-0 cursor-pointer z-30 touch-pan-y"
                   />
                   <div className="w-full h-1.5 sm:h-2 bg-white/20 rounded-full relative overflow-hidden pointer-events-none">
                     {/* Buffer Bar */}
