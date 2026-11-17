@@ -522,6 +522,16 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
       if (ytPlayerRef.current === localYTPlayerRef.current) {
         ytPlayerRef.current = null;
       }
+      
+      // CRITICAL FIX: Reset native video element for non-YouTube videos
+      if (nativeVideoRef.current) {
+        try {
+          nativeVideoRef.current.pause();
+          nativeVideoRef.current.currentTime = 0;
+          nativeVideoRef.current.src = '';
+          nativeVideoRef.current.load();
+        } catch (e) {}
+      }
       return;
     }
 
