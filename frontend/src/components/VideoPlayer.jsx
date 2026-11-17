@@ -26,6 +26,35 @@ const formatTime = (seconds) => {
     : `${minutes}:${secs}`;
 };
 
+function getYouTubeId(video) {
+  const candidates = [video?.youtube_id, video?.ytId, video?.video_url, video?.id]
+    .filter(Boolean)
+    .map(value => String(value).trim());
+
+  for (const candidate of candidates) {
+    const prefixedId = candidate.match(/^yt-([\w-]{11})$/i)?.[1];
+    if (prefixedId) return prefixedId;
+    if (/^[\w-]{11}$/.test(candidate)) return candidate;
+
+    try {
+      const url = new URL(candidate, window.location.origin);
+      const host = url.hostname.toLowerCase().replace(/^www\./, '');
+      if (host === 'youtu.be') {
+        const id = url.pathname.split('/').filter(Boolean)[0] || '';
+        if (/^[\w-]{11}$/.test(id)) return id;
+      }
+      if (host === 'youtube.com' || host.endsWith('.youtube.com') || host === 'youtube-nocookie.com') {
+        const pathMatch = url.pathname.match(/^\/(?:embed|v|shorts|live)\/([\w-]{11})/i);
+        const id = url.searchParams.get('v') || pathMatch?.[1] || '';
+        if (/^[\w-]{11}$/.test(id)) return id;
+      }
+    } catch (error) {
+      // Invalid or relative video identifiers are handled as non-YouTube sources.
+    }
+  }
+  return '';
+}
+
 const YT_QUALITY_OPTIONS = [
   { label: 'Auto', value: 'auto', apiValue: 'auto' },
   { label: '1080p', value: 'hd1080', apiValue: 'hd1080' },
@@ -106,22 +135,18 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [availableQualities, setAvailableQualities] = useState([]);
   const [currentQuality, setCurrentQuality] = useState('auto');
   const [forceLandscape, setForceLandscape] = useState(false);
   // Robust YouTube detection
-  const ytMatch = video?.video_url?.match(
-    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/
-  );
   const isYouTube = video?.source === 'youtube' || 
     Boolean(video?.youtube_id) || 
     Boolean(video?.ytId) || 
     Boolean(typeof video?.id === 'string' && video.id.startsWith('yt-')) ||
     Boolean(video?.video_url?.includes('youtu'));
-  const youtubeVideoId = isYouTube
-    ? (video?.youtube_id || video?.ytId || (typeof video?.id === 'string' && video.id.startsWith('yt-') ? video.id.replace('yt-', '') : '') || ytMatch?.[1] || '')
-    : '';
+  const youtubeVideoId = isYouTube ? getYouTubeId(video) : '';
 
   const showControlsTemporarily = useCallback(() => {
     setShowControls(true);
@@ -471,6 +496,8 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     setVideoDuration(0);
     setCurrentTime(0);
     setDuration(0);
+    setLoadFailed(false);
+    setLoadError('');
     if (currentTimeRef.current) currentTimeRef.current.textContent = '0:00';
     if (durationRef.current) durationRef.current.textContent = '0:00';
     if (progressBarRef.current) progressBarRef.current.style.width = '0%';
@@ -478,6 +505,10 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     if (inputRangeRef.current) inputRangeRef.current.value = 0;
 
     if (!isYouTube || !youtubeVideoId) {
+      if (isYouTube && !youtubeVideoId) {
+        setLoadFailed(true);
+        setLoadError('The YouTube link is invalid or its video ID could not be read.');
+      }
       if (ytTimerRef.current) clearInterval(ytTimerRef.current);
       if (ytFailSafeRef.current) clearTimeout(ytFailSafeRef.current);
       if (localYTPlayerRef.current) {
@@ -495,6 +526,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
     }
 
     let isDisposed = false;
+    let playerReady = false;
 
     const initYouTube = () => {
       if (isDisposed || !ytDomContainer.current) return;
@@ -532,9 +564,12 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
         events: {
           onReady: (event) => {
             if (isDisposed) return;
+            playerReady = true;
+            if (ytFailSafeRef.current) clearTimeout(ytFailSafeRef.current);
             localYTPlayerRef.current = event.target;
             ytPlayerRef.current = event.target;
             setLoadFailed(false);
+            setLoadError('');
             try {
               const initDur = event.target.getDuration?.() || 0;
               if (initDur > 0) {
@@ -576,10 +611,20 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               onNextRef.current?.();
             }
           },
-          onError: () => {
+          onError: (event) => {
             if (isDisposed) return;
+            const code = event?.data;
+            const message = code === 101 || code === 150
+              ? 'This video owner does not allow playback on other websites.'
+              : code === 100
+                ? 'This YouTube video is unavailable or private.'
+                : code === 153
+                  ? 'YouTube could not verify this app request. Please reload and try again.'
+                  : `YouTube could not play this video (error ${code || 'unknown'}).`;
             setLoadFailed(true);
-            onError?.('The YouTube player could not load this video.');
+            setLoadError(message);
+            setPlaying(false);
+            onError?.(message);
           },
         },
       });
@@ -605,13 +650,25 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
 
       ytFailSafeRef.current = setTimeout(() => {
         clearInterval(poll);
-        if (!window.YT?.Player) {
-          setLoadFailed(true);
-          onError?.('The YouTube player timed out while loading.');
-        }
-      }, 10000);
+        if (isDisposed || playerReady) return;
+        const message = window.YT?.Player
+          ? 'The video player did not become ready. Try another video or reload.'
+          : 'YouTube could not be reached. Check your connection and reload.';
+        setLoadFailed(true);
+        setLoadError(message);
+        setPlaying(false);
+        onError?.(message);
+      }, 12000);
     } else {
       initYouTube();
+      ytFailSafeRef.current = setTimeout(() => {
+        if (isDisposed || playerReady) return;
+        const message = 'The video player did not become ready. Try another video or reload.';
+        setLoadFailed(true);
+        setLoadError(message);
+        setPlaying(false);
+        onError?.(message);
+      }, 12000);
     }
 
     // Single, resilient 150ms sync interval that never crashes
@@ -818,7 +875,7 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/90 px-6 text-center">
                 <div>
                   <p className="text-sm font-black uppercase tracking-[0.25em] text-red-300">Playback unavailable</p>
-                  <p className="mt-2 text-xs text-white/70">Please retry the page or choose another video.</p>
+                  <p className="mt-2 text-xs text-white/70">{loadError || 'Please retry the page or choose another video.'}</p>
                 </div>
               </div>
             ) : null}
@@ -890,6 +947,10 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             className="block h-full w-full bg-black object-contain"
             playsInline
             autoPlay={!(navigator.connection && (navigator.connection.effectiveType === '2g' || navigator.connection.effectiveType === '3g'))}
+            onCanPlay={() => {
+              setLoadFailed(false);
+              setLoadError('');
+            }}
             onTimeUpdate={(event) => {
               const cur = event.target.currentTime || 0;
               const dur = event.target.duration || durationStateRef.current || duration || 0;
@@ -914,6 +975,8 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
               }
             }}
             onLoadedMetadata={(event) => {
+              setLoadFailed(false);
+              setLoadError('');
               const dur = event.target.duration || 0;
               if (dur > 0) {
                 durationStateRef.current = dur;
@@ -925,8 +988,22 @@ export default React.memo(function VideoPlayer({ video, onClose, viewMode = 'ful
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
             onEnded={() => { setPlaying(false); onNextRef.current?.(); }}
-            onError={() => onError?.('This video could not be loaded.')}
+            onError={() => {
+              const message = 'This video could not load. Its URL may be unsupported or the source may be offline.';
+              setLoadFailed(true);
+              setLoadError(message);
+              setPlaying(false);
+              onError?.(message);
+            }}
           />
+          {loadFailed && !isYouTube && (
+            <div className="absolute inset-0 z-[95] flex items-center justify-center bg-black/85 px-6 text-center">
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.25em] text-red-300">Playback unavailable</p>
+                <p className="mt-2 text-xs text-white/70">{loadError}</p>
+              </div>
+            </div>
+          )}
         
 <img src="/watermark.png" className="absolute top-4 right-4 w-10 h-10 opacity-60 z-[90] w-6 h-6 z-[60] opacity-80 pointer-events-none drop-shadow-md mix-blend-plus-lighter" alt="watermark" />
 <img src="/watermark.png" className="absolute top-4 right-4 w-12 h-12 z-[90] opacity-100 pointer-events-none drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]" alt="watermark" />
